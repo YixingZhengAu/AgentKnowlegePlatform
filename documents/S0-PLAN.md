@@ -587,7 +587,7 @@ event: done          data: {"message_id": "...", "citations": []}
 
 ---
 
-### Step 9 · 收尾验收
+### Step 9 · 收尾验收 ✅ 已完成
 
 **做什么**
 
@@ -597,14 +597,46 @@ event: done          data: {"message_id": "...", "citations": []}
 
 **S0 最终验收清单**
 
-- [ ] `cp .env.example .env` 填 key → `make db && make migrate && make seed && make dev` 四条命令起全系统
-- [ ] 对话页流式聊天,右侧面板显示 trace(阶段/耗时/token/成本)
-- [ ] `traces` / `messages` / `conversations` 表数据完整
-- [ ] 两个冒烟脚本全绿
-- [ ] 假任务:提交 → 进度条 → 完成;kill 重启后无僵尸任务
-- [ ] 审核台:假数据全流程(筛选/编辑/批量/发布)走通
-- [ ] 改后端 schema → `make types` → 前端编译报错
-- [ ] README 支持陌生人从零起系统
+- [x] `cp .env.example .env` 填 key → `make db && make migrate && make seed && make dev` 四条命令起全系统
+- [x] 对话页流式聊天,右侧面板显示 trace(阶段/耗时/token/成本)
+- [x] `traces` / `messages` / `conversations` 表数据完整
+- [x] 两个冒烟脚本全绿
+- [x] 假任务:提交 → 进度条 → 完成;kill 重启后无僵尸任务
+- [x] 审核台:假数据全流程(筛选/编辑/批量/发布)走通
+- [x] 改后端 schema → `make types` → 前端编译报错
+- [x] README 支持陌生人从零起系统
+
+**全新环境是怎么模拟的(与计划的差异,以及为什么)**:
+
+计划写的是"删掉本地容器和 venv"。实际做法是**等价但不破坏现有数据**的版本:
+`git clone` 到临时目录 → `cp` 一份 .env 并把 `DATABASE_URL` 指向**新建的空库**
+`agent_system_fresh` → 在克隆里 `uv sync` / `make migrate` / `make seed` / 起后端 /
+`npm install` / `npm run build`。这样"迁移从零跑通 + seed + 系统能用"全部被真的验证了,
+而用户现有的容器与数据一行没动。验完删掉克隆(里面有真实 key 的副本)与临时库。
+
+**自测证据(Step 9 这一轮实际跑的)**:
+
+- **全新签出**:`git clone` → `uv sync` → `make migrate`(`Running upgrade -> 184b03b23dab`)
+  → `make seed`(3 KB + 1 agent + 5 条绑定)→ 新库里 **31 张表**(30 业务 + alembic_version)、
+  三个向量列都是 `vector(1536)`
+- **全新签出下起后端**(8002 端口,不碰用户的 8000):`/healthz` `ok`、`/api/kbs` 3 条;
+  非流式问答返回 `'FRESH OK'` + 1 条 trace(**证明 key/网络在全新签出下也通**);
+  `API_BASE=http://localhost:8002 npm run smoke:sse` 全绿(用新库的会话计数=2 反证它真的打的是 8002)
+- **全新签出下的摄取全流程**:提交任务 → `review 100% stats={"staged":6}` →
+  批量通过 3 条 → 发布 `published=3`,`item_counts` 与库一致
+- **前端全新签出**:`npm install` + `npm run build` 成功(产物 321KB JS / 24KB CSS)
+- **契约链路(验收项,重跑)**:把 `StagingItemOut.review_status` 改名 → `make types` →
+  `tsc -b` 报 `TS2339: Property 'review_status' does not exist`,位置直指
+  `StagingReview.tsx:290`;还原后编译通过
+- **两个冒烟脚本(验收项)**:`make smoke` 全绿 —— complete `text='SMOKE OK'`、
+  流式 35 chunks(first_token 2060ms)、JSON 模式 `attempts=1` 判对 `text2sql`;
+  embedding dim=1536、同义 **0.9033** vs 无关 **0.1424**
+- **回归**:`make test` 32 passed;`make lint` 全绿;`alembic check` 无新增变更;
+  `make smoke-sse`(打 8000)全绿
+- `git tag s0-done`
+
+**README 走查发现并补上的**:审核台的用法(筛选/键盘流/发布)与"不起后端也能看界面"
+(`make demo`)之前没写进 README,已补。除此之外按 README 一路走没有卡点。
 
 ---
 
@@ -615,8 +647,8 @@ event: done          data: {"message_id": "...", "citations": []}
 | ~~开工前~~ | ~~U1–U7~~ **已全部拍板**(见第 0 节) | — |
 | Step 1 开始时 | 启动 Docker Desktop | 点一下 |
 | Step 4 完成时 | 亲手跑 `make smoke`,确认 key/网络/代理没问题(我已跑通一次,你再跑一次确认你的环境) | 跑命令,贴结果 |
-| Step 8 完成时 | **体验审核台假数据流程,从运营视角提意见** | 15 分钟试用 + 反馈 |
-| Step 9 | 按 README 从零起一遍系统(最好的文档测试就是你) | 半小时 |
+| Step 8 完成时 | **体验审核台假数据流程,从运营视角提意见** | 15 分钟试用 + 反馈 —— **仍待你做**(代码已交付,你的意见会带进 S1 的渲染器) |
+| Step 9 | 按 README 从零起一遍系统(最好的文档测试就是你) | 半小时 —— 我已用 `git clone` + 空库模拟走了一遍(见 Step 9 自测证据),你亲手再走一遍更有意义 |
 
 ## 4. S0 完成后的状态(交接给 S1 的东西)
 
