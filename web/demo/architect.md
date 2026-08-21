@@ -10,10 +10,10 @@
 
 | | `src/main.tsx` | `demo/main.tsx` |
 | --- | --- | --- |
-| 路由 | `BrowserRouter` | `HashRouter`(静态托管没有 rewrite,刷新 `/kbs` 会 404) |
+| 路由 | `BrowserRouter` | `HashRouter`(静态托管没有 rewrite,刷新 `/chat` 会 404) |
 | 数据 | 真 fetch → Vite 代理 → 后端 | `globalThis.fetch` 换成读 `FIXTURES` |
 | 对话 | 真 SSE 流 | `cannedStream()`:一个按真协议推帧的 ReadableStream |
-| 写操作 | 真 POST / DELETE | 提交任务回放那条跑完的任务;DELETE 直接 204 |
+| 写操作 | 真 POST / DELETE | 重试回放同一条任务;DELETE 直接 204 |
 | 标识 | 无 | 右下角 `static preview · fixture data` 角标 |
 
 `App.tsx` / `layouts` / `pages` / `api` 一行不改。fixture 里没有的路径会返回后端那套错误体
@@ -34,6 +34,9 @@
 如果通过一条之后计数不动、发布按钮不动,预览看起来就是坏的。
 状态推导规则(只改内容 = `modified`)照抄后端 `core/staging.py::derive_review_status`,
 两边不一致的话预览会教出错的直觉。
+
+审核台入口:任务列表页已删(RESTRUCTURE-PLAN Stage 2),预览里用直链
+`#/jobs/e1000000-0001-4a10-9f01-dddd00000001/review` 进入;条目走 JSON 兜底渲染。
 
 注意:只改 URL 的 hash **不会重新加载文档**,所以内存库里的改动会留着 ——
 测预览时要硬刷新(`Page.reload`)才回到初始的 20 条 pending。

@@ -12,7 +12,6 @@
 import {
   Bot,
   ChevronDown,
-  Library,
   ListChecks,
   MessagesSquare,
   PanelRightClose,
@@ -27,7 +26,6 @@ import { cn } from '@/lib/utils'
 
 const NAV_MAIN = [
   { to: '/chat', label: 'Chat', icon: MessagesSquare },
-  { to: '/kbs', label: 'Knowledge Bases', icon: Library },
   { to: '/agents', label: 'Agents', icon: Bot },
 ]
 
@@ -36,11 +34,9 @@ const NAV_FOOT = [{ to: '/settings', label: 'Settings', icon: Settings }]
 /** 路由 -> 顶栏标题(前端不从后端拿页面标题) */
 const TITLES: { prefix: string; title: string }[] = [
   { prefix: '/chat', title: 'Chat' },
-  { prefix: '/kbs', title: 'Knowledge Bases' },
   { prefix: '/agents', title: 'Agents' },
-  // 更具体的前缀必须排在 '/jobs' 前面:TITLES 用 find,先匹配到的赢
+  // 审核台直链 /jobs/{id}/review(任务列表页已删,见 RESTRUCTURE-PLAN Stage 2)
   { prefix: '/jobs/', title: 'Review Queue' },
-  { prefix: '/jobs', title: 'Ingestion Jobs' },
   ...DOMAINS.map((d) => ({ prefix: d.path, title: `${d.label} Ingestion` })),
   { prefix: '/settings', title: 'Settings' },
   { prefix: '/styleguide', title: 'Style Guide' },

@@ -5,8 +5,8 @@
  * 差别只在注册表里多一行渲染器。
  */
 
-import { ArrowLeft, ClipboardCheck } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { ClipboardCheck } from 'lucide-react'
+import { useParams } from 'react-router-dom'
 
 import { useApi } from '@/api/hooks'
 import type { Job, StagingList } from '@/api/schema'
@@ -33,12 +33,6 @@ export function ReviewPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <Link
-          to="/jobs"
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[12px]"
-        >
-          <ArrowLeft className="size-4" /> Ingestion jobs
-        </Link>
         <span className="font-mono text-[12px]">{job.data.job_type}</span>
         <StatusBadge status={job.data.status} />
         <span className="text-muted-foreground text-[12px]">{renderers.label} review</span>
@@ -48,7 +42,7 @@ export function ReviewPage() {
         <EmptyState
           icon={ClipboardCheck}
           title="No staged items"
-          description="This job did not produce anything to review. Run a demo job from the ingestion page."
+          description="This job did not produce anything to review."
         />
       ) : (
         <StagingReview

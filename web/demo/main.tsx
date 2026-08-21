@@ -1,7 +1,7 @@
 /** 静态预览版入口(`make demo`)—— 把前端打成一个不需要后端的单文件页面。
  *
  * 与正式入口 `src/main.tsx` 的两点区别,都只在这里,src 一行不改:
- *   1. 路由用 HashRouter:静态托管没有服务端 rewrite,刷新 /kbs 会 404
+ *   1. 路由用 HashRouter:静态托管没有服务端 rewrite,刷新 /chat 会 404
  *   2. fetch 被换成读 fixtures:同样的 client / hooks / 页面代码,只是数据来自固定响应
  * 于是这份预览页跑的确实是产线组件,不是另画的一套界面。
  *
@@ -168,8 +168,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   if (CHAT_PATH.test(path)) return cannedStream()
   const staged = stagingRoutes(path, method, init)
   if (staged) return staged
-  // 写操作在预览里没有后端可写:提交任务回放那条跑完的任务,删除会话直接 204
-  if (method === 'POST' && path === '/api/jobs') return json(FIXTURES[DEMO_JOB])
+  // 写操作在预览里没有后端可写:重试回放同一条任务,删除会话直接 204
   if (method === 'POST' && path.endsWith('/retry')) return json(FIXTURES[DEMO_JOB])
   if (method === 'DELETE') return new Response(null, { status: 204 })
 

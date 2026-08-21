@@ -22,6 +22,9 @@ effect 里 set,卸载 return 里清空。**没有内容时整个 `<aside>` 不�
 
 ## 改导航要动两处
 
-`NAV`(侧栏条目,含 lucide 图标)和 `TITLES`(路径前缀 → 顶栏标题)。
-当前五项:Chat / Knowledge Bases / Agents / Ingestion / Settings。
-隐藏路由(如 `/styleguide`)只进 `TITLES` 不进 `NAV`。
+`NAV_MAIN`/`NAV_FOOT`(侧栏条目,含 lucide 图标)和 `TITLES`(路径前缀 → 顶栏标题)。
+当前顶级项:Chat / Agents / Knowledge Ingestion(可展开分组)/ Settings。
+分组子项与各域顶栏标题**遍历 `domains/index.ts` 的 DOMAINS 生成**,本文件不硬编码任何域;
+子项用识别色圆点(`toneClass`,色值只在 index.css)。分组展开态:落在 `/ingest/*` 上默认展开。
+`TITLES` 用 find 按前缀匹配,更具体的前缀(如 `/jobs/`)排前面。
+隐藏路由(如 `/styleguide`)只进 `TITLES` 不进导航。

@@ -1,9 +1,7 @@
-/** 精准 QA 域描述符。渲染器暂由 shared 层的 QaRenderers 提供(Stage 2 删除后走 JSON 兜底,
- *  真实渲染器由本域开发者在本文件夹内重写)。 */
+/** 精准 QA 域描述符。审核渲染器尚未注册(qa_pair 走 JSON 兜底),
+ *  真实渲染器由本域开发者在本文件夹内实现后在 renderers 登记。 */
 
 import { MessageSquareText } from 'lucide-react'
-
-import { QaItemCard, QaItemEditor, QaOriginPanel } from '@/components/staging/QaRenderers'
 
 import type { DomainModule } from '../types'
 import { IngestPage } from './IngestPage'
@@ -15,12 +13,4 @@ export const exactQaDomain: DomainModule = {
   icon: MessageSquareText,
   toneClass: 'bg-kb-exact-qa',
   IngestPage,
-  renderers: {
-    qa_pair: {
-      label: 'QA pair',
-      card: QaItemCard,
-      editor: QaItemEditor,
-      origin: QaOriginPanel,
-    },
-  },
 }

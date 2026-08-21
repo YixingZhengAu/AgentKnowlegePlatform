@@ -18,26 +18,25 @@ OriginPanelProps= { item: StagingItem }                       // 原文对照(�
 ## 注册表(registry.ts)
 
 ```
-qa_pair → { card: QaItemCard, editor: QaItemEditor, origin: QaOriginPanel }
-其它     → FALLBACK_RENDERERS(JSON 卡片 + JSON 编辑器)
+RENDERERS = 各域 module.ts 的 renderers 合并(遍历 src/domains/index.ts 的 DOMAINS)
+没登记的  → FALLBACK_RENDERERS(JSON 卡片 + JSON 编辑器)
 ```
 
-`renderersFor(itemType)` 是唯一查询入口。兜底渲染器不是摆设:S2 的切片任务写出来、
-渲染器还没动手时,审核台**已经能用**(看 JSON、改 JSON、通过驳回),
-不必等前端补齐才能验证后端。
+本文件不认识任何具体域。`renderersFor(itemType)` 是唯一查询入口。
+当前**没有任何域登记渲染器**(旧 QA 渲染器随 RESTRUCTURE-PLAN Stage 2 删除),
+所以所有 item_type 都走 JSON 兜底 —— 这正是兜底存在的意义:后端任务写出 staging 条目、
+渲染器还没动手时,审核台已经能用(看 JSON、改 JSON、通过驳回),不必等前端补齐。
 
-## QA 渲染器的两个细节
+## JSON 编辑器的一个细节
 
-- **相似问按行编辑**:`textarea` 的每一行是一个相似问,空行被过滤 ——
-  审核时按回车换行是常态,不该留下空条目
-- **JSON 编辑器只在解析成功时上报**:改坏的 JSON 不该被当成一次编辑
+- **只在解析成功时上报**:改坏的 JSON 不该被当成一次编辑
   (否则一边打字一边就把 payload 写成半截了)
 
 ## 我要改 X 去哪
 
 | 改什么 | 去哪 |
 | --- | --- |
-| 加一类知识的审核界面 | `registry.ts` 加一行 + 新写一对渲染器文件 |
-| QA 编辑器加字段 | `QaRenderers.tsx` 的 `QaItemEditor`(payload 键名对齐 DB-DESIGN §8) |
-| 列表里一行显示什么 | 对应渲染器的 `*ItemCard` |
-| 原文对照面板 | 对应渲染器的 `*OriginPanel`(S2 文档 RAG 的重点) |
+| 加一类知识的审核界面 | `src/domains/<域>/` 写一对渲染器 + 该域 `module.ts` 的 `renderers` 登记 |
+| 列表里一行显示什么 | 对应域渲染器的 `*ItemCard` |
+| 原文对照面板 | 对应域渲染器的 `*OriginPanel`(S2 文档 RAG 的重点) |
+| 渲染器契约本身 | `types.ts`(公共契约变更,单独提,不夹在域开发里) |
