@@ -408,6 +408,9 @@ event: done          data: {"message_id": "...", "citations": []}
 - **契约链路(验收项)**:把 `KnowledgeBaseOut.description` 改名 → `make types` →
   `tsc -b` 报 `TS2339: Property 'description' does not exist`,位置直指 `KbListPage.tsx:52`;
   还原后编译通过
+  > 结构调整备注(RESTRUCTURE-PLAN Stage 2):`KbListPage.tsx` 已删除,上述证据是当时的
+  > 历史记录,不改;契约链路本身仍在,如今改后端字段名,`tsc` 会在其他消费处
+  > (如 `pages/` / `domains/` 内用到该类型的文件)同样报错
 - **`make dev`**:一条命令起 8000 + 5173;`/healthz` 200、经代理的 `/api/kbs` 200
 - **页面实测**(headless Chrome dump DOM 逐项断言,不是"看着像对"):
   `/kbs` 3 个 KB(含三色识别点 `bg-kb-exact-qa`/`document`/`text2sql`)、
@@ -537,6 +540,9 @@ event: done          data: {"message_id": "...", "citations": []}
 - **渲染器多了一个"兜底"**:`registry.ts` 里没登记的 `item_type` 落到 JSON 渲染器
   (直接看/改 payload)。好处很实际:S2 的切片任务写出来、渲染器还没动手时,
   审核台**已经能用**,不必等前端补齐才能验证后端
+  > 结构调整备注(RESTRUCTURE-PLAN Stage 2):Step 8 交付的 `QaRenderers.tsx` 已删除
+  > (属于 exact-qa 域的具体页面代码,由 S1 开发者在 `web/src/domains/exact-qa/` 重写并在
+  > `module.ts` 登记);当前 `qa_pair` 正是走这个 JSON 兜底渲染,审核台功能不受影响
 - **审核状态的推导规则放在后端**(`core/staging.py::derive_review_status`):
   显式传状态就听它的、只改了内容 = `modified`、什么都没传就保持原状。
   做成纯函数后可离线测,前端完全不用重复这套逻辑 —— 它只管把改动发上来
@@ -658,7 +664,7 @@ S1(精准 QA)开工时,以下东西已经存在、直接用,不需要再造:
 2. `LLMProvider.complete(json_schema=...)` —— 抽取 QA 对直接用 JSON 模式
 3. `EmbeddingProvider` —— 一问一向量直接调
 4. Job 框架 —— S1 只写一个 `QaExtractJob(steps=[parse, extract, expand, dedupe])`
-5. `<StagingReview>` —— S1 只写 `QaItemCard` + `QaItemEditor` 两个渲染器
+5. `<StagingReview>` —— S1 只在 `web/src/domains/exact-qa/` 写 `QaItemCard` + `QaItemEditor` 两个渲染器(module.ts 登记,registry 自动聚合)
 6. `run_chat()` 骨架 —— S1 在 generate 前插入一个 `retrieve_exact_qa` stage
 7. SSE 协议与前端执行轨迹面板 —— S1 的检索 stage 自动出现在轨迹里
 8. CLI 脚手架模式 —— S1 第一件事就是写 `scripts/extract_qa.py` 调 prompt

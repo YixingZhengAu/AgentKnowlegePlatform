@@ -12,3 +12,12 @@
 | `tests/` | pytest 测试,见 `tests/claude.md` |
 
 详见 `architect.md`。
+
+**并行开发纪律**(结构调整 Stage 4 入册,详见 `documents/RESTRUCTURE-PLAN.md`):
+
+- **migration 串行生成**:域开发者只改 `app/models/` 自己域的文件 + `documents/DB-DESIGN.md`
+  自己域的节,**不自己跑 `alembic revision`** —— 合并时由集成者统一生成,避免 multiple heads
+- **共享表红线**:`ingest_jobs` / `staging_items` / `publish_records` / `knowledge_bases`
+  的 DDL 任何域不得动,不加"只有自己需要"的列;差异进 payload jsonb 或本域自己的表
+- 域代码只落在 `app/services/<域>/`,禁止 import 兄弟域;Job 注册行只加在
+  `app/services/__init__.py`(全局唯一注册点)

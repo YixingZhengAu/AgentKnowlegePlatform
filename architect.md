@@ -40,20 +40,22 @@
 | 改 SSE 事件协议 | `server/app/api/architect.md` 是协议出处,改完前后端一起改 |
 | 加一张表 / 改字段 | `documents/DB-DESIGN.md` → `server/app/models/` → migration(流程见 DB-DESIGN §10) |
 | 加一个接口 | `server/app/api/`(新文件要在 `api/__init__.py` include)+ `server/app/schemas/` |
-| 加一类异步任务(摄取) | 写一个 `JobRunner` 子类 + `@register_job`,**import 一次**才会进注册表(见 `server/app/core/architect.md`) |
+| 加一类异步任务(摄取) | 本域文件夹写 `JobRunner` 子类 + `@register_job`,注册行加在 `server/app/services/__init__.py`(唯一注册点) |
 | 改错误码 / 错误格式 | `server/app/core/errors.py`(前端只认 `{"error":{code,message,detail}}`) |
 | 加一个 CLI 脚本 | `server/scripts/`,跑法 `cd server && uv run python -m scripts.<name>` |
 | 改容器/数据库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
 | 改颜色 / 字体 / 圆角 | `documents/UI-STYLE.md` → `web/src/index.css` 的品牌层(**全仓唯一 hex 出处**) |
-| 加一个前端页面 | `web/src/pages/` + `web/src/App.tsx` 路由 + `AppLayout` 的 `NAV`/`TITLES` |
+| 加一个知识域(前后端各一处落点) | 前端 `web/src/domains/<域>/` + `domains/index.ts` 加一行;后端 `server/app/services/<域>/` + `services/__init__.py` 加一行 |
+| 改某个域的摄取页面 | `web/src/domains/<域>/`(页面、渲染器、module.ts 都在域内,不动共享文件) |
+| 加一个跨域/公共页面 | `web/src/pages/` + `web/src/App.tsx` 路由 + `AppLayout`(这是公共契约变更,单独提) |
 | 改前端取数 / 错误 toast | `web/src/api/{client,hooks}.ts` |
 | 改前端流式渲染 | `web/src/api/sse.ts`(协议出处仍是 `server/app/api/architect.md`) |
 | 改对话页行为(会话、气泡、中断) | `web/src/api/useChat.ts` + `web/src/components/{ChatMessages,Composer}.tsx` |
 | 改执行轨迹面板 | `web/src/components/TracePanel.tsx` |
 | 改任务进度条 | `web/src/components/JobProgress.tsx`(只依赖 Job 框架的四个字段) |
 | 改审核台的流程(筛选/批量/键盘/发布) | `web/src/components/StagingReview.tsx`(泛型,不认识 payload) |
-| 加一类知识的审核界面 | `web/src/components/staging/registry.ts` 加一行 + 写一对渲染器 |
+| 加一类知识的审核界面 | `web/src/domains/<域>/` 写一对渲染器 + 在该域 `module.ts` 的 `renderers` 登记(registry 自动聚合;没登记走 JSON 兜底) |
 | 改审核/发布的后端规则 | `server/app/core/staging.py`(状态推导、浅合并、发布状态机) |
 | 加一类知识的 publisher(写正式表) | `@register_publisher("qa_pair")`,见 `server/app/core/architect.md` |
 | 改静态预览的假数据 | `web/demo/fixtures.ts`,然后 `make demo` |
@@ -78,9 +80,10 @@
     → 人工审核 (Step 8):PATCH /api/staging/{id} 单条 / POST /api/staging/bulk 批量
     → POST /api/jobs/{id}/publish:approved+modified 标记 published + 写 publish_records
       └─ 各域 publisher(`register_publisher`)写正式表 + 建索引 —— S1–S3 插进来,S0 是空的
-  前端:POST /api/jobs 提交,轮询 GET /api/jobs/{id},<JobProgress> 渲染;
+  入口(结构调整后):demo 任务用 curl/脚本提交(旧 JobsPage 已删),轮询 GET /api/jobs/{id};
         失败 → POST /api/jobs/{id}/retry 从失败的那一步重跑;
-        跑完 → /jobs/{id}/review 里 <StagingReview> 审 + 发布
+        跑完 → 浏览器直链 /jobs/{id}/review,<StagingReview> 审 + 发布(qa_pair 走 JSON 兜底渲染);
+        正式提交入口由各域开发者在 /ingest/<域> 自己的页面里做
 ```
 
 ## 5. 两个数据库(别搞混)
@@ -99,9 +102,10 @@ Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型
 
 `make db && make migrate && make seed && make dev` 之后:
 
-- 页面 http://localhost:5173 —— `/chat` 能真聊天并看执行轨迹,`/jobs` 能提交假任务看进度条,
-  `/jobs/{id}/review` 是审核台(筛选/改/批量/键盘流/发布),
-  `/kbs` `/agents` 是只读列表,`/styleguide` 是 UI 验收对照页
+- 页面 http://localhost:5173 —— `/chat` 能真聊天并看执行轨迹,`/agents` 是只读列表,
+  `/ingest/{exact-qa,document,text2sql}` 是三个域的空白壳(结构调整后待各域开发),
+  `/jobs/{id}/review` 是审核台(直链进入;筛选/改/批量/键盘流/发布),`/styleguide` 是 UI 验收对照页
+  (`/kbs`、`/jobs` 页面已删,重定向回 `/chat`;接口与表保留)
 - curl 也能直接流式聊天并查 trace:
 
 ```bash
@@ -112,6 +116,12 @@ curl localhost:8000/api/traces/<message_id>
 
 契约链路已生效:改后端字段名 → `make types` → 前端 `tsc` 报错(实测见 `web/architect.md`)。
 
-**下一阶段 S1(精准 QA)要写的全部东西**:1 个 `JobRunner` 子类 + 2 个前端渲染器
-(注册表加一行)+ 1 个检索 stage + 1 个 `register_publisher` + 调 prompt。
+**S0 后做过一次结构调整**(`documents/RESTRUCTURE-PLAN.md`,Stage 1–4 已完成):
+前端立了 `web/src/domains/`(DomainModule manifest,加域 = index.ts 加一行),
+后端立了 `server/app/services/{exact_qa,document,text2sql}/`(注册解耦到 `services/__init__.py`),
+删了 KbListPage / JobsPage / QA 渲染器三个演示页面件。三类 ingestion 的真实流程
+**待需求方确认写入 PRD 后**由各域开发者在自己的域文件夹里并行开发,互不打架。
+
+**S1(精准 QA)的落点**:后端 `services/exact_qa/`(Job 子类 + publisher + 检索 stage + prompt),
+前端 `domains/exact-qa/`(摄取页 + 渲染器,module.ts 登记)。
 其余骨架 S0 已交付。逐步进度与自测证据见 `documents/S0-PLAN.md`。

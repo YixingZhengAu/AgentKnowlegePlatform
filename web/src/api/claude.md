@@ -4,7 +4,7 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `types.gen.ts` | `make types` 生成(openapi → TS),**不手改** |
+| `types.gen.ts` | `make types` 生成(openapi → TS),**不手改;合并冲突重跑 `make types`,禁止手工合并** |
 | `schema.ts` | 生成类型的可读别名 + 三类知识的标签/识别色映射 + 审核状态与置信度分档,页面只 import 这里 |
 | `client.ts` | `apiFetch` / `apiPost` / `apiPatch` / `apiDelete` + `ApiError`:把后端错误体翻成异常 |
 | `hooks.ts` | `useApi(path, {refetchInterval})`:GET 的 `{data,error,loading,reload}`,间隔可按数据算 |

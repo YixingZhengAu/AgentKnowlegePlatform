@@ -3,7 +3,11 @@
 **职责**:React + TypeScript + Vite 前端(三栏工作台)。界面文案一律英文(D5),无 i18n。
 
 视觉规范唯一出处:`documents/UI-STYLE.md`;**色值只允许写在 `src/index.css` 的品牌层**。
-API 类型唯一来源:`make types` 生成的 `src/api/types.gen.ts`,**禁止手写 API 类型**。
+API 类型唯一来源:`make types` 生成的 `src/api/types.gen.ts`,**禁止手写 API 类型**;
+它是生成物,**合并冲突永远重跑 `make types` 解决,禁止手工合并**。
+
+**并行开发纪律**:`src/{api,components,layouts,lib}` 是 shared 层,域开发者只读;
+域代码只落在 `src/domains/<域>/`;要改公共契约(shared 层 / SSE 协议 / 渲染器接口)单独提。
 
 | 路径 | 说明 |
 | --- | --- |

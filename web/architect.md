@@ -7,8 +7,9 @@
 ```
 
 `make types` = `server/scripts/dump_openapi.py` 导出 + `openapi-typescript` 生成。
-**验收实测**:把 `KnowledgeBaseOut.description` 改名后跑 `make types`,
-`tsc -b` 报 `TS2339: Property 'description' does not exist`(位置直接指到 KbListPage 第 52 行)。
+**验收实测**(Step 6 历史记录):把 `KnowledgeBaseOut.description` 改名后跑 `make types`,
+`tsc -b` 报 `TS2339: Property 'description' does not exist`(当时直指 KbListPage 第 52 行;
+该页已在结构调整中删除,链路不变 —— 如今报错会落在其他消费该类型的文件上)。
 
 页面不直接引 `types.gen.ts` 的深路径,统一走 `src/api/schema.ts` 里的别名
 (`KnowledgeBase` / `AgentDetail` / `ChatResponse` …),这样生成物结构变了只改一处。
@@ -68,7 +69,8 @@
 ## 右侧面板插槽(AppLayout)
 
 页面调 `useRightPanel(title, node)` 把内容塞进右栏,卸载自动清空;没有内容时整栏不占宽度
-(列表页不会白让 360px)。目前两个页面用它:`/chat` 放执行轨迹面板,`/jobs` 放任务进度条。
+(列表页不会白让 360px)。目前 `/chat` 用它放执行轨迹面板(旧 `/jobs` 任务页已删,
+`<JobProgress>` 组件保留,由各域的摄取页面复用)。
 
 ## 已验证(Step 6–7)
 
