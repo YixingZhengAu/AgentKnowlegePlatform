@@ -1,11 +1,12 @@
 /** item_type -> 渲染器 的注册表。
  *
- * 加一类知识 = 在这里加一行(S1 已经有 qa_pair;S2 的 chunk、S3 的 table_meta/metric/term
- * 各补一行),审核台本身不动。没登记的类型走 JSON 兜底,界面不会空着。
+ * 渲染器由各域在自己的 `domains/<域>/module.ts` 描述符里登记,这里只做汇总 ——
+ * 本文件不认识任何具体域。没登记的类型走 JSON 兜底,界面不会空着。
  */
 
+import { DOMAINS } from '@/domains'
+
 import { JsonItemCard, JsonItemEditor } from './JsonRenderers'
-import { QaItemCard, QaItemEditor, QaOriginPanel } from './QaRenderers'
 import type { ItemRenderers } from './types'
 
 export const FALLBACK_RENDERERS: ItemRenderers = {
@@ -15,14 +16,10 @@ export const FALLBACK_RENDERERS: ItemRenderers = {
 }
 
 // key 取值见 server/app/models/ingest.py 的 ITEM_TYPES
-export const RENDERERS: Record<string, ItemRenderers> = {
-  qa_pair: {
-    label: 'QA pair',
-    card: QaItemCard,
-    editor: QaItemEditor,
-    origin: QaOriginPanel,
-  },
-}
+export const RENDERERS: Record<string, ItemRenderers> = Object.assign(
+  {},
+  ...DOMAINS.map((d) => d.renderers ?? {}),
+)
 
 export function renderersFor(itemType: string | undefined): ItemRenderers {
   return (itemType && RENDERERS[itemType]) || FALLBACK_RENDERERS

@@ -4,10 +4,14 @@
  *
  * 右侧面板是个"插槽":页面通过 useRightPanel() 往里塞内容(Step 7 塞 trace 面板),
  * 没塞东西时整块不占宽度 —— 这样列表页不会白白让出 360px。
+ *
+ * 侧栏的 "Knowledge Ingestion" 是可展开分组,子项来自域清单(src/domains/index.ts),
+ * 本文件不出现任何具体域的硬编码(RESTRUCTURE-PLAN Stage 1)。
  */
 
 import {
   Bot,
+  ChevronDown,
   Library,
   ListChecks,
   MessagesSquare,
@@ -18,15 +22,16 @@ import {
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
+import { DOMAINS } from '@/domains'
 import { cn } from '@/lib/utils'
 
-const NAV = [
+const NAV_MAIN = [
   { to: '/chat', label: 'Chat', icon: MessagesSquare },
   { to: '/kbs', label: 'Knowledge Bases', icon: Library },
   { to: '/agents', label: 'Agents', icon: Bot },
-  { to: '/jobs', label: 'Ingestion', icon: ListChecks },
-  { to: '/settings', label: 'Settings', icon: Settings },
 ]
+
+const NAV_FOOT = [{ to: '/settings', label: 'Settings', icon: Settings }]
 
 /** 路由 -> 顶栏标题(前端不从后端拿页面标题) */
 const TITLES: { prefix: string; title: string }[] = [
@@ -36,6 +41,7 @@ const TITLES: { prefix: string; title: string }[] = [
   // 更具体的前缀必须排在 '/jobs' 前面:TITLES 用 find,先匹配到的赢
   { prefix: '/jobs/', title: 'Review Queue' },
   { prefix: '/jobs', title: 'Ingestion Jobs' },
+  ...DOMAINS.map((d) => ({ prefix: d.path, title: `${d.label} Ingestion` })),
   { prefix: '/settings', title: 'Settings' },
   { prefix: '/styleguide', title: 'Style Guide' },
 ]
@@ -56,11 +62,22 @@ export function useRightPanel(title: string, content: ReactNode, deps: unknown[]
   }, [title, ...deps])
 }
 
+/** 侧栏顶级项(分组头与普通链接共用的外观) */
+const navItemClass = (isActive: boolean) =>
+  cn(
+    'relative flex w-full items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-[14px] transition-colors duration-150',
+    isActive
+      ? 'bg-white/8 font-medium text-white'
+      : 'text-white/70 hover:bg-white/5 hover:text-white',
+  )
+
 export function AppLayout() {
   const [panel, setPanel] = useState<PanelSlot>(null)
   const [open, setOpen] = useState(true)
   const { pathname } = useLocation()
   const ctx = useMemo(() => ({ setPanel }), [])
+  // 分组展开态:落在任何域路由上时默认展开
+  const [ingestOpen, setIngestOpen] = useState(() => pathname.startsWith('/ingest'))
 
   const title = TITLES.find((t) => pathname.startsWith(t.prefix))?.title ?? 'Clenergy Agent'
 
@@ -74,22 +91,60 @@ export function AppLayout() {
             <span className="font-display text-[14px] font-bold tracking-wide">CLENERGY</span>
           </div>
           <div className="flex flex-col gap-0.5 px-2 py-3">
-            {NAV.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  cn(
-                    'relative flex items-center gap-3 rounded-[var(--radius)] px-3 py-2 text-[14px] transition-colors duration-150',
-                    isActive
-                      ? 'bg-white/8 font-medium text-white'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white',
-                  )
-                }
-              >
+            {NAV_MAIN.map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} className={({ isActive }) => navItemClass(isActive)}>
                 {({ isActive }) => (
                   <>
                     {/* 激活项左侧 3px 黄色竖条(UI-STYLE §3) */}
+                    {isActive && (
+                      <span className="bg-accent absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-r" />
+                    )}
+                    <Icon className="size-4" strokeWidth={1.75} />
+                    {label}
+                  </>
+                )}
+              </NavLink>
+            ))}
+
+            {/* Knowledge Ingestion 分组:子项 = 三个知识域,识别色圆点区分 */}
+            <button
+              onClick={() => setIngestOpen((v) => !v)}
+              className={navItemClass(pathname.startsWith('/ingest'))}
+            >
+              <ListChecks className="size-4" strokeWidth={1.75} />
+              Knowledge Ingestion
+              <ChevronDown
+                className={cn(
+                  'ml-auto size-3.5 transition-transform duration-150',
+                  !ingestOpen && '-rotate-90',
+                )}
+                strokeWidth={1.75}
+              />
+            </button>
+            {ingestOpen &&
+              DOMAINS.map((d) => (
+                <NavLink
+                  key={d.key}
+                  to={d.path}
+                  className={({ isActive }) => cn(navItemClass(isActive), 'py-1.5 pl-9')}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <span className="bg-accent absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-r" />
+                      )}
+                      {/* 域识别色圆点(UI-STYLE §2,色值只在 index.css) */}
+                      <span className={cn('size-2 shrink-0 rounded-full', d.toneClass)} />
+                      <span className="text-[13px]">{d.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
+
+            {NAV_FOOT.map(({ to, label, icon: Icon }) => (
+              <NavLink key={to} to={to} className={({ isActive }) => navItemClass(isActive)}>
+                {({ isActive }) => (
+                  <>
                     {isActive && (
                       <span className="bg-accent absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-r" />
                     )}
