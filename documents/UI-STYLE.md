@@ -104,9 +104,19 @@
 - ❌ emoji 当图标(统一 lucide-react)
 - ❌ 每页多个强调色按钮——"发布"级别的动作一屏只有一个
 
-## 5. 落地方式(Step 6 执行)
+## 5. 落地方式(Step 6 已执行 ✅)
 
-1. token 全部写进 `web/src/index.css` 的 CSS 变量 + Tailwind `theme.extend`,组件内禁止出现裸色值(hex 只允许出现在 token 定义处)
-2. shadcn/ui 初始化后立即按本文档覆盖其默认变量(`--primary` → navy 等)
-3. Google Fonts:Montserrat(600/700)+ Inter(400/500/600)+ JetBrains Mono(400),本地化引入(fontsource),不走 CDN
-4. Step 6 完成时产出一个 `/styleguide` 隐藏路由页,平铺展示全部 token 和组件态,作为验收对照
+1. token 全部写进 `web/src/index.css`,组件内禁止出现裸色值(hex 只允许出现在 token 定义处)
+2. shadcn/ui 的默认变量已按本文档覆盖(`--primary` → navy 等),组件只认语义变量那一层
+3. Google Fonts:Montserrat(600/700)+ Inter(400/500/600)+ JetBrains Mono(400),
+   用 fontsource 本地引入,不走 CDN(已核对:构建产物里是自托管 woff2)
+4. `/styleguide` 隐藏路由页已产出,平铺全部 token 与组件态,作为验收对照
+
+**落地时的两处实现说明**(不改上面的规范,只说明它长什么样):
+
+- **Tailwind v4 没有 `tailwind.config.js`**:v4 用 CSS 里的 `@theme` 取代 v3 的 `theme.extend`,
+  所以第 1 条说的"CSS 变量 + theme.extend"在仓库里是同一个文件 `web/src/index.css`。
+  文件内分三层:品牌原色(唯一 hex 出处)→ 语义变量(shadcn 命名)→ `@theme inline` 暴露工具类
+- **命名冲突**:Tailwind 从 `--color-primary` 生成的类叫 `text-primary`(主色文字),
+  与 §2 表格里"`text-primary` = 正文色 #1C1C1C"撞名。落地时正文色叫 `--foreground`
+  (`text-foreground`),`text-primary` 保留给"navy 文字"。**看 §2 表格时以用途列为准**

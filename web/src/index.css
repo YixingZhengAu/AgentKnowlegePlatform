@@ -1,0 +1,178 @@
+/* ==========================================================================
+   设计 token —— 唯一色源(documents/UI-STYLE.md 是出处,改风格先改那份文档)
+   纪律:hex 只允许出现在本文件的「第 1 层 品牌原色」里,组件里禁止裸色值。
+
+   三层结构:
+     1. 品牌原色    --brand-*      从官网抓出来的事实,不带语义
+     2. 语义变量    --primary 等   shadcn/ui 的那套命名,指向第 1 层
+     3. Tailwind    @theme inline  把第 2 层暴露成 bg- / text- / border- 工具类
+   Tailwind v4 用 CSS 的 @theme 替代了 v3 的 tailwind.config.js theme.extend,
+   所以 UI-STYLE §5.1 说的「index.css 变量 + theme.extend」在这里合成了同一个地方。
+   ========================================================================== */
+
+@import 'tailwindcss';
+
+/* 字体本地化引入(UI-STYLE §5.3:不走 CDN) */
+@import '@fontsource/montserrat/600.css';
+@import '@fontsource/montserrat/700.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/jetbrains-mono/400.css';
+
+@layer base {
+  :root {
+    /* ---- 第 1 层:品牌原色(唯一允许写 hex 的地方)---- */
+    --brand-navy: #00205b;
+    --brand-navy-hover: #18206d;
+    --brand-navy-soft: #e8edf7;
+    --brand-yellow: #ffcb02;
+    --brand-orange: #f28601;
+    --brand-grey-page: #f7f7f7;
+    --brand-grey-hover: #fafafa;
+    --brand-white: #ffffff;
+    --brand-line: #e4e4e7;
+    --brand-ink: #1c1c1c;
+    --brand-ink-soft: #474747;
+    --brand-ink-muted: #979797;
+    --brand-green: #3d8b37;
+    --brand-red: #c4320a;
+    --brand-blue: #1c64f2;
+    --brand-violet: #7c3aed;
+
+    /* ---- 第 2 层:语义变量(shadcn/ui 命名,组件只认这一层)---- */
+    --background: var(--brand-grey-page);
+    --foreground: var(--brand-ink);
+    --card: var(--brand-white);
+    --card-foreground: var(--brand-ink);
+    --popover: var(--brand-white);
+    --popover-foreground: var(--brand-ink);
+
+    --primary: var(--brand-navy);
+    --primary-foreground: var(--brand-white);
+    --primary-hover: var(--brand-navy-hover);
+    --primary-soft: var(--brand-navy-soft);
+
+    /* 强调色上永远是 navy 文字,不配白字(UI-STYLE §4) */
+    --accent: var(--brand-yellow);
+    --accent-foreground: var(--brand-navy);
+    --accent-orange: var(--brand-orange);
+
+    --secondary: var(--brand-white);
+    --secondary-foreground: var(--brand-ink-soft);
+    --muted: var(--brand-grey-page);
+    --muted-foreground: var(--brand-ink-muted);
+    --subtle: var(--brand-grey-hover);
+
+    --border: var(--brand-line);
+    --input: var(--brand-line);
+    --ring: var(--brand-navy);
+
+    --success: var(--brand-green);
+    --destructive: var(--brand-red);
+    --destructive-foreground: var(--brand-white);
+    --info: var(--brand-blue);
+
+    /* 三类知识的固定识别色,全站一致(路由徽标 / KB 卡片 / 引用标记同一套) */
+    --kb-exact-qa: var(--brand-yellow);
+    --kb-document: var(--brand-blue);
+    --kb-text2sql: var(--brand-violet);
+  }
+}
+
+/* ---- 第 3 层:暴露给 Tailwind(inline 表示直接用变量值,不再包一层)---- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-orange: var(--accent-orange);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+
+  --color-kb-exact-qa: var(--kb-exact-qa);
+  --color-kb-document: var(--kb-document);
+  --color-kb-text2sql: var(--kb-text2sql);
+
+  /* 字体:标题/导航用几何感的 Montserrat,正文 Inter,代码与 trace 用等宽 */
+  --font-display: 'Montserrat', system-ui, sans-serif;
+  --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* 圆角:按钮/输入/徽标 6px,卡片/弹窗 12px。不出现更大的圆角 */
+  --radius: 6px;
+  --radius-card: 12px;
+
+  /* 阴影只有两档(UI-STYLE §2) */
+  --shadow-card: 0 1px 3px rgb(0 32 91 / 0.06);
+  --shadow-pop: 0 8px 24px rgb(0 32 91 / 0.12);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  /* 工作台不是营销页:不出现 24px 以上字号(UI-STYLE §2) */
+  h1 {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  ::placeholder {
+    color: var(--muted-foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+}

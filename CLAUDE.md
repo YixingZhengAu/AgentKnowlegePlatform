@@ -21,7 +21,7 @@
 ## 目录约定(monorepo)
 
 - `server/` 后端(`app/{main,config,db,models,schemas,api,providers,core,services}`)
-- `web/` 前端(`src/{api,components,layouts,pages}`)
+- `web/` 前端(`src/{api,components,layouts,pages,lib}` + `scripts/` 前端冒烟)
 - `server/scripts/` 冒烟/工具脚本(在 server 下跑:`uv run python -m scripts.seed_minimal`)
 - `docker/` 容器初始化脚本(Postgres init:建业务库与只读账号)
 

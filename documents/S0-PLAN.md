@@ -40,7 +40,7 @@
 
 ## 1. 步骤总览
 
-**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4 ✅ / Step 5 ✅ / Step 6– 待做
+**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4 ✅ / Step 5 ✅ / Step 6 ✅ / Step 7– 待做
 
 ```
 Step 1  仓库与环境骨架        →  git init、目录结构、docker-compose、Makefile
@@ -355,7 +355,7 @@ event: done          data: {"message_id": "...", "citations": []}
 
 ---
 
-### Step 6 · 前端壳
+### Step 6 · 前端壳 ✅ 已完成
 
 **做什么**
 
@@ -372,6 +372,56 @@ event: done          data: {"message_id": "...", "citations": []}
 **需要你做的**:无。语言已定(U7:英文单语),UI 风格已定(Clenergy 官网风,详见 `UI-STYLE.md`)。
 
 **验收**:改一个后端字段名 → `make types` → 前端编译报错(证明契约链路生效)。
+
+**实际落地(与计划的差异)**:
+
+- **Tailwind v4,没有 `tailwind.config.js`**:v4 用 CSS 里的 `@theme` 取代了 v3 的
+  `theme.extend`,所以 UI-STYLE §5.1 说的"index.css 变量 + theme.extend"在这里合成同一个文件。
+  token 分三层:品牌原色(**全仓唯一允许写 hex 的地方**)→ 语义变量(shadcn 命名)→ Tailwind 工具类
+- **shadcn/ui 用抄样式而不是跑 CLI**:S0 只需要 button/card/badge/table/input/skeleton 六个
+  原生元素级的件,没引 Radix。`components.json` 留着,真需要 Dialog/Popover 时
+  `npx shadcn add` 直接可用
+- **不引 react-query、不引 toast 库**:`useApi` 40 行 + toast store 40 行,零依赖、好讲。
+  Step 7 的 Job 轮询在 `useApi` 里加 `refetchInterval` 即可
+- 页面比计划多两个:**Agent 详情页**(证明嵌套类型 `bindings` 链路通)和
+  **Settings 页**(消费 `/healthz`,演示时"库通不通、维度多少"一眼可见)
+- 顶栏没做面包屑:S0 只有一层详情页,详情页用返回链接更直接;真需要多级时再加
+- dev 用 **Vite 代理**(`/api`、`/healthz` → 8000):前端一律写相对路径,
+  于是开发环境同源、无 CORS 预检,SSE 也不受影响
+- 顺手加了 `make lint`(ruff + eslint + tsc)与 `make smoke-sse`(前端 SSE 客户端打真后端)
+
+**四个踩过的坑(都已修)**:
+
+1. **TypeScript 7 装不上**:`typescript-eslint` 的 peer 是 `<6.1.0`、`openapi-typescript` 是
+   `^5.x`,npm 直接 ERESOLVE。把 TS 钉在 `~5.9`
+2. **CSS 注释里不能写 `bg-*/text-*`**:那个 `*/` 会提前闭合注释,Tailwind 报
+   `CssSyntaxError: Invalid declaration`,报错信息还指向下一条 `@import`(很难看出是注释的问题)
+3. **effect 里不能同步 setState**:新版 `eslint-plugin-react-hooks` 把
+   `useEffect(() => setLoading(true))` 判成 error。改成用 `已装载的 key !== 当前 key`
+   推导 `loading`,顺手也少了一轮渲染
+4. **Node 原生跑 `.ts` 有两条约束**:相对 import 必须带 `.ts` 后缀(不做扩展名补全)、
+   不能有不可擦除语法(已开 `erasableSyntaxOnly` 兜住)。
+   这两条是为了让冒烟脚本能 import **产线的** SSE 客户端,而不是复制一份解析逻辑去验假的
+
+**自测证据**:
+
+- **契约链路(验收项)**:把 `KnowledgeBaseOut.description` 改名 → `make types` →
+  `tsc -b` 报 `TS2339: Property 'description' does not exist`,位置直指 `KbListPage.tsx:52`;
+  还原后编译通过
+- **`make dev`**:一条命令起 8000 + 5173;`/healthz` 200、经代理的 `/api/kbs` 200
+- **页面实测**(headless Chrome dump DOM 逐项断言,不是"看着像对"):
+  `/kbs` 3 个 KB(含三色识别点 `bg-kb-exact-qa`/`document`/`text2sql`)、
+  `/agents` 见 Clenergy Assistant + `rule_llm`、`/settings` 见 `dim=1536`/`env=dev`、
+  `/chat` 右侧轨迹面板占位到齐、`/styleguide` 色值从 CSS 变量读回(`#00205b` 等)
+- **SSE 客户端**(`make smoke-sse`,跑的是产线代码 `src/api/sse.ts`):
+  直连 8000 与**穿 Vite 代理**各跑一次都通过 —— 事件顺序
+  `meta → stage_start → token → stage_end → done` 正确、34 chunks 逐个到达
+  (first_token 3.9s < 总耗时,证明代理没把流缓冲住)、`done.status=completed` 且带 trace
+- **样式纪律自查**:`src/**/*.tsx` 里 hex 与 `rgb()` 出现次数为 0(唯一例外是侧栏叠加
+  用 Tailwind 自带的 `bg-white/8`,即 UI-STYLE §3 指定的 `rgba(255,255,255,0.08)`)
+- **回归**:`make test` 16 passed;`make lint` 全绿(ruff + eslint 0 warning + tsc);
+  `npm run build` 成功且字体是本地打包(无 CDN);Step 3 的只读接口仍全 200;
+  `alembic check` 无新增变更;`git status server/` 干净(临时改名已还原)
 
 ---
 

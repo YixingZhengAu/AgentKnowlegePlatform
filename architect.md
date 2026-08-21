@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | `documents/` | 需求与设计文档(无代码) | 见下方第 2 节 |
 | `server/` | FastAPI 后端全部代码,uv 管理 | `server/claude.md` |
-| `web/` | React + Vite 前端(Step 6 起) | `web/claude.md` |
+| `web/` | React + Vite 前端(三栏工作台) | `web/claude.md` |
 | `docker/` | Postgres init 脚本(建业务库与只读账号) | `docker/claude.md` |
 | 根目录 | `Makefile` / `docker-compose.yml` / `.env.example` / `README.md` | 见下方第 3 节 |
 
@@ -44,6 +44,10 @@
 | 加一个 CLI 脚本 | `server/scripts/`,跑法 `cd server && uv run python -m scripts.<name>` |
 | 改容器/数据库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
+| 改颜色 / 字体 / 圆角 | `documents/UI-STYLE.md` → `web/src/index.css` 的品牌层(**全仓唯一 hex 出处**) |
+| 加一个前端页面 | `web/src/pages/` + `web/src/App.tsx` 路由 + `AppLayout` 的 `NAV`/`TITLES` |
+| 改前端取数 / 错误 toast | `web/src/api/{client,hooks}.ts` |
+| 改前端流式渲染 | `web/src/api/sse.ts`(协议出处仍是 `server/app/api/architect.md`) |
 
 ## 4. 数据流(S0 骨架,后续阶段往里插 stage)
 
@@ -72,8 +76,13 @@
 
 ## 6. 当前进度
 
-S0 Step 1–5 已完成:仓库骨架 / 30 张表 / 后端骨架 / Provider 抽象层 / Trace 框架 + 问答链路。
-现在 `make db && make migrate && make seed && make api` 之后,curl 就能流式聊天并查到 trace:
+S0 Step 1–6 已完成:仓库骨架 / 30 张表 / 后端骨架 / Provider 抽象层 / Trace 框架 + 问答链路 / 前端壳。
+
+`make db && make migrate && make seed && make dev` 之后:
+
+- 页面 http://localhost:5173 —— 三栏工作台,能看到 seed 的 3 个 KB 与 1 个 agent;
+  `/styleguide` 是 UI 验收对照页
+- curl 也能直接流式聊天并查 trace:
 
 ```bash
 curl -N -X POST localhost:8000/api/agents/<agent_id>/chat \
@@ -81,5 +90,7 @@ curl -N -X POST localhost:8000/api/agents/<agent_id>/chat \
 curl localhost:8000/api/traces/<message_id>
 ```
 
-下一步 Step 6:前端壳(Vite + React + 三栏布局 + `make types` 契约链路 + SSE client)。
+契约链路已生效:改后端字段名 → `make types` → 前端 `tsc` 报错(实测见 `web/architect.md`)。
+
+下一步 Step 7:最小对话页(消费 `web/src/api/sse.ts`)+ 通用 Job 框架。
 逐步进度见 `documents/S0-PLAN.md` §1。

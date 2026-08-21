@@ -15,7 +15,7 @@
 | --- | --- |
 | Python | 3.13 |
 | uv | 0.8+(Python 依赖只用 uv,禁止 pip install) |
-| Node | 22+ |
+| Node | 22+(实测 24) |
 | Docker | 28+(跑 Postgres 16 + pgvector) |
 
 ## 从零起系统
@@ -30,7 +30,10 @@ make smoke                # 冒烟:确认 key 有效、网络通(真实调 LLM �
 make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
 ```
 
-起来之后可以直接用 curl 试问答(Step 6 的前端页面还没接上):
+起来之后打开 http://localhost:5173:左侧四个入口,知识库页能看到 seed 的 3 个 KB,
+Agent 页点进去能看到 system prompt 与 KB 绑定;`/styleguide` 是 UI 验收对照页(隐藏路由)。
+
+也可以直接用 curl 试问答:
 
 ```bash
 AGENT=$(curl -s localhost:8000/api/agents | python3 -c 'import sys,json;print(json.load(sys.stdin)["items"][0]["id"])')
@@ -53,7 +56,9 @@ make api        只起后端
 make web        只起前端
 make dev        前后端一起起
 make smoke      冒烟:真实调 LLM 与 Embedding(验证 key/网络/代理)
+make smoke-sse  冒烟:前端 SSE 客户端打真后端(需先起后端)
 make test       跑离线测试(不联网、不连 DB)
+make lint       后端 ruff + 前端 eslint + TS 编译
 make types      openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 类型)
 ```
 
