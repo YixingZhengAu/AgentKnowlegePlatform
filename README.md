@@ -30,8 +30,15 @@ make smoke                # 冒烟:确认 key 有效、网络通(真实调 LLM �
 make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
 ```
 
-起来之后打开 http://localhost:5173:左侧四个入口,知识库页能看到 seed 的 3 个 KB,
-Agent 页点进去能看到 system prompt 与 KB 绑定;`/styleguide` 是 UI 验收对照页(隐藏路由)。
+起来之后打开 http://localhost:5173:
+
+- **Chat** —— 发一句话就能看到流式回复,右侧执行轨迹面板列出每个阶段的耗时 / token / 成本;
+  点历史消息可以展开看当时实际发出去的 prompt。流式期间 Send 会变成 Stop(真中断,
+  这条消息会按 `interrupted` 落库)
+- **Knowledge Bases / Agents** —— seed 的 3 个 KB 与默认 agent(含 system prompt 与 KB 绑定)
+- **Ingestion** —— 提交一个假任务(`demo_sleep`)看进度条走完四步;
+  `Inject a failure at` 可以让某一步失败,然后用"从失败步骤重跑"恢复
+- `/styleguide` 是 UI 验收对照页(隐藏路由)
 
 也可以直接用 curl 试问答:
 

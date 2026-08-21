@@ -6,10 +6,11 @@
 main.tsx  createRoot + BrowserRouter + import '@/index.css'
   └─ App.tsx  <Routes>
        └─ AppLayout(唯一的布局路由:侧栏 / 顶栏 / 内容 <Outlet/> / 右侧插槽)
-            ├─ /chat        ChatPage      —— 占住右侧轨迹面板的位置(Step 7 填内容)
+            ├─ /chat        ChatPage      —— useChat(SSE)+ 会话列表,右栏挂 TracePanel
             ├─ /kbs         KbListPage    —— GET /api/kbs
             ├─ /agents      AgentListPage —— GET /api/agents,点行进详情
             ├─ /agents/:id  AgentDetailPage —— GET /api/agents/{id}(含 bindings)
+            ├─ /jobs        JobsPage      —— POST/GET /api/jobs,右栏挂 JobProgress
             ├─ /settings    SettingsPage  —— GET /healthz
             └─ /styleguide  StyleGuidePage —— 隐藏路由,UI 验收对照
   └─ <Toaster/>  订阅 lib/toast 的 store,渲染在 body 右下角

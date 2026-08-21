@@ -9,8 +9,9 @@
 | `health.py` | `GET /healthz`(含 DB 连通检查) |
 | `kbs.py` | `GET /api/kbs`、`GET /api/kbs/{kb_id}` |
 | `agents.py` | `GET /api/agents`、`GET /api/agents/{agent_id}`(带 KB 绑定) |
-| `conversations.py` | `GET /api/conversations`、`GET /api/conversations/{id}/messages` |
+| `conversations.py` | `GET /api/conversations`、`GET .../{id}/messages`、`DELETE .../{id}`(软删) |
 | `chat.py` | `POST /api/agents/{agent_id}/chat`(SSE 流式 / 非流式二合一) |
 | `traces.py` | `GET /api/traces/{message_id}`(一次问答的全部 stage) |
+| `jobs.py` | `GET/POST /api/jobs`、`GET /api/jobs/types`、`GET /api/jobs/{id}`、`POST /api/jobs/{id}/retry` |
 
 详见 `architect.md`(含 SSE 事件协议)。

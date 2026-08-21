@@ -40,6 +40,7 @@
 | 改 SSE 事件协议 | `server/app/api/architect.md` 是协议出处,改完前后端一起改 |
 | 加一张表 / 改字段 | `documents/DB-DESIGN.md` → `server/app/models/` → migration(流程见 DB-DESIGN §10) |
 | 加一个接口 | `server/app/api/`(新文件要在 `api/__init__.py` include)+ `server/app/schemas/` |
+| 加一类异步任务(摄取) | 写一个 `JobRunner` 子类 + `@register_job`,**import 一次**才会进注册表(见 `server/app/core/architect.md`) |
 | 改错误码 / 错误格式 | `server/app/core/errors.py`(前端只认 `{"error":{code,message,detail}}`) |
 | 加一个 CLI 脚本 | `server/scripts/`,跑法 `cd server && uv run python -m scripts.<name>` |
 | 改容器/数据库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
@@ -48,6 +49,9 @@
 | 加一个前端页面 | `web/src/pages/` + `web/src/App.tsx` 路由 + `AppLayout` 的 `NAV`/`TITLES` |
 | 改前端取数 / 错误 toast | `web/src/api/{client,hooks}.ts` |
 | 改前端流式渲染 | `web/src/api/sse.ts`(协议出处仍是 `server/app/api/architect.md`) |
+| 改对话页行为(会话、气泡、中断) | `web/src/api/useChat.ts` + `web/src/components/{ChatMessages,Composer}.tsx` |
+| 改执行轨迹面板 | `web/src/components/TracePanel.tsx` |
+| 改任务进度条 | `web/src/components/JobProgress.tsx`(只依赖 Job 框架的四个字段) |
 | 改静态预览的假数据 | `web/demo/fixtures.ts`,然后 `make demo` |
 
 ## 4. 数据流(S0 骨架,后续阶段往里插 stage)
@@ -64,8 +68,11 @@
        → 前端右侧轨迹面板 / GET /api/traces/{message_id}
 
 知识入库(三类共用一条线)
-  上传 ingest_sources → submit_job → ingest_jobs(steps/progress/step_logs)
-    → staging_items(待审核) → 人工审核 → publish → 各域 publisher 写正式表 + 建索引
+  上传 ingest_sources → submit_job (Step 7) → BackgroundTasks 派发 execute_job()
+    → ingest_jobs(steps 声明式 / progress / step_logs / error,心跳防僵尸)
+    → staging_items(待审核) → 人工审核(Step 8) → publish → 各域 publisher 写正式表 + 建索引
+  前端:POST /api/jobs 提交,轮询 GET /api/jobs/{id},<JobProgress> 渲染;
+        失败 → POST /api/jobs/{id}/retry 从失败的那一步重跑
 ```
 
 ## 5. 两个数据库(别搞混)
@@ -77,12 +84,14 @@
 
 ## 6. 当前进度
 
-S0 Step 1–6 已完成:仓库骨架 / 30 张表 / 后端骨架 / Provider 抽象层 / Trace 框架 + 问答链路 / 前端壳。
+S0 Step 1–7 已完成:仓库骨架 / 30 张表 / 后端骨架 / Provider 抽象层 / Trace 框架 + 问答链路 /
+前端壳 / 对话页 + 通用 Job 框架。**S0 的 DoD 主体已达成**:页面发一句话 → 流式回复 →
+右侧看到 trace(阶段/耗时/token/成本)→ DB 里查得到。
 
 `make db && make migrate && make seed && make dev` 之后:
 
-- 页面 http://localhost:5173 —— 三栏工作台,能看到 seed 的 3 个 KB 与 1 个 agent;
-  `/styleguide` 是 UI 验收对照页
+- 页面 http://localhost:5173 —— `/chat` 能真聊天并看执行轨迹,`/jobs` 能提交假任务看进度条,
+  `/kbs` `/agents` 是只读列表,`/styleguide` 是 UI 验收对照页
 - curl 也能直接流式聊天并查 trace:
 
 ```bash
@@ -93,5 +102,5 @@ curl localhost:8000/api/traces/<message_id>
 
 契约链路已生效:改后端字段名 → `make types` → 前端 `tsc` 报错(实测见 `web/architect.md`)。
 
-下一步 Step 7:最小对话页(消费 `web/src/api/sse.ts`)+ 通用 Job 框架。
-逐步进度见 `documents/S0-PLAN.md` §1。
+下一步 Step 8:通用审核台组件 `<StagingReview>`(素材已经有了 —— 跑一次假任务就有 20 条
+`staging_items`)。逐步进度见 `documents/S0-PLAN.md` §1。

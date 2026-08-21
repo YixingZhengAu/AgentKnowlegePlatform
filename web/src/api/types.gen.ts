@@ -4,782 +4,1134 @@
  */
 
 export interface paths {
-  '/healthz': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Healthz */
-    get: operations['healthz_healthz_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/kbs': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Kbs */
-    get: operations['list_kbs_api_kbs_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/kbs/{kb_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Kb */
-    get: operations['get_kb_api_kbs__kb_id__get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/agents': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Agents */
-    get: operations['list_agents_api_agents_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/agents/{agent_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Agent */
-    get: operations['get_agent_api_agents__agent_id__get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/conversations': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Conversations */
-    get: operations['list_conversations_api_conversations_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/conversations/{conversation_id}/messages': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Messages */
-    get: operations['list_messages_api_conversations__conversation_id__messages_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/agents/{agent_id}/chat': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Chat
-     * @description 问答。`stream=true`(默认)返回 SSE 流,`stream=false` 返回完整 JSON。
-     */
-    post: operations['chat_api_agents__agent_id__chat_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/traces/{message_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Traces */
-    get: operations['get_traces_api_traces__message_id__get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
+    "/healthz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Healthz */
+        get: operations["healthz_healthz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/kbs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Kbs */
+        get: operations["list_kbs_api_kbs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/kbs/{kb_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Kb */
+        get: operations["get_kb_api_kbs__kb_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Agents */
+        get: operations["list_agents_api_agents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{agent_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Agent */
+        get: operations["get_agent_api_agents__agent_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Conversations */
+        get: operations["list_conversations_api_conversations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Messages */
+        get: operations["list_messages_api_conversations__conversation_id__messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Conversation
+         * @description 软删:置 archived 就从列表里消失了,消息与 trace 都留着。
+         */
+        delete: operations["delete_conversation_api_conversations__conversation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{agent_id}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat
+         * @description 问答。`stream=true`(默认)返回 SSE 流,`stream=false` 返回完整 JSON。
+         */
+        post: operations["chat_api_agents__agent_id__chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/traces/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Traces */
+        get: operations["get_traces_api_traces__message_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Jobs */
+        get: operations["list_jobs_api_jobs_get"];
+        put?: never;
+        /** Create Job */
+        post: operations["create_job_api_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Job Types
+         * @description 已注册的 job_type(前端"跑一个任务"的下拉框用它,不硬编码)。
+         */
+        get: operations["list_job_types_api_jobs_types_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Job */
+        get: operations["get_job_api_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/{job_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry
+         * @description 从失败的那一步重跑(前面已成功的步骤不重做)。
+         */
+        post: operations["retry_api_jobs__job_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>
+export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /** AgentDetailOut */
-    AgentDetailOut: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Name */
-      name: string
-      /** Description */
-      description: string | null
-      /** Router Mode */
-      router_mode: string
-      /** Status */
-      status: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Updated At
-       * Format: date-time
-       */
-      updated_at: string
-      /** System Prompt */
-      system_prompt: string
-      /** Fallback Reply */
-      fallback_reply: string | null
-      /** Model Cfg */
-      model_cfg: {
-        [key: string]: unknown
-      }
-      /** Bindings */
-      bindings: components['schemas']['AgentKbBindingOut'][]
-    }
-    /** AgentKbBindingOut */
-    AgentKbBindingOut: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Kb Id
-       * Format: uuid
-       */
-      kb_id: string
-      /** Kb Name */
-      kb_name: string
-      /** Kb Type */
-      kb_type: string
-      /** Priority */
-      priority: number
-      /** Enabled */
-      enabled: boolean
-      /** Top K */
-      top_k: number | null
-      /** Threshold */
-      threshold: number | null
-      /** Usage Desc */
-      usage_desc: string | null
-    }
-    /** AgentOut */
-    AgentOut: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Name */
-      name: string
-      /** Description */
-      description: string | null
-      /** Router Mode */
-      router_mode: string
-      /** Status */
-      status: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Updated At
-       * Format: date-time
-       */
-      updated_at: string
-    }
-    /** ChatRequest */
-    ChatRequest: {
-      /** Question */
-      question: string
-      /** Conversation Id */
-      conversation_id?: string | null
-      /**
-       * Stream
-       * @default true
-       */
-      stream: boolean
-    }
-    /** ChatResponse */
-    ChatResponse: {
-      /**
-       * Message Id
-       * Format: uuid
-       */
-      message_id: string
-      /**
-       * Conversation Id
-       * Format: uuid
-       */
-      conversation_id: string
-      /** Content */
-      content: string
-      /** Status */
-      status: string
-      /** Usage */
-      usage: {
-        [key: string]: unknown
-      }
-      /** Cost Usd */
-      cost_usd: string
-      /** Latency Ms */
-      latency_ms: number
-      /**
-       * Citations
-       * @default []
-       */
-      citations: {
-        [key: string]: unknown
-      }[]
-      /**
-       * Trace
-       * @default []
-       */
-      trace: components['schemas']['TraceSpanOut'][]
-    }
-    /** ConversationOut */
-    ConversationOut: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Agent Id
-       * Format: uuid
-       */
-      agent_id: string
-      /** Title */
-      title: string | null
-      /** Status */
-      status: string
-      /** Last Message At */
-      last_message_at: string | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-    }
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components['schemas']['ValidationError'][]
-    }
-    /** HealthResponse */
-    HealthResponse: {
-      /** Status */
-      status: string
-      /** Env */
-      env: string
-      /** Database */
-      database: string
-      /** Database Error */
-      database_error?: string | null
-      /** Embedding Dim */
-      embedding_dim: number
-    }
-    /** KnowledgeBaseOut */
-    KnowledgeBaseOut: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /** Name */
-      name: string
-      /** Type */
-      type: string
-      /** Description */
-      description: string | null
-      /** Status */
-      status: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Updated At
-       * Format: date-time
-       */
-      updated_at: string
-    }
-    /** ListResponse[AgentOut] */
-    ListResponse_AgentOut_: {
-      /** Items */
-      items: components['schemas']['AgentOut'][]
-      /** Total */
-      total: number
-    }
-    /** ListResponse[ConversationOut] */
-    ListResponse_ConversationOut_: {
-      /** Items */
-      items: components['schemas']['ConversationOut'][]
-      /** Total */
-      total: number
-    }
-    /** ListResponse[KnowledgeBaseOut] */
-    ListResponse_KnowledgeBaseOut_: {
-      /** Items */
-      items: components['schemas']['KnowledgeBaseOut'][]
-      /** Total */
-      total: number
-    }
-    /** ListResponse[MessageOut] */
-    ListResponse_MessageOut_: {
-      /** Items */
-      items: components['schemas']['MessageOut'][]
-      /** Total */
-      total: number
-    }
-    /** ListResponse[TraceOut] */
-    ListResponse_TraceOut_: {
-      /** Items */
-      items: components['schemas']['TraceOut'][]
-      /** Total */
-      total: number
-    }
-    /** MessageOut */
-    MessageOut: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Conversation Id
-       * Format: uuid
-       */
-      conversation_id: string
-      /** Role */
-      role: string
-      /** Content */
-      content: string
-      /** Status */
-      status: string
-      /** Route Decision */
-      route_decision: {
-        [key: string]: unknown
-      } | null
-      /** Usage */
-      usage: {
-        [key: string]: unknown
-      } | null
-      /** Latency Ms */
-      latency_ms: number | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-    }
-    /**
-     * TraceOut
-     * @description traces 表的一行(GET /api/traces/{message_id})。
-     */
-    TraceOut: {
-      /**
-       * Id
-       * Format: uuid
-       */
-      id: string
-      /**
-       * Message Id
-       * Format: uuid
-       */
-      message_id: string
-      /** Stage */
-      stage: string
-      /** Seq */
-      seq: number
-      /** Status */
-      status: string
-      /** Input */
-      input: {
-        [key: string]: unknown
-      } | null
-      /** Output */
-      output: {
-        [key: string]: unknown
-      } | null
-      /** Error */
-      error: string | null
-      /** Latency Ms */
-      latency_ms: number | null
-      /** Prompt Tokens */
-      prompt_tokens: number | null
-      /** Completion Tokens */
-      completion_tokens: number | null
-      /** Cost Usd */
-      cost_usd: string | null
-      /** Model */
-      model: string | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-    }
-    /**
-     * TraceSpanOut
-     * @description 流式/非流式返回体里附带的轻量 trace(前端执行轨迹面板直接用)。
-     */
-    TraceSpanOut: {
-      /** Stage */
-      stage: string
-      /** Seq */
-      seq: number
-      /** Status */
-      status: string
-      /** Latency Ms */
-      latency_ms?: number | null
-      /** Model */
-      model?: string | null
-      /** Usage */
-      usage?: {
-        [key: string]: unknown
-      } | null
-      /** Cost Usd */
-      cost_usd?: string | null
-      /** Error */
-      error?: string | null
-    }
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[]
-      /** Message */
-      msg: string
-      /** Error Type */
-      type: string
-      /** Input */
-      input?: unknown
-      /** Context */
-      ctx?: Record<string, never>
-    }
-  }
-  responses: never
-  parameters: never
-  requestBodies: never
-  headers: never
-  pathItems: never
+    schemas: {
+        /** AgentDetailOut */
+        AgentDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Router Mode */
+            router_mode: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Fallback Reply */
+            fallback_reply: string | null;
+            /** Model Cfg */
+            model_cfg: {
+                [key: string]: unknown;
+            };
+            /** Bindings */
+            bindings: components["schemas"]["AgentKbBindingOut"][];
+        };
+        /** AgentKbBindingOut */
+        AgentKbBindingOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Kb Name */
+            kb_name: string;
+            /** Kb Type */
+            kb_type: string;
+            /** Priority */
+            priority: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Top K */
+            top_k: number | null;
+            /** Threshold */
+            threshold: number | null;
+            /** Usage Desc */
+            usage_desc: string | null;
+        };
+        /** AgentOut */
+        AgentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Router Mode */
+            router_mode: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ChatRequest */
+        ChatRequest: {
+            /** Question */
+            question: string;
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /**
+             * Stream
+             * @default true
+             */
+            stream: boolean;
+        };
+        /** ChatResponse */
+        ChatResponse: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Content */
+            content: string;
+            /** Status */
+            status: string;
+            /** Usage */
+            usage: {
+                [key: string]: unknown;
+            };
+            /** Cost Usd */
+            cost_usd: string;
+            /** Latency Ms */
+            latency_ms: number;
+            /**
+             * Citations
+             * @default []
+             */
+            citations: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Trace
+             * @default []
+             */
+            trace: components["schemas"]["TraceSpanOut"][];
+        };
+        /** ConversationOut */
+        ConversationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /** Title */
+            title: string | null;
+            /** Status */
+            status: string;
+            /** Last Message At */
+            last_message_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HealthResponse */
+        HealthResponse: {
+            /** Status */
+            status: string;
+            /** Env */
+            env: string;
+            /** Database */
+            database: string;
+            /** Database Error */
+            database_error?: string | null;
+            /** Embedding Dim */
+            embedding_dim: number;
+        };
+        /** JobOut */
+        JobOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Source Id */
+            source_id: string | null;
+            /** Job Type */
+            job_type: string;
+            /** Status */
+            status: string;
+            /** Steps */
+            steps: {
+                [key: string]: unknown;
+            }[];
+            /** Current Step */
+            current_step: string | null;
+            /** Progress */
+            progress: number;
+            /** Step Logs */
+            step_logs: {
+                [key: string]: unknown;
+            }[];
+            /** Error */
+            error: {
+                [key: string]: unknown;
+            } | null;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Stats */
+            stats: {
+                [key: string]: unknown;
+            };
+            /** Heartbeat At */
+            heartbeat_at: string | null;
+            /** Started At */
+            started_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** JobSubmitRequest */
+        JobSubmitRequest: {
+            /** Job Type */
+            job_type: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Source Id */
+            source_id?: string | null;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: unknown;
+            };
+        };
+        /** KnowledgeBaseOut */
+        KnowledgeBaseOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Description */
+            description: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ListResponse[AgentOut] */
+        ListResponse_AgentOut_: {
+            /** Items */
+            items: components["schemas"]["AgentOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[ConversationOut] */
+        ListResponse_ConversationOut_: {
+            /** Items */
+            items: components["schemas"]["ConversationOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[JobOut] */
+        ListResponse_JobOut_: {
+            /** Items */
+            items: components["schemas"]["JobOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[KnowledgeBaseOut] */
+        ListResponse_KnowledgeBaseOut_: {
+            /** Items */
+            items: components["schemas"]["KnowledgeBaseOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[MessageOut] */
+        ListResponse_MessageOut_: {
+            /** Items */
+            items: components["schemas"]["MessageOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[TraceOut] */
+        ListResponse_TraceOut_: {
+            /** Items */
+            items: components["schemas"]["TraceOut"][];
+            /** Total */
+            total: number;
+        };
+        /** MessageOut */
+        MessageOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Status */
+            status: string;
+            /** Route Decision */
+            route_decision: {
+                [key: string]: unknown;
+            } | null;
+            /** Usage */
+            usage: {
+                [key: string]: unknown;
+            } | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * TraceOut
+         * @description traces 表的一行(GET /api/traces/{message_id})。
+         */
+        TraceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Stage */
+            stage: string;
+            /** Seq */
+            seq: number;
+            /** Status */
+            status: string;
+            /** Input */
+            input: {
+                [key: string]: unknown;
+            } | null;
+            /** Output */
+            output: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error: string | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Prompt Tokens */
+            prompt_tokens: number | null;
+            /** Completion Tokens */
+            completion_tokens: number | null;
+            /** Cost Usd */
+            cost_usd: string | null;
+            /** Model */
+            model: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * TraceSpanOut
+         * @description 流式/非流式返回体里附带的轻量 trace(前端执行轨迹面板直接用)。
+         */
+        TraceSpanOut: {
+            /** Stage */
+            stage: string;
+            /** Seq */
+            seq: number;
+            /** Status */
+            status: string;
+            /** Latency Ms */
+            latency_ms?: number | null;
+            /** Model */
+            model?: string | null;
+            /** Usage */
+            usage?: {
+                [key: string]: unknown;
+            } | null;
+            /** Cost Usd */
+            cost_usd?: string | null;
+            /** Error */
+            error?: string | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-export type $defs = Record<string, never>
+export type $defs = Record<string, never>;
 export interface operations {
-  healthz_healthz_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HealthResponse']
-        }
-      }
-    }
-  }
-  list_kbs_api_kbs_get: {
-    parameters: {
-      query?: {
-        type?: string | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListResponse_KnowledgeBaseOut_']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  get_kb_api_kbs__kb_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        kb_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['KnowledgeBaseOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  list_agents_api_agents_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListResponse_AgentOut_']
-        }
-      }
-    }
-  }
-  get_agent_api_agents__agent_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        agent_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AgentDetailOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  list_conversations_api_conversations_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListResponse_ConversationOut_']
-        }
-      }
-    }
-  }
-  list_messages_api_conversations__conversation_id__messages_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        conversation_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListResponse_MessageOut_']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  chat_api_agents__agent_id__chat_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        agent_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChatRequest']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChatResponse']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  get_traces_api_traces__message_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        message_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListResponse_TraceOut_']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
+    healthz_healthz_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    list_kbs_api_kbs_get: {
+        parameters: {
+            query?: {
+                type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_KnowledgeBaseOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_kb_api_kbs__kb_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeBaseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_agents_api_agents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_AgentOut_"];
+                };
+            };
+        };
+    };
+    get_agent_api_agents__agent_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conversations_api_conversations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_ConversationOut_"];
+                };
+            };
+        };
+    };
+    list_messages_api_conversations__conversation_id__messages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_MessageOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_conversation_api_conversations__conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_api_agents__agent_id__chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_traces_api_traces__message_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_TraceOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_jobs_api_jobs_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+                status?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_JobOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_job_api_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_job_types_api_jobs_types_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    get_job_api_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_api_jobs__job_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
 }

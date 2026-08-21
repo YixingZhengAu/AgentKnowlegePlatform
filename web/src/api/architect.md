@@ -13,7 +13,31 @@
 (新版 `eslint-plugin-react-hooks` 直接报 error:`set-state-in-effect`)。
 `reload()` 靠 `tick` 自增改变 key。切页/换 path 时用 `cancelled` 闭包标记丢弃回包。
 
-Step 7 加 Job 轮询就在这里加 `refetchInterval`,不换实现。
+两个 Step 7 加上来的能力:
+
+- **`path` 可以是 `null`** = 这次不取数(hook 不能条件调用,但"暂时没有 id 可查"是常态,
+  比如 trace 面板还没有 message_id)。比造一个假 path 干净。
+- **`refetchInterval` 可以是一个读当前数据的函数**:
+  `refetchInterval: (job) => (isJobActive(job?.status) ? 1000 : null)`。
+  为什么必须是函数 —— "任务到终态就停轮询"这个判断得看到刚拿回来的数据,
+  写成常量的话它要在调用 useApi 之前算出来,那时数据还没回来。
+  effect 的依赖里放的是**算出来的数字**,所以每次渲染传新函数也不会重装定时器。
+
+## useChat.ts
+
+一次问答期间有五件事同时在变(助手消息内容、当前 stage、trace 列表、会话 id、错误),
+放在一个 hook 里才说得清。两个关键决定:
+
+1. **历史消息是"点了才取",没有 effect 盯着 conversationId 自动取。**
+   新会话的 id 是后端在流的第一个事件(`meta`)里给的;如果有 effect 跟着它自动拉历史,
+   会在流还没结束时把正在流的消息覆盖掉。所以取数只发生在用户点会话那一刻。
+2. **助手消息的 id 用后端的 `message_id`**(先用本地占位 id,`meta` 到达时替换)。
+   流完之后右侧面板要查 `GET /api/traces/{id}`,不用另找 id。
+
+`done` 事件里成本是独立字段,但落库时是塞进 `usage` 的(见 `core/chat.py` 的 `_persist`),
+所以 `onDone` 会把它合并进 `usage` —— 刚答完的消息与从库里读回的历史消息形状一致。
+
+中断:`stop()` abort 掉 fetch,后端按 `status="interrupted"` 落库,前端把气泡标成 interrupted。
 
 ## sse.ts
 

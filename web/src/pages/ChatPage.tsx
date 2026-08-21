@@ -1,72 +1,155 @@
-/** 对话页 —— Step 6 只立形状:布局位置 + 右侧轨迹面板插槽。
+/** 对话页(S0-PLAN Step 7.1)—— S0 的 DoD 主体:发一句话、流式回复、右侧看轨迹、DB 可查。
  *
- * 真正的输入框、消息流与流式渲染是 Step 7 的活;
- * 它要用的两块地基已经就位:`api/sse.ts`(事件协议客户端)与这里的右侧面板插槽。
+ * 三块拼起来:会话列表(建/切/删)+ 消息流(`useChat` 消费 SSE)+ 右侧轨迹面板。
+ *
+ * **"新对话"没有对应的接口**:后端不传 conversation_id 就等于新开一轮,
+ * 所以点 New chat 只是把本地状态清空 —— 少一次往返,也不会留下"建了但没发消息"的空会话。
  */
 
-import { MessagesSquare, Route } from 'lucide-react'
+import { MessagesSquare, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
+import { apiDelete } from '@/api/client'
 import { useApi } from '@/api/hooks'
-import type { ConversationList } from '@/api/schema'
+import type { AgentList, ConversationList } from '@/api/schema'
+import { useChat, type ChatTurn } from '@/api/useChat'
+import { ChatMessages } from '@/components/ChatMessages'
+import { Composer } from '@/components/Composer'
 import { EmptyState } from '@/components/EmptyState'
-import { StatusBadge } from '@/components/StatusBadge'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TD, TH, THead, TR } from '@/components/ui/table'
+import { TracePanel } from '@/components/TracePanel'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { useRightPanel } from '@/layouts/AppLayout'
 import { fmtDateTime } from '@/lib/format'
+import { pushToast } from '@/lib/toast'
+import { cn } from '@/lib/utils'
 
 export function ChatPage() {
-  const state = useApi<ConversationList>('/api/conversations')
+  const agents = useApi<AgentList>('/api/agents')
+  const conversations = useApi<ConversationList>('/api/conversations')
+  const agentId = agents.data?.items[0]?.id ?? null
 
-  // 右侧面板的位置现在就占住:Step 7 把这里换成真实的 stage 列表
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const chat = useChat(agentId, { onConversationCreated: () => conversations.reload() })
+
+  // 右侧面板默认盯住最后一条助手消息;点某条气泡就切到那条(历史消息会去查完整 trace)
+  const lastAssistant = [...chat.turns].reverse().find((t) => t.role === 'assistant')
+  const selected =
+    chat.turns.find((t) => t.id === selectedId && t.role === 'assistant') ?? lastAssistant
+
   useRightPanel(
     'Execution trace',
-    <EmptyState
-      icon={Route}
-      title="No trace yet"
-      description="Every answer records its stages here: retrieval, routing and generation, each with latency, tokens and cost."
+    <TracePanel
+      spans={selected?.trace}
+      messageId={selected?.id}
+      streaming={chat.streaming}
+      currentStage={chat.currentStage}
     />,
+    [selected?.id, selected?.trace?.length, chat.streaming, chat.currentStage],
   )
 
+  const openTurn = (turn: ChatTurn) => setSelectedId(turn.id)
+
+  const remove = async (id: string) => {
+    try {
+      await apiDelete(`/api/conversations/${id}`)
+      if (chat.conversationId === id) chat.newChat()
+      conversations.reload()
+    } catch {
+      pushToast('error', 'delete_failed', 'Could not delete this conversation.')
+    }
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Conversations</CardTitle>
-        <CardDescription>
-          Ask a question and the agent decides which knowledge tier answers it. Every step of that
-          decision is recorded and shown on the right.
-        </CardDescription>
-      </CardHeader>
-      {state.data && state.data.items.length > 0 ? (
-        <Table>
-          <THead>
-            <TR>
-              <TH>Title</TH>
-              <TH>Status</TH>
-              <TH>Last message</TH>
-            </TR>
-          </THead>
-          <tbody>
-            {state.data.items.map((c) => (
-              <TR key={c.id}>
-                <TD className="font-medium">{c.title ?? 'Untitled'}</TD>
-                <TD>
-                  <StatusBadge status={c.status} />
-                </TD>
-                <TD className="text-muted-foreground text-[12px]">
+    <div className="flex h-full min-h-0 gap-4">
+      {/* 会话列表 */}
+      <Card className="flex w-[240px] shrink-0 flex-col overflow-hidden">
+        <div className="border-b p-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              chat.newChat()
+              setSelectedId(null)
+            }}
+          >
+            <Plus />
+            New chat
+          </Button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {conversations.data?.items.map((c) => (
+            <div
+              key={c.id}
+              className={cn(
+                'group hover:bg-subtle relative flex items-center gap-2 border-b px-3 py-2.5 last:border-0',
+                chat.conversationId === c.id && 'bg-primary-soft',
+              )}
+            >
+              {chat.conversationId === c.id && (
+                <span className="bg-primary absolute top-0 bottom-0 left-0 w-[3px]" />
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedId(null)
+                  void chat.openConversation(c.id)
+                }}
+                className="min-w-0 flex-1 text-left"
+              >
+                <div className="truncate text-[13px] font-medium">{c.title ?? 'Untitled'}</div>
+                <div className="text-muted-foreground font-mono text-[11px]">
                   {fmtDateTime(c.last_message_at)}
-                </TD>
-              </TR>
-            ))}
-          </tbody>
-        </Table>
-      ) : (
-        <EmptyState
-          icon={MessagesSquare}
-          title="No conversations yet"
-          description="The chat composer arrives with the conversation workspace."
+                </div>
+              </button>
+              <button
+                type="button"
+                aria-label="Delete conversation"
+                onClick={() => void remove(c.id)}
+                className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
+          ))}
+          {conversations.data?.items.length === 0 && (
+            <p className="text-muted-foreground p-4 text-[12px]">
+              No conversations yet. Ask something on the right.
+            </p>
+          )}
+        </div>
+      </Card>
+
+      {/* 消息流 + 输入框 */}
+      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {chat.turns.length === 0 ? (
+            <EmptyState
+              icon={MessagesSquare}
+              title={agentId ? 'Ask the agent anything' : 'No agent configured'}
+              description={
+                agentId
+                  ? 'The answer streams in token by token, and every stage it went through is recorded on the right.'
+                  : 'Run `make seed` to create the default agent.'
+              }
+            />
+          ) : (
+            <ChatMessages
+              turns={chat.turns}
+              selectedId={selected?.id ?? null}
+              onSelect={openTurn}
+            />
+          )}
+        </div>
+        <Composer
+          // 流结束后再刷一次会话列表:标题与 last_message_at 是后端在这轮里写的
+          onSend={(text) => void chat.send(text).then(() => conversations.reload())}
+          onStop={chat.stop}
+          streaming={chat.streaming}
+          disabled={!agentId}
         />
-      )}
-    </Card>
+      </Card>
+    </div>
   )
 }

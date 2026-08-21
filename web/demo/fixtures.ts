@@ -2,7 +2,9 @@
  *
  * 来源:2026-08-21 从真后端(`make seed` 之后)抓下来的实际返回 ——
  * `/healthz`、`/api/kbs`、`/api/agents`、`/api/agents/{id}`。
- * 只有会话列表是手写的演示数据:真库里那几条是冒烟脚本留下的测试问句,不适合给人看。
+ * 手写的部分:会话列表与消息、trace、jobs —— 真库里那几条是冒烟脚本留下的
+ * 测试问句("Reply with exactly: SSE OK"),不适合给人看。手写的内容与真接口
+ * 同形(字段名来自 openapi 生成的类型),所以页面代码一行都不用为预览让步。
  *
  * 这个文件**不参与正式构建**,只有 `make demo` 打的静态包会用它。
  */
@@ -157,4 +159,155 @@ export const FIXTURES: Record<string, unknown> = {
     ],
     total: 4,
   },
+
+  // ---- 对话页:一条完整的历史会话(消息 + trace)----
+  '/api/conversations/3f2b1c88-0001-4a10-9f01-aaaa00000001/messages': {
+    items: [
+      {
+        id: 'c4d5e6f7-0000-4a10-9f01-bbbb00000000',
+        conversation_id: '3f2b1c88-0001-4a10-9f01-aaaa00000001',
+        role: 'user',
+        content: 'What is the warranty period for the PV-ezRack SolarRoof?',
+        status: 'completed',
+        route_decision: null,
+        usage: null,
+        latency_ms: null,
+        created_at: '2026-08-20T04:40:58.000000Z',
+      },
+      {
+        id: 'c4d5e6f7-0001-4a10-9f01-bbbb00000001',
+        conversation_id: '3f2b1c88-0001-4a10-9f01-aaaa00000001',
+        role: 'assistant',
+        content:
+          'The PV-ezRack SolarRoof carries a 15 year structural warranty when it is installed to the published torque and span tables. Anodised aluminium components are covered for corrosion for the same period; stainless fasteners are covered for 10 years.',
+        status: 'completed',
+        route_decision: null,
+        usage: {
+          prompt_tokens: 218,
+          completion_tokens: 61,
+          total_tokens: 279,
+          cost_usd: '0.001913',
+        },
+        latency_ms: 2417,
+        created_at: '2026-08-20T04:41:12.000000Z',
+      },
+    ],
+    total: 2,
+  },
+
+  '/api/traces/c4d5e6f7-0001-4a10-9f01-bbbb00000001': {
+    items: [
+      {
+        id: 'd1e2f3a4-0001-4a10-9f01-cccc00000001',
+        message_id: 'c4d5e6f7-0001-4a10-9f01-bbbb00000001',
+        stage: 'generate',
+        seq: 1,
+        status: 'ok',
+        input: {
+          question: 'What is the warranty period for the PV-ezRack SolarRoof?',
+          history_turns: 0,
+          prompt: [
+            {
+              role: 'system',
+              content:
+                'You are the Clenergy enterprise knowledge assistant. Answer staff and partner questions about Clenergy products, documentation and sales data.',
+            },
+            { role: 'user', content: 'What is the warranty period for the PV-ezRack SolarRoof?' },
+          ],
+        },
+        output: {
+          text: 'The PV-ezRack SolarRoof carries a 15 year structural warranty…',
+          finish_reason: 'stop',
+        },
+        error: null,
+        latency_ms: 2417,
+        prompt_tokens: 218,
+        completion_tokens: 61,
+        cost_usd: '0.001913',
+        model: 'gpt-5',
+        created_at: '2026-08-20T04:41:12.000000Z',
+      },
+    ],
+    total: 1,
+  },
+
+  // ---- 摄取任务页:一个跑完的、一个失败在 extract 的 ----
+  '/api/jobs/types': ['demo_sleep'],
 }
+
+/** 任务的四个步骤(与 server/app/core/jobs_demo.py 的声明一致) */
+const JOB_STEPS = [
+  { name: 'fetch', title: 'Fetch source' },
+  { name: 'parse', title: 'Parse content' },
+  { name: 'extract', title: 'Extract candidates' },
+  { name: 'stage', title: 'Write staging items' },
+]
+
+const JOB_BASE = {
+  kb_id: '8926389c-3d89-4e09-be74-252a42f825a1',
+  source_id: null,
+  job_type: 'demo_sleep',
+  steps: JOB_STEPS,
+  params: { items: 20, step_seconds: 2 },
+  heartbeat_at: null,
+}
+
+function log(step: string, title: string, status: string, message: string, latency_ms = 2003) {
+  return { step, title, status, message, latency_ms, at: '2026-08-20T05:10:00.000000Z' }
+}
+
+Object.assign(FIXTURES, {
+  '/api/jobs?limit=20': {
+    items: [
+      {
+        ...JOB_BASE,
+        id: 'e1000000-0002-4a10-9f01-dddd00000002',
+        status: 'failed',
+        current_step: 'extract',
+        progress: 50,
+        step_logs: [
+          log('fetch', 'Fetch source', 'ok', 'Loaded 1 source document'),
+          log('parse', 'Parse content', 'ok', 'Parsed 8 sections / 1,240 words'),
+          log(
+            'extract',
+            'Extract candidates',
+            'error',
+            "RuntimeError: Injected failure at step 'extract' (fail_at param)",
+          ),
+        ],
+        error: {
+          code: 'step_failed',
+          step: 'extract',
+          message: "RuntimeError: Injected failure at step 'extract' (fail_at param)",
+        },
+        stats: {},
+        started_at: '2026-08-20T05:12:00.000000Z',
+        finished_at: '2026-08-20T05:12:04.000000Z',
+        created_at: '2026-08-20T05:12:00.000000Z',
+      },
+      {
+        ...JOB_BASE,
+        id: 'e1000000-0001-4a10-9f01-dddd00000001',
+        status: 'review',
+        current_step: null,
+        progress: 100,
+        step_logs: [
+          log('fetch', 'Fetch source', 'ok', 'Loaded 1 source document'),
+          log('parse', 'Parse content', 'ok', 'Parsed 8 sections / 1,240 words'),
+          log('extract', 'Extract candidates', 'ok', 'Extracted 20 candidate QA pairs'),
+          log('stage', 'Write staging items', 'ok', 'Wrote 20 staging items, waiting for review'),
+        ],
+        error: null,
+        stats: { staged: 20 },
+        started_at: '2026-08-20T05:10:00.000000Z',
+        finished_at: '2026-08-20T05:10:08.000000Z',
+        created_at: '2026-08-20T05:10:00.000000Z',
+      },
+    ],
+    total: 2,
+  },
+})
+
+// 单个任务的详情就是列表里的那两条,避免同一份数据写两遍
+const JOBS = (FIXTURES['/api/jobs?limit=20'] as { items: { id: string }[] }).items
+for (const job of JOBS) FIXTURES[`/api/jobs/${job.id}`] = job

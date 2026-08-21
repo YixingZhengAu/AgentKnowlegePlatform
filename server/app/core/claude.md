@@ -9,5 +9,7 @@
 | `middleware.py` | `RequestContextMiddleware`:分配 request_id、记访问日志 |
 | `trace.py` | `traced()` 计时/记账 + `ChatContext` buffer + `flush_traces()` 批量落库 |
 | `chat.py` | `chat_events()`(唯一编排)+ `run_chat()`(非流式入口,D4) |
+| `jobs.py` | 通用 Job 框架:`submit_job` / `execute_job` / `retry_job` / 僵尸收尸 |
+| `jobs_demo.py` | `DemoSleepJob`:验证框架用的假任务(可调慢、可注入失败、产出待审条目) |
 
 详见 `architect.md`。

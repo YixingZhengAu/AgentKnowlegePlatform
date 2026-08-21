@@ -19,12 +19,15 @@ export type ChatResponse = S['ChatResponse']
 export type TraceSpan = S['TraceSpanOut']
 export type Trace = S['TraceOut']
 export type Health = S['HealthResponse']
+export type Job = S['JobOut']
+export type JobSubmit = S['JobSubmitRequest']
 
 export type KbList = S['ListResponse_KnowledgeBaseOut_']
 export type AgentList = S['ListResponse_AgentOut_']
 export type ConversationList = S['ListResponse_ConversationOut_']
 export type MessageList = S['ListResponse_MessageOut_']
 export type TraceList = S['ListResponse_TraceOut_']
+export type JobList = S['ListResponse_JobOut_']
 
 /** 三类知识的固定识别色(色值在 index.css,这里只做 type -> token 的映射)。 */
 // 取值与 server/app/models/knowledge.py 的 KB_TYPES 一致(exact_qa / document / text2sql)
@@ -43,3 +46,25 @@ export const KB_TYPE_DOT: Record<string, string> = {
   document: 'bg-kb-document',
   text2sql: 'bg-kb-text2sql',
 }
+
+/** Job 状态机(出处 server/app/models/ingest.py JOB_STATUSES)。
+ *  前端只需要区分"还在动"和"停了" —— 轮询该不该继续,全靠这一个判断。 */
+export const JOB_ACTIVE_STATUSES = ['queued', 'running', 'publishing'] as const
+
+export function isJobActive(status: string): boolean {
+  return (JOB_ACTIVE_STATUSES as readonly string[]).includes(status)
+}
+
+/** 一条分步日志的形状。jsonb 里的东西 openapi 只给到 `dict`,
+ *  所以这里是全前端唯一允许手写的"类型" —— 它不是 API 契约,是 Job 框架的约定,
+ *  出处 server/app/core/jobs.py 的 `_append_log()`。 */
+export type JobStepLog = {
+  step: string | null
+  title?: string
+  status: 'ok' | 'error' | 'info'
+  at?: string
+  latency_ms?: number
+  message?: string | null
+}
+
+export type JobStepDef = { name: string; title: string }

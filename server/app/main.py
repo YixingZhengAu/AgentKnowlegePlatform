@@ -14,6 +14,7 @@ from sqlalchemy import text
 from app.api import api_router
 from app.config import settings
 from app.core.errors import register_exception_handlers
+from app.core.jobs import reap_abandoned_jobs
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import RequestContextMiddleware
 from app.db import SessionLocal, engine
@@ -31,6 +32,14 @@ async def lifespan(_: FastAPI):
     except Exception as exc:
         # 起服务不因为数据库没起来而失败,/healthz 会如实报 unhealthy
         log.warning("startup_db_unavailable", error=str(exc))
+    # 僵尸任务收尸:进程内 BackgroundTasks 不可能跨重启存活,
+    # 所以启动这一刻还标着 running 的任务一定是上一条命的残留(Step 7 验收项)。
+    try:
+        reaped = await reap_abandoned_jobs()
+        if reaped:
+            log.warning("startup_jobs_reaped", count=reaped)
+    except Exception as exc:
+        log.warning("startup_reap_failed", error=str(exc))
     log.info(
         "startup",
         env=settings.app_env,

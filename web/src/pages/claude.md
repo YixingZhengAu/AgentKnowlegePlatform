@@ -4,10 +4,11 @@
 
 | 文件 | 数据来源 |
 | --- | --- |
-| `ChatPage.tsx` | `GET /api/conversations`;并占住右侧执行轨迹面板(Step 7 填真内容) |
+| `ChatPage.tsx` | `GET /api/agents` + `/api/conversations` + `useChat`(SSE);右侧挂 `<TracePanel>` |
 | `KbListPage.tsx` | `GET /api/kbs` |
 | `AgentListPage.tsx` | `GET /api/agents` |
 | `AgentDetailPage.tsx` | `GET /api/agents/{id}`(含 KB 绑定,按 priority 升序) |
+| `JobsPage.tsx` | `GET /api/kbs` + `/api/jobs`;提交假任务,右侧挂 `<JobProgress>` |
 | `SettingsPage.tsx` | `GET /healthz`(**任何密钥都不进前端**) |
 | `StyleGuidePage.tsx` | 无后端依赖;隐藏路由 `/styleguide`,UI 验收对照页 |
 

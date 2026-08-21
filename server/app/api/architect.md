@@ -53,6 +53,26 @@ conversation_id / message_id,否则没法把这条消息挂到正确的会话上
 - `/api/traces/{message_id}`:traces 表按 seq 升序;**消息不存在报 404**,
   "消息存在但没有 trace"返回空数组(两件事要分清)
 
+## 摄取 Job 接口(jobs.py)
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/jobs` | 列表(可按 `kb_id` / `status` 过滤,默认 50 条,按创建时间倒序) |
+| GET | `/api/jobs/types` | 已注册的 job_type(前端下拉框用它,不硬编码) |
+| POST | `/api/jobs` | 提交:`{job_type, kb_id, source_id?, params}` → 201 + JobOut |
+| GET | `/api/jobs/{id}` | 进度查询(前端轮询这个);顺便做心跳超时的惰性僵尸判定 |
+| POST | `/api/jobs/{id}/retry` | 从失败的那一步重跑(只有 `status=failed` 能重跑,否则 409) |
+
+**路由顺序有讲究**:`/api/jobs/types` 必须声明在 `/api/jobs/{job_id}` 之前,
+否则 `types` 会被当成 uuid 参数吃掉(422)。
+
+派发用 **FastAPI BackgroundTasks**:响应发出去之后才开始跑,所以提交是瞬时返回的。
+代价是"进程重启 = 任务丢失",补偿在 `core/jobs.py`(启动收尸 + 心跳超时),
+保证任务不会永远停在 running。
+
+`POST /api/jobs` 会先检查 kb 是否存在 —— 不拦的话会撞外键、报成 `db_error 503`,
+把"知识库 id 写错了"这个真实原因盖住。
+
 ## 待加(后续 Step)
 
-- Step 7:jobs 提交/查询;Step 8:staging 审核与发布
+- Step 8:staging 审核与发布(`PATCH /api/staging/{id}`、`POST /api/jobs/{id}/publish`)

@@ -1,8 +1,15 @@
-"""会话只读接口(Step 7 对话页会在这上面加写接口)。"""
+"""会话接口:列表 / 消息 / 删除。
+
+**为什么没有"新建会话"接口**:`chat` 接口不传 `conversation_id` 就等于新开一轮
+(见 `app/core/chat.py`)。前端点"New chat"只是把当前会话置空,不需要先请求一次 ——
+少一次往返,也少一种"建了会话却没发消息"的空数据。
+
+删除是**软删**(status=archived):对话与 trace 是演示时要复盘的证据,不真删。
+"""
 
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from sqlalchemy import select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -44,3 +51,13 @@ async def list_messages(conversation_id: uuid.UUID, session: SessionDep) -> List
     )
     items = [MessageOut.model_validate(r) for r in rows]
     return ListResponse[MessageOut](items=items, total=len(items))
+
+
+@router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_conversation(conversation_id: uuid.UUID, session: SessionDep) -> None:
+    """软删:置 archived 就从列表里消失了,消息与 trace 都留着。"""
+    conv = await session.get(Conversation, conversation_id)
+    if conv is None:
+        raise NotFoundError(f"Conversation {conversation_id} not found")
+    conv.status = "archived"
+    await session.commit()

@@ -68,10 +68,13 @@
 ## 右侧面板插槽(AppLayout)
 
 页面调 `useRightPanel(title, node)` 把内容塞进右栏,卸载自动清空;没有内容时整栏不占宽度
-(列表页不会白让 360px)。Step 7 的执行轨迹面板就往这个插槽里放。
+(列表页不会白让 360px)。目前两个页面用它:`/chat` 放执行轨迹面板,`/jobs` 放任务进度条。
 
-## 已验证(Step 6)
+## 已验证(Step 6–7)
 
 - `tsc -b` / `npm run lint` / `npm run build` 全绿;`make dev` 一条命令起 8000 + 5173
-- 5 个路由用 headless Chrome dump DOM 断言过内容(3 个 KB、1 个 agent、health 1536、轨迹面板)
+- 只读路由用 headless Chrome dump DOM 断言过内容(3 个 KB、1 个 agent、health 1536)
 - `npm run smoke:sse` 直连 8000 与穿 Vite 代理各跑一次:事件顺序、token 拼接、done 终止均正确
+- 交互路径用 CDP(Node 自带 WebSocket,不装 puppeteer)真点按钮验过:
+  发消息 → 流式 → 轨迹面板;点历史消息 → 展开看 prompt;Stop → interrupted;
+  提交假任务 → 进度条走完;注入失败 → 从失败步骤重跑 → 跑完

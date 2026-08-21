@@ -12,10 +12,17 @@
 | --- | --- | --- |
 | 路由 | `BrowserRouter` | `HashRouter`(静态托管没有 rewrite,刷新 `/kbs` 会 404) |
 | 数据 | 真 fetch → Vite 代理 → 后端 | `globalThis.fetch` 换成读 `FIXTURES` |
+| 对话 | 真 SSE 流 | `cannedStream()`:一个按真协议推帧的 ReadableStream |
+| 写操作 | 真 POST / DELETE | 提交任务回放那条跑完的任务;DELETE 直接 204 |
 | 标识 | 无 | 右下角 `static preview · fixture data` 角标 |
 
 `App.tsx` / `layouts` / `pages` / `api` 一行不改。fixture 里没有的路径会返回后端那套错误体
 (`code=not_available_in_preview`),所以错误态与 toast 在预览里也是真在工作的。
+
+**对话是真的在流**:`cannedStream()` 返回的是 ReadableStream,按
+`meta → stage_start → token* → stage_end → done` 一帧一帧推,由**产线的
+`src/api/sse.ts`** 解析。所以预览里的打字机效果、阶段事件、轨迹面板走的都是真代码路径,
+只有内容写死(问什么都答同一段)。这也顺便证明了 SSE 客户端不依赖真后端。
 
 ## 构建两步
 

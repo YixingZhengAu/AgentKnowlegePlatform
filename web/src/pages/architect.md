@@ -13,6 +13,25 @@ const state = useApi<KbList>('/api/kbs')          // 三态在 hook 里
 
 卡片标题**不要跟顶栏标题重复**(顶栏已经写了 "Knowledge Bases",卡片就叫 "Governance tiers")。
 
+## ChatPage:三块拼起来
+
+```
+[会话列表 240px] [消息流 + 输入框] │ 右侧面板挂 <TracePanel>(AppLayout 的插槽)
+```
+
+- **"新对话"没有对应的接口**:后端不传 `conversation_id` 就等于新开一轮,
+  所以点 New chat 只是清空本地状态 —— 少一次往返,也不留"建了但没发消息"的空会话。
+- 删除是软删(`DELETE /api/conversations/{id}` → status=archived),消息与 trace 都留着。
+- 右侧面板默认盯最后一条助手消息;点某条气泡就切到那条(历史消息会去查完整 trace)。
+- 流结束后再刷一次会话列表:标题与 `last_message_at` 是后端在这一轮里写的。
+
+## JobsPage:假任务的联调界面
+
+S0 只有 `demo_sleep`,但这页的形状就是 S1–S3 摄取的形状:
+选知识库 → 提交 → 右侧看进度与分步日志 → 失败了从失败步骤重跑。
+`Inject a failure at` 下拉框是刻意留的:演示"失败会怎样"不用断网、不用改代码。
+黄色 CTA 一屏只有一个(UI-STYLE §4),就是 Run demo job。
+
 ## StyleGuidePage:为什么色值是读回来的
 
 它显示的 hex 用 `getComputedStyle(document.documentElement).getPropertyValue('--brand-navy')`

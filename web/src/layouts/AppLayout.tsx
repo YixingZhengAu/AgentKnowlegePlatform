@@ -9,6 +9,7 @@
 import {
   Bot,
   Library,
+  ListChecks,
   MessagesSquare,
   PanelRightClose,
   PanelRightOpen,
@@ -23,6 +24,7 @@ const NAV = [
   { to: '/chat', label: 'Chat', icon: MessagesSquare },
   { to: '/kbs', label: 'Knowledge Bases', icon: Library },
   { to: '/agents', label: 'Agents', icon: Bot },
+  { to: '/jobs', label: 'Ingestion', icon: ListChecks },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -31,6 +33,7 @@ const TITLES: { prefix: string; title: string }[] = [
   { prefix: '/chat', title: 'Chat' },
   { prefix: '/kbs', title: 'Knowledge Bases' },
   { prefix: '/agents', title: 'Agents' },
+  { prefix: '/jobs', title: 'Ingestion Jobs' },
   { prefix: '/settings', title: 'Settings' },
   { prefix: '/styleguide', title: 'Style Guide' },
 ]

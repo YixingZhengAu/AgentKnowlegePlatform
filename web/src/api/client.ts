@@ -56,7 +56,21 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     throw new ApiError('network_error', 'Cannot reach the API server.', 0, String(cause))
   }
   if (!res.ok) throw await toApiError(res)
+  // 204 没有响应体(DELETE 会走到这里),res.json() 会抛 —— 不能无条件解析
+  if (res.status === 204) return undefined as T
   return (await res.json()) as T
+}
+
+/** 写操作:body 自动 JSON 化。返回类型与 GET 一样由调用方标注(仍来自生成的契约类型)。 */
+export function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  return apiFetch<T>(path, {
+    method: 'POST',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+}
+
+export function apiDelete(path: string): Promise<void> {
+  return apiFetch<void>(path, { method: 'DELETE' })
 }
 
 export { API_BASE }

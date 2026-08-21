@@ -40,7 +40,7 @@
 
 ## 1. 步骤总览
 
-**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4 ✅ / Step 5 ✅ / Step 6 ✅ / Step 7– 待做
+**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4 ✅ / Step 5 ✅ / Step 6 ✅ / Step 7 ✅ / Step 8– 待做
 
 ```
 Step 1  仓库与环境骨架        →  git init、目录结构、docker-compose、Makefile
@@ -425,7 +425,7 @@ event: done          data: {"message_id": "...", "citations": []}
 
 ---
 
-### Step 7 · 最小对话页 + 通用 Job 框架
+### Step 7 · 最小对话页 + 通用 Job 框架 ✅ 已完成
 
 **做什么**
 
@@ -442,6 +442,60 @@ event: done          data: {"message_id": "...", "citations": []}
 **需要你做的**:无。
 
 **验收**:DoD 主体达成 —— 页面发一句话,流式回复,右侧看到 trace,DB 可查;假任务中途 kill 后端进程再重启,任务状态是 failed 而不是永远 running(僵尸任务处理)。
+
+**实际落地(与计划的差异)**:
+
+- **"新建会话"接口没做,而且是刻意的**:后端不传 `conversation_id` 就等于新开一轮,
+  所以前端点 New chat 只是清空本地状态 —— 少一次往返,也不会留下"建了会话但没发消息"
+  的空数据。删除做成软删(`DELETE /api/conversations/{id}` → `status=archived`):
+  对话与 trace 是演示时要复盘的证据,不真删
+- **轨迹面板有两个数据源**(计划只写了"显示本次回答的 trace"):正在流的用 SSE 的
+  `stage_end` 事件;点历史消息则去查 `GET /api/traces/{id}`,于是能**展开看当时
+  实际发出去的 prompt 和 finish_reason** —— 演示时最有说服力的一屏
+- **`useApi` 的 `refetchInterval` 做成了"可以是函数"**:轮询该不该继续得看刚拿回来的
+  数据(任务到终态就停),写成常量做不到 —— 常量要在调用 useApi 之前算出来,那时数据还没回来
+- **假任务顺带产出 20 条 `staging_items`**(计划只说"4 步各睡 2 秒"):
+  Step 8 的审核台因此不需要另写灌数据脚本,`fail_at` 参数还能让指定步骤**只失败一次**
+  (重跑就过)—— 不然"重试"按钮永远重试失败,演示不出恢复路径
+- 顺手加了 `Stop` 按钮:abort fetch → 后端按 `status=interrupted` 落库(Step 5 已实现的
+  中断路径,这一步终于有界面能演示它了)
+- 页面比计划多一个 **Ingestion 页**(`/jobs`):进度条组件总得有个地方住,
+  S1–S3 的摄取入口也长在这里
+- 静态预览(`make demo`)一起升级了:预览里的对话是**真的在流** ——
+  `demo/main.tsx` 返回一个按真协议推帧的 ReadableStream,由产线 `src/api/sse.ts` 解析
+
+**四个踩过的坑(都已修)**:
+
+1. **渲染期间不能写 ref**:`eslint-plugin-react-hooks` 的 `react-hooks/refs` 直接报 error。
+   "把回调塞进 ref 保持最新"这个常见写法必须放到 effect 里做
+2. **`done` 事件里的成本是独立字段,但落库时塞进了 `usage`**。不合并的话"刚答完的消息"
+   没有成本、"从库里读回来的历史消息"有 —— 同一个组件两种形状。`onDone` 里合并解决
+3. **trace 行的 key 不能只用 `seq + stage`**:阶段名和 seq 在不同消息里会重复,
+   切消息时 React 复用了组件,展开状态串到另一条消息上
+4. **`/api/jobs/types` 必须声明在 `/api/jobs/{job_id}` 之前**,否则 `types` 被当成
+   uuid 参数吃掉,报 422
+
+**自测证据**(交互路径用 CDP 真点按钮验,不是"看着像对"):
+
+- **对话页**:输入 → 点 Send → 流式期间 Send 变 Stop、气泡内 `thinking…`、轨迹面板显示
+  `generate…` 脉冲 → 流结束后气泡有正文 + `3.56 s / 94 + 12 tok`、轨迹面板 `generate`
+  一行 + `1 stage / 3.56 s` 汇总、会话列表出现新会话(标题=首问)
+- **历史消息**:点会话 → 消息加载 → 点轨迹行展开 → `INPUT` 里能看到完整 prompt
+  (含 system_prompt)、`OUTPUT` 里有 `finish_reason`
+- **中断**:发一个长问题,4 秒后点 Stop → 气泡标 `interrupted`;
+  DB 里该消息 `status=interrupted`、`latency_ms=3996`、`total_tokens=0`,trace 有一条
+- **假任务**:提交 → `running 25/50/75%` 逐步推进 → `review 100%`、四步日志齐全、
+  `stats={"staged":20}`;DB 里 `staging_items` 20 条、置信度 0.62–0.95(审核台能筛)
+- **失败与重跑**:`fail_at=extract` → 50% 停在 extract、错误信息透到界面、
+  出现"Retry from 'extract'"按钮 → 点它 → 只从 extract 起重跑(fetch/parse 不重做)→ review 100%
+- **僵尸任务(验收项)**:另起一个 8001 端口的后端,提交一个每步 30 秒的任务,
+  3 秒后 `kill -9`。DB 里当时仍是 `running`;重启后启动日志
+  `jobs_reaped count=1`,任务变 `failed` + `error.code=job_abandoned`,且**可以重跑**。
+  另外把心跳手动拨回 5 分钟前,查询接口把它判成 `job_stalled`(第二道防线)
+- **回归**:`make test` 24 passed(新增 `test_jobs.py` 8 个用例);`make lint` 全绿
+  (ruff + eslint 0 warning + tsc);`make smoke-sse` 通过;`npm run build` 成功;
+  Step 3 的只读接口仍全 200;`alembic check` 无新增变更;`make demo` 产物 715KB、
+  预览里聊天/任务两页都实测可交互
 
 ---
 
@@ -468,7 +522,9 @@ event: done          data: {"message_id": "...", "citations": []}
 - 键盘流:`j/k` 上下条,`a` 通过,`x` 驳回(审核几十条时效率差 5 倍,也是演示亮点);
 - 底部"发布"按钮 → `POST /api/jobs/{id}/publish`(S0 后端只做通用骨架:把 approved 条目标记 published + 写 `publish_records`;各类型的"写正式表 + 建索引"由 S1–S3 各自实现的 publisher 完成)。
 
-**验证方式**:用脚本往 `staging_items` 灌 20 条假 QA payload,拿一个最简 `itemRenderer` 渲染,走通"筛选 → 修改 → 批量通过 → 发布"全流程。
+**验证方式**:素材不用另写脚本 —— Step 7 的假任务(`/jobs` 页点一下)就会产出 20 条
+`qa_pair` 的 `staging_items`(置信度铺开在 0.62–0.95,筛选/排序有东西可筛)。
+拿一个最简 `itemRenderer` 渲染,走通"筛选 → 修改 → 批量通过 → 发布"全流程。
 
 **产出**:审核台组件 + staging 通用 API。
 

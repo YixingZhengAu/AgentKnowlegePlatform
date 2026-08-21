@@ -23,4 +23,5 @@ effect 里 set,卸载 return 里清空。**没有内容时整个 `<aside>` 不�
 ## 改导航要动两处
 
 `NAV`(侧栏条目,含 lucide 图标)和 `TITLES`(路径前缀 → 顶栏标题)。
+当前五项:Chat / Knowledge Bases / Agents / Ingestion / Settings。
 隐藏路由(如 `/styleguide`)只进 `TITLES` 不进 `NAV`。

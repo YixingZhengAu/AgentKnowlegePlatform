@@ -74,6 +74,52 @@ S0 链路:`加载 agent → 存用户消息(先 commit)→ [stage: generate] →
 会话:不传 `conversation_id` 就新开一轮(标题取首问前 60 字);历史带最近
 `HISTORY_LIMIT=10` 条,**只带 `status=completed` 的消息**(失败/中断的不进 prompt)。
 
+## Job 框架(jobs.py + jobs_demo.py)
+
+三类知识的摄取业务完全不同,但"分步执行 / 报进度 / 分步日志 / 失败可从该步重跑 /
+前端一个进度条通吃"这套骨架完全一样。所以框架在这里,S1–S3 只贡献子类。
+
+子类要写的只有两样:
+
+```python
+@register_job
+class QaExtractJob(JobRunner):
+    job_type = "qa_extract"
+    steps = [JobStepDef("parse", "Parse source"), JobStepDef("extract", "Extract QA pairs")]
+
+    async def prepare(self, ctx): ...           # 重跑也会执行,必须幂等
+    async def step_parse(self, ctx): ...        # 返回值 = 这一步的日志 message
+    async def step_extract(self, ctx): ...
+```
+
+| 函数 | 职责 |
+| --- | --- |
+| `submit_job()` | 建 `ingest_jobs` 行(status=queued,**steps 骨架现在就写进去**)并返回 |
+| `execute_job(job_id, from_step=None)` | 逐步执行;**永不抛异常**,失败写进 `error` |
+| `retry_job(job_id)` | 校验状态(只有 failed 能重跑)+ 定位起点步骤,返回给调用方派发 |
+| `reap_abandoned_jobs()` | 启动时收尸:`running`/`publishing` 一律判 failed |
+| `fail_if_stalled(job, session)` | 惰性判定:心跳停超 `JOB_HEARTBEAT_TIMEOUT_SEC` 就判 failed |
+
+**四个刻意的设计决定**:
+
+1. **步骤是数据不是代码流程**(`steps` 声明式)。所以任务还没开始跑,前端就能画出
+   全部步骤 —— 用户看到"四步里的第二步",而不是"日志冒了两行"。
+2. **每次写库都自己开一个短 session**。Job 可能跑几分钟,不能借请求作用域的 session
+   (请求早就结束了)。JSONB 里的 list **不能就地 append**(SQLAlchemy 检测不到),
+   `_append_log()` 整体重新赋值。
+3. **僵尸任务两道防线**。执行器是进程内 BackgroundTasks(刻意不上 Celery),
+   进程一重启内存里的任务就没了 —— 所以启动这一刻还标着 running 的**一定**是僵尸,
+   `reap_abandoned_jobs()` 可以武断地全判失败;而"进程活着但协程死了"这种情况
+   抓不到,靠心跳超时在查询接口里惰性判定(`fail_if_stalled`)。
+   没有这两道,kill 一次后端就会留下一个永远 99% 的任务。
+4. **失败步骤名留在 `current_step` 上**,重跑接口就是从它开始的;历史日志不清空,
+   只追加一行 `status=info` 的 Retry 分隔 —— "重跑过"这件事本身是审计信息。
+
+`DemoSleepJob`(jobs_demo.py)是验证框架用的假任务:四步、每步睡 `step_seconds`、
+最后写 `items` 条 `staging_items`(Step 8 审核台的素材)。`fail_at` 参数让指定步骤
+**只失败一次** —— 重跑时框架发现这步已经有一条 error 日志就放它过去,
+否则"重试"按钮永远重试失败,演示不出恢复路径。
+
 ## 待加(后续 Step)
 
-- Step 7:`jobs.py`(`submit_job()` + 执行器基类 + 僵尸任务清理)
+- Step 8:staging 审核与发布的通用骨架(publisher 由 S1–S3 各自实现)
