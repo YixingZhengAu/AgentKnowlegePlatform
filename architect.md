@@ -52,6 +52,10 @@
 | 改对话页行为(会话、气泡、中断) | `web/src/api/useChat.ts` + `web/src/components/{ChatMessages,Composer}.tsx` |
 | 改执行轨迹面板 | `web/src/components/TracePanel.tsx` |
 | 改任务进度条 | `web/src/components/JobProgress.tsx`(只依赖 Job 框架的四个字段) |
+| 改审核台的流程(筛选/批量/键盘/发布) | `web/src/components/StagingReview.tsx`(泛型,不认识 payload) |
+| 加一类知识的审核界面 | `web/src/components/staging/registry.ts` 加一行 + 写一对渲染器 |
+| 改审核/发布的后端规则 | `server/app/core/staging.py`(状态推导、浅合并、发布状态机) |
+| 加一类知识的 publisher(写正式表) | `@register_publisher("qa_pair")`,见 `server/app/core/architect.md` |
 | 改静态预览的假数据 | `web/demo/fixtures.ts`,然后 `make demo` |
 
 ## 4. 数据流(S0 骨架,后续阶段往里插 stage)
@@ -70,9 +74,13 @@
 知识入库(三类共用一条线)
   上传 ingest_sources → submit_job (Step 7) → BackgroundTasks 派发 execute_job()
     → ingest_jobs(steps 声明式 / progress / step_logs / error,心跳防僵尸)
-    → staging_items(待审核) → 人工审核(Step 8) → publish → 各域 publisher 写正式表 + 建索引
+    → staging_items(待审核)
+    → 人工审核 (Step 8):PATCH /api/staging/{id} 单条 / POST /api/staging/bulk 批量
+    → POST /api/jobs/{id}/publish:approved+modified 标记 published + 写 publish_records
+      └─ 各域 publisher(`register_publisher`)写正式表 + 建索引 —— S1–S3 插进来,S0 是空的
   前端:POST /api/jobs 提交,轮询 GET /api/jobs/{id},<JobProgress> 渲染;
-        失败 → POST /api/jobs/{id}/retry 从失败的那一步重跑
+        失败 → POST /api/jobs/{id}/retry 从失败的那一步重跑;
+        跑完 → /jobs/{id}/review 里 <StagingReview> 审 + 发布
 ```
 
 ## 5. 两个数据库(别搞混)
@@ -84,13 +92,15 @@
 
 ## 6. 当前进度
 
-S0 Step 1–7 已完成:仓库骨架 / 30 张表 / 后端骨架 / Provider 抽象层 / Trace 框架 + 问答链路 /
-前端壳 / 对话页 + 通用 Job 框架。**S0 的 DoD 主体已达成**:页面发一句话 → 流式回复 →
-右侧看到 trace(阶段/耗时/token/成本)→ DB 里查得到。
+**S0 已完成(Step 1–9,tag `s0-done`)**:仓库骨架 / 30 张表 / 后端骨架 / Provider 抽象层 /
+Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型审核台 + 发布骨架 / 收尾验收。
+**S0 的 DoD 已达成**:页面发一句话 → 流式回复 → 右侧看到 trace(阶段/耗时/token/成本)
+→ DB 里查得到;假任务提交 → 进度条 → 20 条待审 → 筛选/改/批量/发布 → 审计记录。
 
 `make db && make migrate && make seed && make dev` 之后:
 
 - 页面 http://localhost:5173 —— `/chat` 能真聊天并看执行轨迹,`/jobs` 能提交假任务看进度条,
+  `/jobs/{id}/review` 是审核台(筛选/改/批量/键盘流/发布),
   `/kbs` `/agents` 是只读列表,`/styleguide` 是 UI 验收对照页
 - curl 也能直接流式聊天并查 trace:
 
@@ -102,5 +112,6 @@ curl localhost:8000/api/traces/<message_id>
 
 契约链路已生效:改后端字段名 → `make types` → 前端 `tsc` 报错(实测见 `web/architect.md`)。
 
-下一步 Step 8:通用审核台组件 `<StagingReview>`(素材已经有了 —— 跑一次假任务就有 20 条
-`staging_items`)。逐步进度见 `documents/S0-PLAN.md` §1。
+**下一阶段 S1(精准 QA)要写的全部东西**:1 个 `JobRunner` 子类 + 2 个前端渲染器
+(注册表加一行)+ 1 个检索 stage + 1 个 `register_publisher` + 调 prompt。
+其余骨架 S0 已交付。逐步进度与自测证据见 `documents/S0-PLAN.md`。

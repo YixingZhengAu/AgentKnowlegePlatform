@@ -4,8 +4,8 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `main.tsx` | 预览版入口:HashRouter + `fetch` 换成读 fixtures + **假 SSE 流** + 预览角标 |
-| `fixtures.ts` | 固定响应(只读接口抓的真返回;会话/消息/trace/jobs 是手写演示数据) |
+| `main.tsx` | 预览版入口:HashRouter + `fetch` 换成读 fixtures + **假 SSE 流** + **审核台内存库(可写)** + 预览角标 |
+| `fixtures.ts` | 固定响应(只读接口抓的真返回;会话/消息/trace/jobs/staging 是手写演示数据) |
 | `index.html` | 预览版 HTML 入口 |
 | `inline.mjs` | 把构建产物拼成单文件 `dist-demo/preview.html` |
 

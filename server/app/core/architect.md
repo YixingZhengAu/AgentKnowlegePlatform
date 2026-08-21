@@ -115,6 +115,35 @@ class QaExtractJob(JobRunner):
 4. **失败步骤名留在 `current_step` 上**,重跑接口就是从它开始的;历史日志不清空,
    只追加一行 `status=info` 的 Retry 分隔 —— "重跑过"这件事本身是审计信息。
 
+## 审核与发布骨架(staging.py)
+
+Job 把加工产物写进 `staging_items`,人过一眼,再发布进正式表。三类知识的**内容**不同,
+但"通过/驳回/改一改 → 点发布 → 留一条审计"这套**流程**一样,所以流程在这里写一遍。
+
+| 函数 | 职责 |
+| --- | --- |
+| `merge_payload(old, patch)` | payload 的 PATCH 语义:**顶层键浅合并**,list 整份替换 |
+| `derive_review_status(...)` | 状态推导:显式传的赢 → 只改了内容 = `modified` → 否则保持 |
+| `assert_reviewable(session, job_id)` | 审核动作的闸:只有 `review` 的 job 能审 |
+| `patch_item(...)` | 审一条:改内容 / 改状态 / 加备注 + 写 `reviewed_by/at` |
+| `bulk_review(...)` | 批量通过驳回;已发布的条目静默跳过,不打断整批 |
+| `summarize(session, job_id)` | 按 review_status 计数(审核台顶部的筛选标签渲染它) |
+| `publish_job(session, job_id)` | `review → publishing → published`,写 `publish_records` |
+| `register_publisher(item_type)` | **扩展点**:各类型"写正式表 + 建索引"在这里插进来 |
+
+**三个刻意的设计决定**:
+
+1. **S0 只做通用部分**。发布 = 标记 `published` + 写审计;`published_ref` 是 null
+   不是漏了 —— 这一层不该知道 `exact_qa_items` 长什么样。S1 注册一个 publisher 就补上了。
+2. **`modified` 也发布**。"人工改过再通过"如果不算通过,改完的条目永远发不出去。
+3. **审核有前置状态闸**。发布之后再"通过"一条,那条永远发不出去(job 已是 published,
+   发布接口不再受理)—— 所以 `patch_item` / `bulk_review` 都先过 `assert_reviewable`,
+   界面上的只读只是提示,这里才是防线。
+
+**状态推导为什么值得单独一个函数**:前端也需要知道"改了内容会变成 modified",
+但这个规则只能有一处出处。做成纯函数后它可以离线测(`tests/test_staging.py`),
+前端则完全不用重复这套逻辑 —— 它只管把改动发上来,状态由后端定。
+
 `DemoSleepJob`(jobs_demo.py)是验证框架用的假任务:四步、每步睡 `step_seconds`、
 最后写 `items` 条 `staging_items`(Step 8 审核台的素材)。`fail_at` 参数让指定步骤
 **只失败一次** —— 重跑时框架发现这步已经有一条 error 日志就放它过去,

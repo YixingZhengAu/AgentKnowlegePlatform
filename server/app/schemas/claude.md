@@ -10,5 +10,6 @@
 | `conversation.py` | `ConversationOut` / `MessageOut` |
 | `chat.py` | `ChatRequest` / `ChatResponse` / `TraceSpanOut` / `TraceOut` |
 | `job.py` | `JobSubmitRequest` / `JobOut`(jsonb 字段保持宽松,结构由 Job 框架约定) |
+| `staging.py` | `StagingItemOut` / `StagingItemPatch` / `StagingBulkRequest` / `StagingSummary` / `PublishResult` |
 
 详见 `architect.md`。

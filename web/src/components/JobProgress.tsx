@@ -8,8 +8,9 @@
  * 轮询靠 `useApi(..., { refetchInterval })`:到终态就把间隔传 null,接口彻底安静。
  */
 
-import { AlertTriangle, Check, Loader2, RotateCcw } from 'lucide-react'
+import { AlertTriangle, Check, ClipboardCheck, Loader2, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { apiPost } from '@/api/client'
 import { useApi } from '@/api/hooks'
@@ -138,10 +139,19 @@ export function JobProgress({ jobId }: { jobId: string }) {
         </div>
       )}
 
-      {job.status === 'review' && (
-        <div className="text-muted-foreground border-t px-5 py-4 text-[12px]">
-          {(job.stats?.staged as number) ?? 0} items are waiting for review. The review workspace
-          arrives next.
+      {(job.status === 'review' || job.status === 'published') && (
+        <div className="flex flex-col items-start gap-2 border-t px-5 py-4">
+          <span className="text-muted-foreground text-[12px]">
+            {job.status === 'published'
+              ? `${(job.stats?.published as number) ?? 0} items published.`
+              : `${(job.stats?.staged as number) ?? 0} items are waiting for review.`}
+          </span>
+          <Link to={`/jobs/${jobId}/review`}>
+            <Button variant="secondary" size="sm">
+              <ClipboardCheck />
+              {job.status === 'published' ? 'Open review record' : 'Review items'}
+            </Button>
+          </Link>
         </div>
       )}
     </div>

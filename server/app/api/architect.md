@@ -73,6 +73,29 @@ conversation_id / message_id,否则没法把这条消息挂到正确的会话上
 `POST /api/jobs` 会先检查 kb 是否存在 —— 不拦的话会撞外键、报成 `db_error 503`,
 把"知识库 id 写错了"这个真实原因盖住。
 
+## 待审内容与发布接口(staging.py + jobs.py)
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/staging?job_id=&review_status=&item_type=&sort=&limit=` | 一批待审内容;`sort` 默认 `confidence_asc`(最不靠谱的先看) |
+| GET | `/api/staging/summary?job_id=` | 按 review_status 计数 + 已发布数(审核台筛选标签用) |
+| PATCH | `/api/staging/{id}` | 审一条:`{payload?, review_status?, review_note?}`;只传 payload = `modified` |
+| POST | `/api/staging/bulk` | 批量:`{ids, review_status}` → `{updated}` |
+| POST | `/api/jobs/{id}/publish` | 发布:approved/modified 标记 published + 写 `publish_records` |
+
+**为什么按 `job_id` 查而不是 `kb_id`**:一次审核就是"审这一批加工产物"。
+按 KB 查会把历史所有批次混在一起,审到一半分不清哪条是这次抽出来的。
+
+**发布挂在 jobs 下**:发布是**一个 job 的**动作(整批一起发、写一条审计),
+不是某条 item 的动作,路由位置要说明这件事。
+
+三个会遇到的 409(都在后端拦,不靠前端禁用按钮):
+`job_not_publishable`(重复发布)/ `nothing_to_publish`(一条都没通过)/
+`job_not_reviewable`(发布之后又来审)。
+
+**校验正则必须锚定**:`pattern="|".join(...)` 不加 `^$` 的话 `xapprovedy` 也算合法,
+错值一路走到 DB 的 CHECK 才被拦(报成 500,而不是 422)。
+
 ## 待加(后续 Step)
 
-- Step 8:staging 审核与发布(`PATCH /api/staging/{id}`、`POST /api/jobs/{id}/publish`)
+- S1 起:`POST /api/ingest/sources`(上传原料)、各类型的 publisher 注册

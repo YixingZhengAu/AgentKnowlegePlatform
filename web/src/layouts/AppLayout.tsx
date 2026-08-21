@@ -33,6 +33,8 @@ const TITLES: { prefix: string; title: string }[] = [
   { prefix: '/chat', title: 'Chat' },
   { prefix: '/kbs', title: 'Knowledge Bases' },
   { prefix: '/agents', title: 'Agents' },
+  // 更具体的前缀必须排在 '/jobs' 前面:TITLES 用 find,先匹配到的赢
+  { prefix: '/jobs/', title: 'Review Queue' },
   { prefix: '/jobs', title: 'Ingestion Jobs' },
   { prefix: '/settings', title: 'Settings' },
   { prefix: '/styleguide', title: 'Style Guide' },

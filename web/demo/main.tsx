@@ -16,7 +16,7 @@ import { HashRouter } from 'react-router-dom'
 
 import App from '@/App'
 import '@/index.css'
-import { FIXTURES } from './fixtures.ts'
+import { DEMO_JOB_ID, FIXTURES, STAGING_ITEMS } from './fixtures.ts'
 
 const LATENCY_MS = 220 // 留一点延迟,骨架屏才看得见(真环境本地约 5–30ms)
 
@@ -79,6 +79,86 @@ function cannedStream(): Response {
   })
 }
 
+/** 审核台的内存库:预览里 PATCH / 批量 / 发布真的改数据,所以筛选计数、发布按钮都跟着动。
+ *  只有这一块需要"可写",因为审核这件事的全部意义就是状态会变。 */
+function stagingRoutes(path: string, method: string, init?: RequestInit): Response | null {
+  const url = new URL(path, 'http://x')
+  const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {}
+  const stamp = () => new Date().toISOString()
+
+  if (method === 'GET' && url.pathname === '/api/staging') {
+    const status = url.searchParams.get('review_status')
+    const sort = url.searchParams.get('sort') ?? 'confidence_asc'
+    let items = STAGING_ITEMS.filter((i) => !status || i.review_status === status)
+    if (sort === 'confidence_asc') items = [...items].sort((a, b) => a.confidence - b.confidence)
+    if (sort === 'confidence_desc') items = [...items].sort((a, b) => b.confidence - a.confidence)
+    const limit = Number(url.searchParams.get('limit') ?? 200)
+    return json({ items: items.slice(0, limit), total: Math.min(items.length, limit) })
+  }
+
+  if (method === 'GET' && url.pathname === '/api/staging/summary') {
+    const count = (s: string) => STAGING_ITEMS.filter((i) => i.review_status === s).length
+    return json({
+      total: STAGING_ITEMS.length,
+      pending: count('pending'),
+      approved: count('approved'),
+      modified: count('modified'),
+      rejected: count('rejected'),
+      published: STAGING_ITEMS.filter((i) => i.published).length,
+    })
+  }
+
+  if (method === 'PATCH' && url.pathname.startsWith('/api/staging/')) {
+    const item = STAGING_ITEMS.find((i) => i.id === url.pathname.split('/').pop())
+    if (!item) return null
+    if (body.payload) item.payload = { ...item.payload, ...(body.payload as object) }
+    // 状态推导与后端一致(core/staging.py::derive_review_status):改了内容没表态 = modified
+    item.review_status =
+      (body.review_status as string) ?? (body.payload ? 'modified' : item.review_status)
+    item.reviewed_at = stamp()
+    return json(item)
+  }
+
+  if (method === 'POST' && url.pathname === '/api/staging/bulk') {
+    const ids = new Set(body.ids as string[])
+    let updated = 0
+    for (const item of STAGING_ITEMS) {
+      if (!ids.has(item.id) || item.published) continue
+      item.review_status = body.review_status as string
+      item.reviewed_at = stamp()
+      updated++
+    }
+    return json({ updated })
+  }
+
+  if (method === 'POST' && /^\/api\/jobs\/[^/]+\/publish$/.test(url.pathname)) {
+    const publishable = STAGING_ITEMS.filter(
+      (i) => ['approved', 'modified'].includes(i.review_status) && !i.published,
+    )
+    if (!publishable.length) {
+      return new Response(
+        JSON.stringify({
+          error: { code: 'nothing_to_publish', message: 'Approve at least one item first.' },
+        }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } },
+      )
+    }
+    for (const i of publishable) i.published = true
+    const job = FIXTURES[`/api/jobs/${DEMO_JOB_ID}`] as Record<string, unknown>
+    job.status = 'published'
+    job.stats = { staged: STAGING_ITEMS.length, published: publishable.length }
+    return json({
+      record_id: 'f3000000-0001-4a10-9f01-ffff00000001',
+      job_id: DEMO_JOB_ID,
+      job_status: 'published',
+      published: publishable.length,
+      item_counts: { published: publishable.length },
+      created_at: stamp(),
+    })
+  }
+  return null
+}
+
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = typeof input === 'string' ? input : input.toString()
   const path = url.replace(/^https?:\/\/[^/]+/, '')
@@ -86,6 +166,8 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   await new Promise((r) => setTimeout(r, LATENCY_MS))
 
   if (CHAT_PATH.test(path)) return cannedStream()
+  const staged = stagingRoutes(path, method, init)
+  if (staged) return staged
   // 写操作在预览里没有后端可写:提交任务回放那条跑完的任务,删除会话直接 204
   if (method === 'POST' && path === '/api/jobs') return json(FIXTURES[DEMO_JOB])
   if (method === 'POST' && path.endsWith('/retry')) return json(FIXTURES[DEMO_JOB])

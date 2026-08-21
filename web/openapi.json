@@ -610,6 +610,285 @@
           }
         }
       }
+    },
+    "/api/jobs/{job_id}/publish": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Publish",
+        "description": "发布审核结果:approved/modified 的条目标记 published + 写一条 publish_records。\n\nS0 只做这层通用骨架 —— \"写进正式表 + 建索引\"由各类型的 publisher 在 S1–S3 插进来\n(`core/staging.py::register_publisher`),所以现在 `published_ref` 是 null。\n发布是 job 级动作(不是 item 级),所以路由挂在 jobs 下。",
+        "operationId": "publish_api_jobs__job_id__publish_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staging": {
+      "get": {
+        "tags": [
+          "staging"
+        ],
+        "summary": "List Staging Items",
+        "operationId": "list_staging_items_api_staging_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Review Status"
+            }
+          },
+          {
+            "name": "item_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Item Type"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(confidence_asc|confidence_desc|created_asc|created_desc)$",
+              "default": "confidence_asc",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_StagingItemOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staging/summary": {
+      "get": {
+        "tags": [
+          "staging"
+        ],
+        "summary": "Staging Summary",
+        "operationId": "staging_summary_api_staging_summary_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StagingSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staging/{item_id}": {
+      "patch": {
+        "tags": [
+          "staging"
+        ],
+        "summary": "Patch Staging Item",
+        "operationId": "patch_staging_item_api_staging__item_id__patch",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StagingItemPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StagingItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staging/bulk": {
+      "post": {
+        "tags": [
+          "staging"
+        ],
+        "summary": "Bulk Review Items",
+        "operationId": "bulk_review_items_api_staging_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StagingBulkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StagingBulkResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1376,6 +1655,27 @@
         ],
         "title": "ListResponse[MessageOut]"
       },
+      "ListResponse_StagingItemOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StagingItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[StagingItemOut]"
+      },
       "ListResponse_TraceOut_": {
         "properties": {
           "items": {
@@ -1475,6 +1775,304 @@
           "created_at"
         ],
         "title": "MessageOut"
+      },
+      "PublishResult": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Record Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "job_status": {
+            "type": "string",
+            "title": "Job Status"
+          },
+          "published": {
+            "type": "integer",
+            "title": "Published"
+          },
+          "item_counts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Item Counts"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "record_id",
+          "job_id",
+          "job_status",
+          "published",
+          "item_counts",
+          "created_at"
+        ],
+        "title": "PublishResult",
+        "description": "发布结果 = 一条审计记录 + 发布后的 job 状态。"
+      },
+      "StagingBulkRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Ids"
+          },
+          "review_status": {
+            "type": "string",
+            "pattern": "^(pending|approved|rejected|modified)$",
+            "title": "Review Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids",
+          "review_status"
+        ],
+        "title": "StagingBulkRequest",
+        "description": "批量通过/驳回:审核几十条时这是主要动作,不是附属功能。"
+      },
+      "StagingBulkResult": {
+        "properties": {
+          "updated": {
+            "type": "integer",
+            "title": "Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated"
+        ],
+        "title": "StagingBulkResult"
+      },
+      "StagingItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "item_type": {
+            "type": "string",
+            "title": "Item Type"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "origin_ref": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Ref"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "review_status": {
+            "type": "string",
+            "title": "Review Status"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "published": {
+            "type": "boolean",
+            "title": "Published"
+          },
+          "published_ref": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Ref"
+          },
+          "conflict_with": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conflict With"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "kb_id",
+          "item_type",
+          "payload",
+          "origin_ref",
+          "confidence",
+          "review_status",
+          "review_note",
+          "reviewed_at",
+          "published",
+          "published_ref",
+          "conflict_with",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "StagingItemOut"
+      },
+      "StagingItemPatch": {
+        "properties": {
+          "payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(pending|approved|rejected|modified)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Status"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          }
+        },
+        "type": "object",
+        "title": "StagingItemPatch",
+        "description": "审一条。三个字段都可选:只改状态、只改内容、只加备注都是合法请求。\n\n`payload` 是**顶层键浅合并**(见 core/staging.py::merge_payload);\n只传 payload 不传状态时,状态自动变 `modified`。"
+      },
+      "StagingSummary": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending"
+          },
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected"
+          },
+          "modified": {
+            "type": "integer",
+            "title": "Modified"
+          },
+          "published": {
+            "type": "integer",
+            "title": "Published"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "pending",
+          "approved",
+          "rejected",
+          "modified",
+          "published"
+        ],
+        "title": "StagingSummary",
+        "description": "一个 job 下的审核进度。审核台顶部的筛选标签直接渲染它,不在前端数数\n(前端只拿到当前页的条目,数不准)。"
       },
       "TraceOut": {
         "properties": {

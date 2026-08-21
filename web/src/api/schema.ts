@@ -21,6 +21,11 @@ export type Trace = S['TraceOut']
 export type Health = S['HealthResponse']
 export type Job = S['JobOut']
 export type JobSubmit = S['JobSubmitRequest']
+export type StagingItem = S['StagingItemOut']
+export type StagingPatch = S['StagingItemPatch']
+export type StagingBulk = S['StagingBulkRequest']
+export type StagingSummary = S['StagingSummary']
+export type PublishResult = S['PublishResult']
 
 export type KbList = S['ListResponse_KnowledgeBaseOut_']
 export type AgentList = S['ListResponse_AgentOut_']
@@ -28,6 +33,7 @@ export type ConversationList = S['ListResponse_ConversationOut_']
 export type MessageList = S['ListResponse_MessageOut_']
 export type TraceList = S['ListResponse_TraceOut_']
 export type JobList = S['ListResponse_JobOut_']
+export type StagingList = S['ListResponse_StagingItemOut_']
 
 /** 三类知识的固定识别色(色值在 index.css,这里只做 type -> token 的映射)。 */
 // 取值与 server/app/models/knowledge.py 的 KB_TYPES 一致(exact_qa / document / text2sql)
@@ -68,3 +74,20 @@ export type JobStepLog = {
 }
 
 export type JobStepDef = { name: string; title: string }
+
+/** 审核状态(出处 server/app/models/ingest.py REVIEW_STATUSES)。
+ *  顺序就是审核台筛选标签的顺序:先看没审的。 */
+export const REVIEW_STATUSES = ['pending', 'approved', 'modified', 'rejected'] as const
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number]
+
+/** 会被发布的状态(与 core/staging.py::PUBLISHABLE_STATUSES 一致)。 */
+export const PUBLISHABLE_STATUSES: readonly string[] = ['approved', 'modified']
+
+/** 置信度三档(UI-STYLE §3:≥0.9 绿 / 0.75–0.9 黄 / <0.75 红)。
+ *  阈值写在这里一处 —— 徽标颜色和"先审哪些"的说法必须用同一套线。 */
+export function confidenceTone(v?: number | null): 'success' | 'accent' | 'danger' | 'neutral' {
+  if (v == null) return 'neutral'
+  if (v >= 0.9) return 'success'
+  if (v >= 0.75) return 'accent'
+  return 'danger'
+}

@@ -32,6 +32,22 @@ S0 只有 `demo_sleep`,但这页的形状就是 S1–S3 摄取的形状:
 `Inject a failure at` 下拉框是刻意留的:演示"失败会怎样"不用断网、不用改代码。
 黄色 CTA 一屏只有一个(UI-STYLE §4),就是 Run demo job。
 
+## ReviewPage:一页七行
+
+```tsx
+const renderers = renderersFor(probe.data?.items[0]?.item_type)
+<StagingReview jobId={jobId} jobStatus={job.data.status}
+  itemRenderer={renderers.card} editorRenderer={renderers.editor}
+  originPanel={renderers.origin} onPublished={job.reload} />
+```
+
+页面自己几乎不做事:查一下这批待审内容是什么类型(只取一条:渲染器按类型选,不按条目选),
+从注册表取渲染器,交给审核台。右侧面板挂 `<JobProgress>` —— 审核时还能看见"这批是怎么来的"。
+S1/S2/S3 的审核入口都会长成这七行。
+
+入口在两处:`/jobs` 表格里 `review`/`published` 状态的行有 Review 链接,
+`<JobProgress>` 跑完后也有一个按钮。
+
 ## StyleGuidePage:为什么色值是读回来的
 
 它显示的 hex 用 `getComputedStyle(document.documentElement).getPropertyValue('--brand-navy')`

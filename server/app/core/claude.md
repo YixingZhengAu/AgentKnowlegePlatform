@@ -11,5 +11,6 @@
 | `chat.py` | `chat_events()`(唯一编排)+ `run_chat()`(非流式入口,D4) |
 | `jobs.py` | 通用 Job 框架:`submit_job` / `execute_job` / `retry_job` / 僵尸收尸 |
 | `jobs_demo.py` | `DemoSleepJob`:验证框架用的假任务(可调慢、可注入失败、产出待审条目) |
+| `staging.py` | 审核与发布骨架:payload 合并/状态推导、批量审、`publish_job()` + publisher 注册表 |
 
 详见 `architect.md`。

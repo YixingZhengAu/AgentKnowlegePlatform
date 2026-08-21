@@ -6,6 +6,7 @@ import { AgentDetailPage } from '@/pages/AgentDetailPage'
 import { AgentListPage } from '@/pages/AgentListPage'
 import { ChatPage } from '@/pages/ChatPage'
 import { JobsPage } from '@/pages/JobsPage'
+import { ReviewPage } from '@/pages/ReviewPage'
 import { KbListPage } from '@/pages/KbListPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { StyleGuidePage } from '@/pages/StyleGuidePage'
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/agents" element={<AgentListPage />} />
           <Route path="/agents/:agentId" element={<AgentDetailPage />} />
           <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/jobs/:jobId/review" element={<ReviewPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           {/* 隐藏路由:UI 验收对照页,不进侧栏 */}
           <Route path="/styleguide" element={<StyleGuidePage />} />

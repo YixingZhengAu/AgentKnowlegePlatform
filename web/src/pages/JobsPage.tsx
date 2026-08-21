@@ -6,8 +6,9 @@
  * `fail_at` 那个下拉框是刻意留的:演示"失败会怎样"不需要断网、不需要改代码。
  */
 
-import { ListChecks, Play } from 'lucide-react'
+import { ClipboardCheck, ListChecks, Play } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { apiPost } from '@/api/client'
 import { useApi } from '@/api/hooks'
@@ -119,8 +120,9 @@ export function JobsPage() {
         <CardHeader>
           <CardTitle>Recent jobs</CardTitle>
           <CardDescription>
-            Click a job to follow its steps on the right. A job that outlives its worker is marked
-            failed on the next start, never left running.
+            Click a job to follow its steps on the right. Jobs that finished extraction open the
+            review workspace. A job that outlives its worker is marked failed on the next start,
+            never left running.
           </CardDescription>
         </CardHeader>
         <DataState
@@ -139,6 +141,7 @@ export function JobsPage() {
                   <TH>Status</TH>
                   <TH>Progress</TH>
                   <TH>Started</TH>
+                  <TH>Review</TH>
                 </TR>
               </THead>
               <tbody>
@@ -170,6 +173,20 @@ export function JobsPage() {
                       <TD className="font-mono text-[12px]">{job.progress}%</TD>
                       <TD className="text-muted-foreground text-[12px]">
                         {fmtDateTime(job.started_at ?? job.created_at)}
+                      </TD>
+                      {/* 只有产出了待审内容的任务才有审核入口(queued/running/failed 没有) */}
+                      <TD onClick={(e) => e.stopPropagation()}>
+                        {job.status === 'review' || job.status === 'published' ? (
+                          <Link
+                            to={`/jobs/${job.id}/review`}
+                            className="text-info flex items-center gap-1 text-[12px] hover:underline"
+                          >
+                            <ClipboardCheck className="size-3.5" />
+                            {job.status === 'published' ? 'View' : 'Review'}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground text-[12px]">—</span>
+                        )}
                       </TD>
                     </TR>
                   )

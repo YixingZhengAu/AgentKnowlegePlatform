@@ -24,6 +24,20 @@
 `src/api/sse.ts`** 解析。所以预览里的打字机效果、阶段事件、轨迹面板走的都是真代码路径,
 只有内容写死(问什么都答同一段)。这也顺便证明了 SSE 客户端不依赖真后端。
 
+## 审核台在预览里是"可写"的
+
+`main.tsx` 的 `stagingRoutes()` 把 `fixtures.ts` 的 `STAGING_ITEMS` 数组当内存库:
+`GET /api/staging`(筛选 + 排序)、`GET /api/staging/summary`(现算计数)、
+`PATCH`、`POST /api/staging/bulk`、`POST /api/jobs/{id}/publish` 全部真的改这个数组。
+
+为什么只有这一块需要可写:**审核这件事的全部意义就是状态会变**。
+如果通过一条之后计数不动、发布按钮不动,预览看起来就是坏的。
+状态推导规则(只改内容 = `modified`)照抄后端 `core/staging.py::derive_review_status`,
+两边不一致的话预览会教出错的直觉。
+
+注意:只改 URL 的 hash **不会重新加载文档**,所以内存库里的改动会留着 ——
+测预览时要硬刷新(`Page.reload`)才回到初始的 20 条 pending。
+
 ## 构建两步
 
 ```

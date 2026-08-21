@@ -12,6 +12,7 @@
 | `conversations.py` | `GET /api/conversations`、`GET .../{id}/messages`、`DELETE .../{id}`(软删) |
 | `chat.py` | `POST /api/agents/{agent_id}/chat`(SSE 流式 / 非流式二合一) |
 | `traces.py` | `GET /api/traces/{message_id}`(一次问答的全部 stage) |
-| `jobs.py` | `GET/POST /api/jobs`、`GET /api/jobs/types`、`GET /api/jobs/{id}`、`POST /api/jobs/{id}/retry` |
+| `jobs.py` | `GET/POST /api/jobs`、`GET /api/jobs/types`、`GET /api/jobs/{id}`、`POST /api/jobs/{id}/retry`、`POST /api/jobs/{id}/publish` |
+| `staging.py` | `GET /api/staging`、`GET /api/staging/summary`、`PATCH /api/staging/{id}`、`POST /api/staging/bulk` |
 
 详见 `architect.md`(含 SSE 事件协议)。

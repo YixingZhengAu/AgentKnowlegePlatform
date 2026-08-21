@@ -38,6 +38,9 @@ make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
 - **Knowledge Bases / Agents** —— seed 的 3 个 KB 与默认 agent(含 system prompt 与 KB 绑定)
 - **Ingestion** —— 提交一个假任务(`demo_sleep`)看进度条走完四步;
   `Inject a failure at` 可以让某一步失败,然后用"从失败步骤重跑"恢复
+- **Review**(任务跑完后点行尾的 Review)—— 20 条待审条目:按置信度排序、按状态筛选、
+  改内容、批量通过驳回、键盘流(`j/k` 走条目 / `a` 通过 / `x` 驳回 / 空格勾选),
+  最后点右上角 **Publish** 发布(写 `publish_records` 审计,发布后审核台变只读)
 - `/styleguide` 是 UI 验收对照页(隐藏路由)
 
 也可以直接用 curl 试问答:
@@ -49,6 +52,9 @@ curl -N -X POST localhost:8000/api/agents/$AGENT/chat \
 # 拿 done 事件里的 message_id 查执行轨迹(阶段/耗时/token/成本)
 curl localhost:8000/api/traces/<message_id>
 ```
+
+不想起后端也能看界面:`make demo` 打出 `web/dist-demo/preview.html` 单文件预览
+(fixture 数据、零外部请求;里面的对话是真在流,审核台真能改状态)。
 
 ## 常用命令
 

@@ -40,7 +40,7 @@
 
 ## 1. 步骤总览
 
-**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4 ✅ / Step 5 ✅ / Step 6 ✅ / Step 7 ✅ / Step 8– 待做
+**进度**(2026-08-21):Step 1–9 全部 ✅ —— **S0 完成**(tag `s0-done`)
 
 ```
 Step 1  仓库与环境骨架        →  git init、目录结构、docker-compose、Makefile
@@ -499,7 +499,7 @@ event: done          data: {"message_id": "...", "citations": []}
 
 ---
 
-### Step 8 · 通用审核台组件(S0 前端核心)
+### Step 8 · 通用审核台组件(S0 前端核心)✅ 已完成
 
 **做什么**
 
@@ -531,6 +531,59 @@ event: done          data: {"message_id": "...", "citations": []}
 **需要你做的**:走一遍这个假数据审核流程,**从"未来每天要审几百条"的运营视角提体验意见**(列表密度、快捷键、批量交互)。这是 S0 唯一需要你认真体验反馈的界面,因为它定型后 S1–S3 都长这样。
 
 **验收**:20 条假数据全流程走通;审核状态刷新页面不丢。
+
+**实际落地(与计划的差异)**:
+
+- **渲染器多了一个"兜底"**:`registry.ts` 里没登记的 `item_type` 落到 JSON 渲染器
+  (直接看/改 payload)。好处很实际:S2 的切片任务写出来、渲染器还没动手时,
+  审核台**已经能用**,不必等前端补齐才能验证后端
+- **审核状态的推导规则放在后端**(`core/staging.py::derive_review_status`):
+  显式传状态就听它的、只改了内容 = `modified`、什么都没传就保持原状。
+  做成纯函数后可离线测,前端完全不用重复这套逻辑 —— 它只管把改动发上来
+- **`payload` 的 PATCH 是顶层键浅合并**:只改 answer 不必回传整份;
+  但 list(相似问/关键词)是整份替换 —— 深合并的话"删掉一个相似问"没法表达
+- **计数走单独的 `GET /api/staging/summary`**,不在前端数:前端只有当前筛选下的条目,数不准
+- **发布是 job 级动作**,所以路由是 `POST /api/jobs/{id}/publish` 而不是挂在 staging 下;
+  `publisher` 注册表(`register_publisher`)是 S1–S3 写正式表的插入点,
+  S0 一个都没注册 —— 所以发布后 `published_ref` 是 null,这是分层不是漏项
+- **审核动作有前置状态闸**(计划没写):只有 `review` 状态的 job 能审。
+  发布之后再"通过"一条,那条永远发不出去(发布接口不再受理),必须在后端拦
+- 页面比计划多一个 **`/jobs/:jobId/review`**;`<JobProgress>` 跑完后也多了一个进审核台的按钮
+- 静态预览(`make demo`)里的审核台**真的能改**:`demo/main.tsx` 把 fixture 数组当内存库,
+  PATCH / 批量 / 发布都写进它 —— 通过一条之后计数与发布按钮真的会动
+
+**四个踩过的坑(都已修)**:
+
+1. **Pydantic 的 `pattern` 必须锚定**。`pattern="|".join(REVIEW_STATUSES)` 不加 `^$`,
+   `xapprovedy` 也算合法,错值一路走到 DB 的 CHECK 才被拦 —— 422 变成 500
+2. **`modified` 必须一起发布**。第一版只发 `approved`,结果"人工改过再通过"的条目
+   永远发不出去(状态是 modified,发布时被过滤掉)
+3. **发布后到 job 状态回来之间有个窗口**。`publish` 成功但 `GET /api/jobs/{id}` 还没返回时,
+   界面仍允许"通过" —— 前端加 `justPublished` 立刻置只读,后端加 `job_not_reviewable` 兜底
+4. **`h-[calc(100vh-…)]` 要把页面标题行算进去**。第一版只减了顶栏与 padding,
+   于是批量操作栏和动作条被挤到视口外(截图里一眼可见,DOM 断言看不出来)
+
+**自测证据**(接口用 curl,交互用 CDP 真点按钮):
+
+- **接口**:PATCH 只传 payload → `review_status=modified` 且其它键原样保留;
+  显式传 `approved` 时听显式的;非法状态 / 非法 sort → `422`;不存在的 item → `404`;
+  批量 → `{"updated":3}`;`GET /summary` 计数与 DB 一致
+- **发布**:`{"published":2,"item_counts":{"pending":17,"approved":1,"modified":1,"rejected":1,"published":2}}`;
+  job 变 `published` 且 `stats={"staged":20,"published":2}`;
+  `publish_records` 一条;`staging_items` 里 2 条 `published=t`
+- **三个 409 都实测到**:重复发布 `job_not_publishable`;一条没通过就发 `nothing_to_publish`;
+  发布之后再审(单条与批量)`job_not_reviewable`
+- **界面全流程**(一次跑完 21 项断言):20 条列表、默认置信度升序(0.62 在最前)、
+  改答案出现 `unsaved` → Save 后变 `modified`、`j/k` 走条目、`a` 通过并自动跳下一条、
+  `x` 驳回、勾三条出现批量栏 → 批量通过返回 `{"updated":3}`、
+  筛选 pending 后剩 17 条、`Publish 3 approved` → toast `Published 3 items` →
+  状态变 published → **Approve 按钮禁用(只读)**
+- **验收项"刷新不丢"**:刷新页面后审核与发布状态仍在(状态在库里,不在前端)
+- **静态预览**:硬刷新回到 20 条 pending → 按 `a` 计数真的变 → 发布成功 → 状态 published;
+  顺手回归对话页仍是真流式(`15 year structural warranty` 逐字渲染出来)
+- **回归**:`make test` 32 passed(新增 `test_staging.py` 8 个用例);`make lint` 全绿;
+  `alembic check` 无新增变更(Step 8 没动表);`make types` 后 openapi 19 条 path;
+  `npm run build` 成功;`make demo` 产物 732KB
 
 ---
 

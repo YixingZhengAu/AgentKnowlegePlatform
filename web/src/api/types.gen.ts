@@ -255,6 +255,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/jobs/{job_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish
+         * @description 发布审核结果:approved/modified 的条目标记 published + 写一条 publish_records。
+         *
+         *     S0 只做这层通用骨架 —— "写进正式表 + 建索引"由各类型的 publisher 在 S1–S3 插进来
+         *     (`core/staging.py::register_publisher`),所以现在 `published_ref` 是 null。
+         *     发布是 job 级动作(不是 item 级),所以路由挂在 jobs 下。
+         */
+        post: operations["publish_api_jobs__job_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/staging": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Staging Items */
+        get: operations["list_staging_items_api_staging_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/staging/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Staging Summary */
+        get: operations["staging_summary_api_staging_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/staging/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Staging Item */
+        patch: operations["patch_staging_item_api_staging__item_id__patch"];
+        trace?: never;
+    };
+    "/api/staging/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Review Items */
+        post: operations["bulk_review_items_api_staging_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -573,6 +665,13 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ListResponse[StagingItemOut] */
+        ListResponse_StagingItemOut_: {
+            /** Items */
+            items: components["schemas"]["StagingItemOut"][];
+            /** Total */
+            total: number;
+        };
         /** ListResponse[TraceOut] */
         ListResponse_TraceOut_: {
             /** Items */
@@ -613,6 +712,140 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * PublishResult
+         * @description 发布结果 = 一条审计记录 + 发布后的 job 状态。
+         */
+        PublishResult: {
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Job Status */
+            job_status: string;
+            /** Published */
+            published: number;
+            /** Item Counts */
+            item_counts: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * StagingBulkRequest
+         * @description 批量通过/驳回:审核几十条时这是主要动作,不是附属功能。
+         */
+        StagingBulkRequest: {
+            /** Ids */
+            ids: string[];
+            /** Review Status */
+            review_status: string;
+        };
+        /** StagingBulkResult */
+        StagingBulkResult: {
+            /** Updated */
+            updated: number;
+        };
+        /** StagingItemOut */
+        StagingItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Item Type */
+            item_type: string;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Origin Ref */
+            origin_ref: {
+                [key: string]: unknown;
+            } | null;
+            /** Confidence */
+            confidence: number | null;
+            /** Review Status */
+            review_status: string;
+            /** Review Note */
+            review_note: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Published */
+            published: boolean;
+            /** Published Ref */
+            published_ref: {
+                [key: string]: unknown;
+            } | null;
+            /** Conflict With */
+            conflict_with: unknown[] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * StagingItemPatch
+         * @description 审一条。三个字段都可选:只改状态、只改内容、只加备注都是合法请求。
+         *
+         *     `payload` 是**顶层键浅合并**(见 core/staging.py::merge_payload);
+         *     只传 payload 不传状态时,状态自动变 `modified`。
+         */
+        StagingItemPatch: {
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            } | null;
+            /** Review Status */
+            review_status?: string | null;
+            /** Review Note */
+            review_note?: string | null;
+        };
+        /**
+         * StagingSummary
+         * @description 一个 job 下的审核进度。审核台顶部的筛选标签直接渲染它,不在前端数数
+         *     (前端只拿到当前页的条目,数不准)。
+         */
+        StagingSummary: {
+            /** Total */
+            total: number;
+            /** Pending */
+            pending: number;
+            /** Approved */
+            approved: number;
+            /** Rejected */
+            rejected: number;
+            /** Modified */
+            modified: number;
+            /** Published */
+            published: number;
         };
         /**
          * TraceOut
@@ -1121,6 +1354,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_api_jobs__job_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_staging_items_api_staging_get: {
+        parameters: {
+            query: {
+                job_id: string;
+                review_status?: string | null;
+                item_type?: string | null;
+                sort?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_StagingItemOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staging_summary_api_staging_summary_get: {
+        parameters: {
+            query: {
+                job_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StagingSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_staging_item_api_staging__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StagingItemPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StagingItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_review_items_api_staging_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StagingBulkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StagingBulkResult"];
                 };
             };
             /** @description Validation Error */

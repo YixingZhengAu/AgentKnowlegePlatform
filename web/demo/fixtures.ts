@@ -311,3 +311,62 @@ Object.assign(FIXTURES, {
 // 单个任务的详情就是列表里的那两条,避免同一份数据写两遍
 const JOBS = (FIXTURES['/api/jobs?limit=20'] as { items: { id: string }[] }).items
 for (const job of JOBS) FIXTURES[`/api/jobs/${job.id}`] = job
+
+// ---- 审核台:一批待审的 QA 条目 ----
+// 预览里的审核**真的能改**:main.tsx 把这个数组当内存库,PATCH / 批量 / 发布都写进它,
+// 于是筛选计数、发布按钮都跟着动。数据是假的,流程是真的。
+const TOPICS: [string, string][] = [
+  ['warranty period', 'The standard warranty covers 5 years on the unit'],
+  ['shipping lead time', 'Standard lead time is 6 weeks from order confirmation'],
+  ['mounting compatibility', 'The rail system fits tile, metal and flat roofs'],
+  ['inverter pairing', 'Any inverter with a 600 V DC input window is supported'],
+  ['cycle life', 'Rated for 6000 cycles at 80% depth of discharge'],
+]
+
+export type DemoStagingItem = {
+  id: string
+  job_id: string
+  kb_id: string
+  item_type: string
+  payload: Record<string, unknown>
+  origin_ref: Record<string, unknown> | null
+  confidence: number
+  review_status: string
+  review_note: string | null
+  reviewed_at: string | null
+  published: boolean
+  published_ref: Record<string, unknown> | null
+  conflict_with: unknown[] | null
+  created_at: string
+  updated_at: string
+}
+
+export const DEMO_JOB_ID = 'e1000000-0001-4a10-9f01-dddd00000001'
+
+/** 与 server/app/core/jobs_demo.py 的 `_fake_item()` 同一套模板与置信度分档。 */
+export const STAGING_ITEMS: DemoStagingItem[] = Array.from({ length: 20 }, (_, i) => {
+  const [topic, answer] = TOPICS[i % TOPICS.length]
+  const model = `HC-${215 + i}`
+  return {
+    id: `f2000000-${String(i + 1).padStart(4, '0')}-4a10-9f01-eeee00000001`,
+    job_id: DEMO_JOB_ID,
+    kb_id: JOB_BASE.kb_id,
+    item_type: 'qa_pair',
+    payload: {
+      standard_question: `What is the ${topic} for model ${model}?`,
+      answer: `${answer} (${model}).`,
+      similar_questions: [`${model} ${topic}`, `${topic} ${model.replace('-', '')}`],
+      keywords: [topic.split(' ')[0], model],
+    },
+    origin_ref: { page: 1 + Math.floor(i / 4), quote: `…${topic}…` },
+    confidence: Number((0.62 + (i % 7) * 0.055).toFixed(3)),
+    review_status: 'pending',
+    review_note: null,
+    reviewed_at: null,
+    published: false,
+    published_ref: null,
+    conflict_with: null,
+    created_at: '2026-08-20T05:10:08.000000Z',
+    updated_at: '2026-08-20T05:10:08.000000Z',
+  }
+})

@@ -16,6 +16,7 @@ from sqlalchemy import select
 from app.api.deps import CurrentUser, SessionDep
 from app.core.errors import NotFoundError
 from app.core.jobs import execute_job, fail_if_stalled, known_job_types, retry_job, submit_job
+from app.core.staging import publish_job
 
 # 注册表靠 import 副作用填充:这一行没有,`demo_sleep` 就不存在。
 # S1–S3 的 Job 子类同样要在这里(或 services 的 __init__)被 import 一次。
@@ -23,6 +24,7 @@ from app.core import jobs_demo  # noqa: F401  isort:skip
 from app.models import IngestJob, KnowledgeBase
 from app.schemas.common import ListResponse
 from app.schemas.job import JobOut, JobSubmitRequest
+from app.schemas.staging import PublishResult
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
@@ -87,3 +89,22 @@ async def retry(job_id: uuid.UUID, background: BackgroundTasks) -> JobOut:
     job, from_step = await retry_job(job_id)
     background.add_task(execute_job, job.id, from_step=from_step)
     return JobOut.model_validate(job)
+
+
+@router.post("/{job_id}/publish", response_model=PublishResult)
+async def publish(job_id: uuid.UUID, session: SessionDep, user: CurrentUser) -> PublishResult:
+    """发布审核结果:approved/modified 的条目标记 published + 写一条 publish_records。
+
+    S0 只做这层通用骨架 —— "写进正式表 + 建索引"由各类型的 publisher 在 S1–S3 插进来
+    (`core/staging.py::register_publisher`),所以现在 `published_ref` 是 null。
+    发布是 job 级动作(不是 item 级),所以路由挂在 jobs 下。
+    """
+    job, record = await publish_job(session, job_id, user_id=user.id)
+    return PublishResult(
+        record_id=record.id,
+        job_id=job.id,
+        job_status=job.status,
+        published=int(record.item_counts.get("published", 0)),
+        item_counts=record.item_counts,
+        created_at=record.created_at,
+    )
