@@ -116,7 +116,7 @@ curl localhost:8000/api/traces/<message_id>
 
 契约链路已生效:改后端字段名 → `make types` → 前端 `tsc` 报错(实测见 `web/architect.md`)。
 
-**S0 后做过一次结构调整**(`documents/RESTRUCTURE-PLAN.md`,Stage 1–4 已完成):
+**S0 后做过一次结构调整**(2026-08-21,记录见 `documents/S0-PLAN.md` §5):
 前端立了 `web/src/domains/`(DomainModule manifest,加域 = index.ts 加一行),
 后端立了 `server/app/services/{exact_qa,document,text2sql}/`(注册解耦到 `services/__init__.py`),
 删了 KbListPage / JobsPage / QA 渲染器三个演示页面件。三类 ingestion 的真实流程

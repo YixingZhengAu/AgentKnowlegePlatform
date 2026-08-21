@@ -1,7 +1,7 @@
 # web/src/pages/
 
 **职责**:一页一文件。页面负责取数 + 组装组件,不写样式常量、不写 API 类型。
-三类知识的 ingestion 页**不在这里**,在 `src/domains/<域>/`(RESTRUCTURE-PLAN)。
+三类知识的 ingestion 页**不在这里**,在 `src/domains/<域>/`(结构调整,见 S0-PLAN §5)。
 
 | 文件 | 数据来源 |
 | --- | --- |

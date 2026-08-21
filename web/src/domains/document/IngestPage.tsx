@@ -1,4 +1,4 @@
-/** 文档 RAG ingestion 页 —— 空白壳(RESTRUCTURE-PLAN 决策 3)。
+/** 文档 RAG ingestion 页 —— 空白壳(结构调整决策:空白壳,见 S0-PLAN §5)。
  *  真实流程待需求确认后,由本域开发者在 src/domains/document/ 内自行搭建。 */
 
 import { FileText } from 'lucide-react'

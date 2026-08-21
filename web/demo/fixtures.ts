@@ -1,7 +1,7 @@
 /** 静态预览版用的固定响应。
  *
  * 来源:2026-08-21 从真后端(`make seed` 之后)抓下来的实际返回 ——
- * `/healthz`、`/api/agents`、`/api/agents/{id}`(kbs/jobs 列表随页面删除,见 RESTRUCTURE-PLAN)。
+ * `/healthz`、`/api/agents`、`/api/agents/{id}`(kbs/jobs 列表随页面删除,见 S0-PLAN §5)。
  * 手写的部分:会话列表与消息、trace、jobs —— 真库里那几条是冒烟脚本留下的
  * 测试问句("Reply with exactly: SSE OK"),不适合给人看。手写的内容与真接口
  * 同形(字段名来自 openapi 生成的类型),所以页面代码一行都不用为预览让步。
@@ -279,7 +279,7 @@ export const STAGING_ITEMS: DemoStagingItem[] = Array.from({ length: 20 }, (_, i
 })
 
 // ---- 审核台直链需要的任务详情:预览里唯一保留的任务 ----
-// 任务列表页已删(RESTRUCTURE-PLAN Stage 2),预览里审核台用直链 #/jobs/{id}/review 进入,
+// 任务列表页已删(结构调整,见 S0-PLAN §5),预览里审核台用直链 #/jobs/{id}/review 进入,
 // ReviewPage 与右栏 JobProgress 都取这一条。
 FIXTURES[`/api/jobs/${DEMO_JOB_ID}`] = {
   ...JOB_BASE,

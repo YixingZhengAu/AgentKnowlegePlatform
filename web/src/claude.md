@@ -15,6 +15,6 @@
 | `lib/` | 无 React 依赖的工具,见 `lib/claude.md` |
 
 **分层纪律**:`api/components/layouts/lib` 是 shared 层,域开发者只读;
-域代码只落在 `domains/<域>/`,禁止 import 兄弟域(RESTRUCTURE-PLAN)。
+域代码只落在 `domains/<域>/`,禁止 import 兄弟域(结构调整纪律,见 S0-PLAN §5)。
 
 详见 `architect.md`。

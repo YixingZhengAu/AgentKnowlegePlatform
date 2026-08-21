@@ -40,7 +40,7 @@
 
 ## 1. 步骤总览
 
-**进度**(2026-08-21):Step 1–9 全部 ✅ —— **S0 完成**(tag `s0-done`)
+**进度**(2026-08-21):Step 1–9 全部 ✅ —— **S0 完成**(tag `s0-done`);此后完成一次结构调整(见 §5)
 
 ```
 Step 1  仓库与环境骨架        →  git init、目录结构、docker-compose、Makefile
@@ -84,7 +84,7 @@ agent-system/
 │   │   ├── api/              # 路由,按模块分文件
 │   │   ├── providers/        # LLM / Embedding / Rerank 抽象与实现
 │   │   ├── core/             # trace / jobs / chat 等核心机制
-│   │   └── services/         # 业务逻辑(S1 起填充)
+│   │   └── services/         # 业务逻辑,按知识域分包(结构调整后,见 §5)
 │   ├── migrations/           # Alembic
 │   ├── scripts/              # CLI 工具(冒烟、灌数据)
 │   └── tests/
@@ -93,8 +93,9 @@ agent-system/
 │   └── src/
 │       ├── api/              # client + types.gen.ts(自动生成)
 │       ├── components/       # 通用组件(审核台在这)
+│       ├── domains/          # 三类知识的域文件夹(结构调整后加入,见 §5)
 │       ├── layouts/          # 三栏布局
-│       └── pages/            # chat / kb / agent / settings
+│       └── pages/            # 跨域公共页面(chat / agent / settings)
 └── documents/                # PRD、本计划、后续设计文档(已建)
 ```
 
@@ -408,7 +409,7 @@ event: done          data: {"message_id": "...", "citations": []}
 - **契约链路(验收项)**:把 `KnowledgeBaseOut.description` 改名 → `make types` →
   `tsc -b` 报 `TS2339: Property 'description' does not exist`,位置直指 `KbListPage.tsx:52`;
   还原后编译通过
-  > 结构调整备注(RESTRUCTURE-PLAN Stage 2):`KbListPage.tsx` 已删除,上述证据是当时的
+  > 结构调整备注(见 §5):`KbListPage.tsx` 已删除,上述证据是当时的
   > 历史记录,不改;契约链路本身仍在,如今改后端字段名,`tsc` 会在其他消费处
   > (如 `pages/` / `domains/` 内用到该类型的文件)同样报错
 - **`make dev`**:一条命令起 8000 + 5173;`/healthz` 200、经代理的 `/api/kbs` 200
@@ -463,7 +464,7 @@ event: done          data: {"message_id": "...", "citations": []}
 - 顺手加了 `Stop` 按钮:abort fetch → 后端按 `status=interrupted` 落库(Step 5 已实现的
   中断路径,这一步终于有界面能演示它了)
 - 页面比计划多一个 **Ingestion 页**(`/jobs`):进度条组件总得有个地方住,
-  S1–S3 的摄取入口也长在这里
+  S1–S3 的摄取入口也长在这里(该页已在结构调整中删除,demo 任务改走 curl,见 §5)
 - 静态预览(`make demo`)一起升级了:预览里的对话是**真的在流** ——
   `demo/main.tsx` 返回一个按真协议推帧的 ReadableStream,由产线 `src/api/sse.ts` 解析
 
@@ -540,7 +541,7 @@ event: done          data: {"message_id": "...", "citations": []}
 - **渲染器多了一个"兜底"**:`registry.ts` 里没登记的 `item_type` 落到 JSON 渲染器
   (直接看/改 payload)。好处很实际:S2 的切片任务写出来、渲染器还没动手时,
   审核台**已经能用**,不必等前端补齐才能验证后端
-  > 结构调整备注(RESTRUCTURE-PLAN Stage 2):Step 8 交付的 `QaRenderers.tsx` 已删除
+  > 结构调整备注(见 §5):Step 8 交付的 `QaRenderers.tsx` 已删除
   > (属于 exact-qa 域的具体页面代码,由 S1 开发者在 `web/src/domains/exact-qa/` 重写并在
   > `module.ts` 登记);当前 `qa_pair` 正是走这个 JSON 兜底渲染,审核台功能不受影响
 - **审核状态的推导规则放在后端**(`core/staging.py::derive_review_status`):
@@ -664,9 +665,46 @@ S1(精准 QA)开工时,以下东西已经存在、直接用,不需要再造:
 2. `LLMProvider.complete(json_schema=...)` —— 抽取 QA 对直接用 JSON 模式
 3. `EmbeddingProvider` —— 一问一向量直接调
 4. Job 框架 —— S1 只写一个 `QaExtractJob(steps=[parse, extract, expand, dedupe])`
+   (落点 `server/app/services/exact_qa/`,注册行加在 `services/__init__.py`,见 §5)
 5. `<StagingReview>` —— S1 只在 `web/src/domains/exact-qa/` 写 `QaItemCard` + `QaItemEditor` 两个渲染器(module.ts 登记,registry 自动聚合)
 6. `run_chat()` 骨架 —— S1 在 generate 前插入一个 `retrieve_exact_qa` stage
 7. SSE 协议与前端执行轨迹面板 —— S1 的检索 stage 自动出现在轨迹里
 8. CLI 脚手架模式 —— S1 第一件事就是写 `scripts/extract_qa.py` 调 prompt
 
 也就是说:**S1 的全部工作 = 1 个 Job 子类 + 2 个前端渲染器 + 1 个检索 stage + 1 个 publisher + 调 prompt**。这就是 S0 值 15% 投入的原因。
+
+---
+
+## 5. S0 后的结构调整(2026-08-21,已完成)
+
+S0 交付后确认:三类知识的 ingestion 将由**不同开发者并行开发**,且真实流程与 S0 的演示假设
+完全不同。因此做了一次只动结构、不预设任何流程的调整。**本节是这次调整的唯一记录**
+(独立计划文档已完成使命删除);Step 6–8 中涉及 `/kbs`、`/jobs` 页面与 QA 渲染器的
+描述均为当时的历史记录,不再与现状对应,以本节为准。
+
+**四条决策(已与需求方确认)**:
+
+1. Knowledge Bases 页删除(`GET /api/kbs` 与 `knowledge_bases` 表保留 —— 外键归属根,删页面不删实体)
+2. 侧栏改为 "Knowledge Ingestion" 二级导航,三个知识域各一个子项
+   (`/ingest/exact-qa` `/ingest/document` `/ingest/text2sql`)
+3. 三个域页面是**空白壳**(域识别色 + 空状态一句话,零按钮),留给各域开发者自行发挥
+4. **具体页面代码删除、框架保留**:删 KbListPage / JobsPage(demo 表单)/ QA 渲染器;
+   泛型审核台 `<StagingReview>`、`ReviewPage`、Job 框架、`<JobProgress>`、渲染器注册表接缝全部保留
+
+**落地结果(每 Stage 一个 commit,自测全绿)**:
+
+| Commit | 内容 |
+| --- | --- |
+| `ad6a33f` | Stage 1:`web/src/domains/` 骨架 + `DomainModule` manifest —— App 路由 / 侧栏导航 / 顶栏标题 / 渲染器注册表全部**遍历 `DOMAINS` 生成**,加一个域 = `domains/index.ts` 加一行 |
+| `aa21bdd` | Stage 2:删 KbListPage / JobsPage / QaRenderers;`/kbs` `/jobs` 重定向回 `/chat`;`qa_pair` 走 JSON 兜底渲染;静态预览同步瘦身 |
+| `7d71028` | Stage 3:`server/app/services/{exact_qa,document,text2sql}/` 空壳包;Job 注册解耦到 `services/__init__.py`(**全局唯一注册点**),`api/jobs.py` 不再 import 任何具体任务 |
+| `5c34750` | Stage 4:全局文档同步 + 并行开发纪律入册(纪律正文见 `server/claude.md` 与 `web/claude.md`:migration 串行生成、四张共享表 DDL 红线、shared 层域开发者只读、`types.gen.ts` 冲突永远重跑 `make types`) |
+
+**两个已知代价(接受)**:
+
+- demo 任务暂时没有界面入口:curl/脚本提交,审核台用直链 `/jobs/{id}/review` 打开;
+  正式入口由各域开发者在自己的域页面里做
+- `qa_pair` 走 JSON 兜底渲染 —— 这正是兜底渲染器存在的意义(渲染器没写好之前,任何类型都能审)
+
+**当前约束**:三类 ingestion 的真实流程**待需求方确认写入 PRD 后**各域才动工
+(PRD §3.2–§3.4 已标记"待重写");S1 尚未开工。

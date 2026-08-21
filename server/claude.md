@@ -13,7 +13,7 @@
 
 详见 `architect.md`。
 
-**并行开发纪律**(结构调整 Stage 4 入册,详见 `documents/RESTRUCTURE-PLAN.md`):
+**并行开发纪律**(结构调整时入册,记录见 `documents/S0-PLAN.md` §5):
 
 - **migration 串行生成**:域开发者只改 `app/models/` 自己域的文件 + `documents/DB-DESIGN.md`
   自己域的节,**不自己跑 `alembic revision`** —— 合并时由集成者统一生成,避免 multiple heads

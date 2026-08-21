@@ -35,7 +35,7 @@
 状态推导规则(只改内容 = `modified`)照抄后端 `core/staging.py::derive_review_status`,
 两边不一致的话预览会教出错的直觉。
 
-审核台入口:任务列表页已删(RESTRUCTURE-PLAN Stage 2),预览里用直链
+审核台入口:任务列表页已删(结构调整,见 S0-PLAN §5),预览里用直链
 `#/jobs/e1000000-0001-4a10-9f01-dddd00000001/review` 进入;条目走 JSON 兜底渲染。
 
 注意:只改 URL 的 hash **不会重新加载文档**,所以内存库里的改动会留着 ——

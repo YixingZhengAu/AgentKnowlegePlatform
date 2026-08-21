@@ -6,7 +6,7 @@
  * 没塞东西时整块不占宽度 —— 这样列表页不会白白让出 360px。
  *
  * 侧栏的 "Knowledge Ingestion" 是可展开分组,子项来自域清单(src/domains/index.ts),
- * 本文件不出现任何具体域的硬编码(RESTRUCTURE-PLAN Stage 1)。
+ * 本文件不出现任何具体域的硬编码(结构调整,见 S0-PLAN §5)。
  */
 
 import {
@@ -35,7 +35,7 @@ const NAV_FOOT = [{ to: '/settings', label: 'Settings', icon: Settings }]
 const TITLES: { prefix: string; title: string }[] = [
   { prefix: '/chat', title: 'Chat' },
   { prefix: '/agents', title: 'Agents' },
-  // 审核台直链 /jobs/{id}/review(任务列表页已删,见 RESTRUCTURE-PLAN Stage 2)
+  // 审核台直链 /jobs/{id}/review(任务列表页已删,见 S0-PLAN §5)
   { prefix: '/jobs/', title: 'Review Queue' },
   ...DOMAINS.map((d) => ({ prefix: d.path, title: `${d.label} Ingestion` })),
   { prefix: '/settings', title: 'Settings' },

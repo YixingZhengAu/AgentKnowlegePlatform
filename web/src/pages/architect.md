@@ -38,7 +38,7 @@ const renderers = renderersFor(probe.data?.items[0]?.item_type)
 从注册表取渲染器,交给审核台。右侧面板挂 `<JobProgress>` —— 审核时还能看见"这批是怎么来的"。
 S1/S2/S3 的审核入口都会长成这七行。
 
-入口:旧任务列表页已删(RESTRUCTURE-PLAN Stage 2),当前用直链 `/jobs/{id}/review`
+入口:旧任务列表页已删(结构调整,见 S0-PLAN §5),当前用直链 `/jobs/{id}/review`
 (demo 任务用 curl/脚本提交);正式入口由各域开发者在 `src/domains/<域>/` 里做。
 `<JobProgress>` 跑完后的 Review 按钮仍在(框架件)。
 

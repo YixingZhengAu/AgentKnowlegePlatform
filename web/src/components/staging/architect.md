@@ -23,7 +23,7 @@ RENDERERS = 各域 module.ts 的 renderers 合并(遍历 src/domains/index.ts �
 ```
 
 本文件不认识任何具体域。`renderersFor(itemType)` 是唯一查询入口。
-当前**没有任何域登记渲染器**(旧 QA 渲染器随 RESTRUCTURE-PLAN Stage 2 删除),
+当前**没有任何域登记渲染器**(旧 QA 渲染器已在结构调整中删除,见 S0-PLAN §5),
 所以所有 item_type 都走 JSON 兜底 —— 这正是兜底存在的意义:后端任务写出 staging 条目、
 渲染器还没动手时,审核台已经能用(看 JSON、改 JSON、通过驳回),不必等前端补齐。
 

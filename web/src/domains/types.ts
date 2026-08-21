@@ -1,4 +1,4 @@
-/** DomainModule —— 一个知识域对外的全部描述(RESTRUCTURE-PLAN Stage 1)。
+/** DomainModule —— 一个知识域对外的全部描述(结构调整,见 S0-PLAN §5)。
  *
  * 路由、导航子项、顶栏标题、识别色、审核渲染器都从这个描述符生成:
  * 共享文件(App / AppLayout / staging registry)只遍历 DOMAINS,不认识任何具体域。
