@@ -40,6 +40,8 @@
 
 ## 1. 步骤总览
 
+**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4– 待做
+
 ```
 Step 1  仓库与环境骨架        →  git init、目录结构、docker-compose、Makefile
 Step 2  数据库与全量建表      →  Alembic + 全部数据表一次建齐(含 eval 四张 + 摄取四张)
@@ -58,7 +60,7 @@ Step 9  收尾验收              →  跑一遍 DoD 清单、写 README、打 t
 
 ## 2. 分步详细计划
 
-### Step 1 · 仓库与环境骨架
+### Step 1 · 仓库与环境骨架 ✅ 已完成
 
 **做什么**
 
@@ -67,6 +69,7 @@ Step 9  收尾验收              →  跑一遍 DoD 清单、写 README、打 t
 ```
 agent-system/
 ├── docker-compose.yml        # postgres(pgvector) 一个服务
+├── docker/postgres/init/     # 首次建卷时执行:建 clenergy_biz + 只读账号 biz_reader
 ├── Makefile                  # make dev / make db / make types / make seed
 ├── .env.example              # 所有需要的环境变量模板(不含真实 key)
 ├── README.md
@@ -105,9 +108,20 @@ agent-system/
 
 **验收**:`docker exec` 进容器 `SELECT * FROM pg_extension` 能看到 `vector` 扩展。
 
+**实际落地(与计划的差异)**:
+
+- Makefile 实际有 10 个命令:计划的五个 + `db-stop` / `psql` / `api` / `web` / `install`(拆开单起前后端在调试时更方便)
+- 脚本目录落在 `server/scripts/`(要 import app,必须在 uv 工程内),CLAUDE.md 已同步
+- `.env.example` 比计划多了 `APP_ENV / LOG_LEVEL / CORS_ORIGINS / SECRET_KEY / BIZ_DATABASE_URL / RERANK_PROVIDER`
+- 每个代码目录已按 CLAUDE.md 的索引机制补 `claude.md` + `architect.md`
+
+**自测证据**:`make db` 起库成功;`pg_extension` 见 `vector 0.8.6` + `pgcrypto`;`\l` 见
+`agent_system` 与 `clenergy_biz` 两个库;`biz_reader` 能连业务库、建表被拒(权限不足)、
+连系统库被拒(无 CONNECT 权限)。
+
 ---
 
-### Step 2 · 数据库与全量建表
+### Step 2 · 数据库与全量建表 ✅ 已完成
 
 **做什么**
 
@@ -138,9 +152,21 @@ Alembic 初始化 + **一次性把全部表建齐**(改表比建表贵,这是 D4
 
 **验收**:`\dt` 看到全部表;seed 后能查到默认 agent。
 
+**实际落地**:
+
+- 表数是 **30 张**(DB-DESIGN 文末写的 28 是笔误,已修正),模型在 `server/app/models/`,一域一文件
+- 初始 migration `184b03b23dab`:开头 `CREATE EXTENSION IF NOT EXISTS vector/pgcrypto`
+  让迁移自成一体;向量列维度用 `EMBEDDING_DIM = settings.embedding_dim`,不硬编码
+- 依赖比计划多一个 `greenlet`(SQLAlchemy async 的硬依赖,alembic 首跑就暴露了)
+- seed 内容全英文(D5),KB 绑定 priority = 精准QA 10 / 文档 20 / 问数 30,幂等可重复跑
+
+**自测证据**:`make migrate` 一次跑通;`information_schema` 计数 31(30 表 + alembic_version);
+三个向量列均为 `vector(1536)`;`chunks.tsv` 是 `ALWAYS GENERATED`;HNSW 索引 3 个 + GIN 索引 1 个;
+`make seed` 两次、第二次全部跳过;`alembic check` 输出 "No new upgrade operations detected."。
+
 ---
 
-### Step 3 · 后端骨架
+### Step 3 · 后端骨架 ✅ 已完成
 
 **做什么**
 
@@ -155,6 +181,21 @@ Alembic 初始化 + **一次性把全部表建齐**(改表比建表贵,这是 D4
 **需要你做的**:无。
 
 **验收**:关掉数据库容器时 `/healthz` 报 unhealthy 而不是崩溃。
+
+**实际落地(两个值得记的坑)**:
+
+1. **路径参数必须声明成 `uuid.UUID`**。写成 `str` 时非法 uuid 会一路走到 DB,
+   报成 `db_error 503`,掩盖了"这是参数错误"。改成 UUID 后正确返回 `validation_error 422`。
+2. **裸 `ConnectionRefusedError` 要单独接住**。DB 停掉时 asyncpg 抛的是 OSError 子类,
+   SQLAlchemy 不包装它,导致业务接口报 `internal_error 500`。已在 `errors.py` 加
+   `ConnectionError` handler,统一成 `db_error 503`。
+3. 配置缺失的报错做了翻译:`MissingConfigError` 把 pydantic 字段名转成 .env 变量名,
+   直接列出"缺 SECRET_KEY / OPENAI_API_KEY / DATABASE_URL"。
+
+**自测证据**:`/healthz` 200 ok;三个只读接口 200,agent 详情带出 3 条 KB 绑定;
+404/422 错误体格式统一;`make db-stop` 后 `/healthz` 返回 503 unhealthy、业务接口 503 db_error、
+**后端进程未崩**;`make db` 恢复后无需重启后端即自动恢复(pool_pre_ping);
+`ruff check` 全绿;`scripts.dump_openapi` 导出 7 条 path。
 
 ---
 

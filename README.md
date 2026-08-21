@@ -1,0 +1,61 @@
+# Clenergy 企业知识 Agent 系统
+
+企业知识分层治理 + Agent 路由问答的演示系统。三类知识按容错率分层:**精准问答对**(零改写)、**文档知识**(RAG + 强制引用)、**智能问数**(语义层 + Text2SQL)。
+
+- 需求与架构:[documents/PRD.md](documents/PRD.md)
+- 当前阶段计划:[documents/S0-PLAN.md](documents/S0-PLAN.md)
+- 表结构唯一出处:[documents/DB-DESIGN.md](documents/DB-DESIGN.md)
+- 前端风格唯一出处:[documents/UI-STYLE.md](documents/UI-STYLE.md)
+
+> 界面与问答交互为英文单语(平台面向澳洲用户);开发文档与代码注释为中文。
+
+## 环境要求
+
+| 依赖 | 版本 |
+| --- | --- |
+| Python | 3.13 |
+| uv | 0.8+(Python 依赖只用 uv,禁止 pip install) |
+| Node | 22+ |
+| Docker | 28+(跑 Postgres 16 + pgvector) |
+
+## 从零起系统
+
+```bash
+cp .env.example .env      # 填 OPENAI_API_KEY;SECRET_KEY 按注释里的命令生成
+make install              # uv sync + npm install
+make db                   # 起 Postgres(pgvector),首次会建 clenergy_biz 与 biz_reader
+make migrate              # 建表
+make seed                 # 灌最小数据:1 用户 / 1 agent / 3 个空 KB
+make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
+```
+
+## 常用命令
+
+```
+make help       列出全部命令
+make db         起数据库(等到健康)
+make psql       进系统库 psql
+make migrate    跑 Alembic 迁移
+make seed       灌最小演示数据
+make db-reset   删库重建 + 迁移 + seed(会丢数据;改表阶段的常规操作)
+make api        只起后端
+make web        只起前端
+make dev        前后端一起起
+make types      openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 类型)
+```
+
+## 目录结构
+
+```
+docker/          Postgres 初始化脚本(建业务库与只读账号)
+server/          FastAPI 后端(uv 管理),详见 server/claude.md
+web/             React + Vite 前端,详见 web/claude.md
+documents/       PRD / 阶段计划 / 数据库设计 / UI 规范
+```
+
+## 两个数据库
+
+| 库 | 用途 | 连接账号 |
+| --- | --- | --- |
+| `agent_system` | 本系统全部业务表(知识、摄取、会话、trace、评测) | `postgres` |
+| `clenergy_biz` | 演示业务库,智能问数的查询目标 | `biz_reader`(只读,无 CREATE、无法连系统库) |

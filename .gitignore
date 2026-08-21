@@ -11,3 +11,7 @@ dist/
 .idea/
 .vscode/
 storage/
+
+# 生成物 / 缓存
+.pytest_cache/
+.ruff_cache/

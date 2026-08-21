@@ -531,7 +531,10 @@ eval_sets ── eval_cases ── eval_results ── eval_runs(→ agents)
 unanswered_pool(→ agents, messages)
 ```
 
-共 28 张表。
+共 30 张表(逐项数下来是 30,早先文中写的 28 是笔误)。
+
+**代码对应**:`server/app/models/`,一表一模型,汇总导出在 `models/__init__.py`;
+初始 migration 为 `server/migrations/versions/*_initial_schema.py`。
 
 ---
 

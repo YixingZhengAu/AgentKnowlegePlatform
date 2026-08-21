@@ -1,0 +1,26 @@
+# 只有一个服务:带 pgvector 的 Postgres 16(系统库 + 演示业务库都在这里)
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agent_system_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agent_system
+      # 初始化时的编码与排序(演示数据含英文与少量中文)
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # 仅数据卷首次创建时执行,建 clenergy_biz + biz_reader
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agent_system"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

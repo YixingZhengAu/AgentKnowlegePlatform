@@ -22,7 +22,8 @@
 
 - `server/` 后端(`app/{main,config,db,models,schemas,api,providers,core,services}`)
 - `web/` 前端(`src/{api,components,layouts,pages}`)
-- `scripts/` 冒烟/工具脚本(如 `uv run python -m scripts.smoke_llm`)
+- `server/scripts/` 冒烟/工具脚本(在 server 下跑:`uv run python -m scripts.seed_minimal`)
+- `docker/` 容器初始化脚本(Postgres init:建业务库与只读账号)
 
 ## 代码索引机制:每个文件夹的 claude.md + architect.md
 
