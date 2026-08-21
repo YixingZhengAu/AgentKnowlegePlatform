@@ -26,6 +26,7 @@
 | 当前阶段的步骤与验收 | `documents/S0-PLAN.md` | 每个 Step 完成后回填自测证据 |
 | 表结构、字段定义 | `documents/DB-DESIGN.md` | **文档先于 migration**;两者不一致以文档为准 |
 | 颜色、字体、组件样式 | `documents/UI-STYLE.md` | hex 只允许出现在 token 定义处 |
+| 某个知识域的代码往哪写、并行开发纪律 | `documents/DOMAIN-DEV-GUIDE.md` | 域开发者开工前必读;冲突地图在它的 §5 |
 | 环境约定、依赖管理、索引机制 | `CLAUDE.md` | 精干优先,详细内容放各目录 architect.md |
 
 ## 3. 常改的东西在哪(按"我要改 X"索引)
