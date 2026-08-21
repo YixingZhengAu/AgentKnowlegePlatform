@@ -1,7 +1,7 @@
 # Clenergy 企业知识 Agent 系统 —— 开发命令入口
 # 详细说明见 README.md
 
-.PHONY: help db db-stop db-wait migrate seed db-reset api web dev types install psql smoke smoke-sse test lint
+.PHONY: help db db-stop db-wait migrate seed db-reset api web dev types install psql smoke smoke-sse test lint demo
 
 SHELL := /bin/bash
 COMPOSE := docker compose
@@ -72,6 +72,10 @@ lint:  ## 后端 ruff + 前端 eslint + TS 编译(契约链路的守门人)
 	cd server && uv run ruff check app scripts tests
 	cd web && npm run lint && npx tsc -b
 
+
+demo:  ## 打一份静态预览(fixture 数据、零后端、零外部请求)-> web/dist-demo/preview.html
+	cd web && npx vite build --config vite.config.demo.ts
+	cd web && node demo/inline.mjs
 
 types:  ## openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 类型)
 	cd server && uv run python -m scripts.dump_openapi ../web/openapi.json

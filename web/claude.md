@@ -9,11 +9,13 @@ API 类型唯一来源:`make types` 生成的 `src/api/types.gen.ts`,**禁止手
 | --- | --- |
 | `src/` | 应用代码,见 `src/claude.md` |
 | `scripts/` | 前端冒烟脚本(SSE 客户端打真后端),见 `scripts/claude.md` |
+| `demo/` | 静态预览版入口(fixture 数据、零后端),见 `demo/claude.md` |
 | `openapi.json` / `src/api/types.gen.ts` | 生成物,不手改 |
 | `index.html` / `vite.config.ts` | 入口与 dev 代理(`/api`、`/healthz` → 8000) |
+| `vite.config.demo.ts` | 静态预览版的构建配置(`make demo`) |
 | `components.json` | shadcn/ui CLI 配置(`npx shadcn add <x>` 会按它落文件) |
 | `eslint.config.js` / `.prettierrc` | 代码规范(`npm run lint` / `make lint`) |
 
-常用命令:`make dev`(前后端一起起)/ `make types`(契约)/ `make lint` / `make smoke-sse`。
+常用命令:`make dev`(前后端一起起)/ `make types`(契约)/ `make lint` / `make smoke-sse` / `make demo`。
 
 详见 `architect.md`。

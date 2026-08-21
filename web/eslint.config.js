@@ -23,9 +23,9 @@ export default tseslint.config(
     },
   },
   {
-    // 这两处故意跟组件同文件导出:shadcn 约定的 cva variants、布局的右侧面板 hook。
-    // 代价只是这两个文件改动时热更新退化成整页刷新,不值得为它拆文件。
-    files: ['src/components/ui/**/*.tsx', 'src/layouts/**/*.tsx'],
+    // 这几处故意跟组件同文件写:shadcn 约定的 cva variants、布局的右侧面板 hook、
+    // 静态预览入口里的角标组件。代价只是热更新退化成整页刷新,不值得为它拆文件。
+    files: ['src/components/ui/**/*.tsx', 'src/layouts/**/*.tsx', 'demo/main.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
 )

@@ -48,6 +48,7 @@
 | 加一个前端页面 | `web/src/pages/` + `web/src/App.tsx` 路由 + `AppLayout` 的 `NAV`/`TITLES` |
 | 改前端取数 / 错误 toast | `web/src/api/{client,hooks}.ts` |
 | 改前端流式渲染 | `web/src/api/sse.ts`(协议出处仍是 `server/app/api/architect.md`) |
+| 改静态预览的假数据 | `web/demo/fixtures.ts`,然后 `make demo` |
 
 ## 4. 数据流(S0 骨架,后续阶段往里插 stage)
 

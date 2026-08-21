@@ -59,6 +59,7 @@ make smoke      冒烟:真实调 LLM 与 Embedding(验证 key/网络/代理)
 make smoke-sse  冒烟:前端 SSE 客户端打真后端(需先起后端)
 make test       跑离线测试(不联网、不连 DB)
 make lint       后端 ruff + 前端 eslint + TS 编译
+make demo       打静态预览单文件(fixture 数据,不用起后端)
 make types      openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 类型)
 ```
 
