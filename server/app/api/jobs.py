@@ -18,9 +18,9 @@ from app.core.errors import NotFoundError
 from app.core.jobs import execute_job, fail_if_stalled, known_job_types, retry_job, submit_job
 from app.core.staging import publish_job
 
-# 注册表靠 import 副作用填充:这一行没有,`demo_sleep` 就不存在。
-# S1–S3 的 Job 子类同样要在这里(或 services 的 __init__)被 import 一次。
-from app.core import jobs_demo  # noqa: F401  isort:skip
+# Job 注册表靠 import 副作用填充,唯一注册点在 services/__init__.py。
+# 这里只 import 包本身,不认识任何具体域/具体任务。
+import app.services  # noqa: F401  isort:skip
 from app.models import IngestJob, KnowledgeBase
 from app.schemas.common import ListResponse
 from app.schemas.job import JobOut, JobSubmitRequest

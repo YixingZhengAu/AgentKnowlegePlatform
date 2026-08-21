@@ -63,6 +63,9 @@ conversation_id / message_id,否则没法把这条消息挂到正确的会话上
 | GET | `/api/jobs/{id}` | 进度查询(前端轮询这个);顺便做心跳超时的惰性僵尸判定 |
 | POST | `/api/jobs/{id}/retry` | 从失败的那一步重跑(只有 `status=failed` 能重跑,否则 409) |
 
+**Job 注册链**:`jobs.py` 只 `import app.services`(noqa 副作用 import),
+具体任务在 `services/__init__.py` 里注册 —— api 层不认识任何具体域(结构调整 Stage 3)。
+
 **路由顺序有讲究**:`/api/jobs/types` 必须声明在 `/api/jobs/{job_id}` 之前,
 否则 `types` 会被当成 uuid 参数吃掉(422)。
 

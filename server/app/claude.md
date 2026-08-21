@@ -12,6 +12,6 @@
 | `api/` | HTTP 路由 |
 | `core/` | 机制层:日志、错误、中间件、Trace 框架、问答编排(后续 jobs) |
 | `providers/` | LLM / Embedding / Rerank 抽象与实现(tier 化调用、重试、计价) |
-| `services/` | 业务逻辑(S1 起填充) |
+| `services/` | 业务逻辑,按知识域分包;`__init__.py` 是唯一 Job 注册点,见 `services/claude.md` |
 
 详见 `architect.md`。
