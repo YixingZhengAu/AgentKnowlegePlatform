@@ -2,12 +2,14 @@
 
 from fastapi import APIRouter
 
-from app.api import agents, conversations, health, kbs
+from app.api import agents, chat, conversations, health, kbs, traces
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(kbs.router)
 api_router.include_router(agents.router)
 api_router.include_router(conversations.router)
+api_router.include_router(chat.router)
+api_router.include_router(traces.router)
 
 __all__ = ["api_router"]

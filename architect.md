@@ -34,6 +34,10 @@
 | --- | --- |
 | 加一个环境变量 | `server/app/config.py` + `.env.example` + 本地 `.env`(三处同步) |
 | 换 LLM 型号 / 换 tier 映射 | 只改 `.env` 的 `LLM_MODEL_MAIN/LIGHT`,业务代码不写型号名 |
+| 换供应商 / 加供应商 | `server/app/providers/`(步骤见该目录 architect.md 末节) |
+| 改模型价格 | `server/app/providers/pricing.py`(价格是事实不是环境,不进 .env) |
+| 问答链路加一个 stage | `server/app/core/chat.py` 里加一个 `async with traced(...)` 块;SSE 协议不用改 |
+| 改 SSE 事件协议 | `server/app/api/architect.md` 是协议出处,改完前后端一起改 |
 | 加一张表 / 改字段 | `documents/DB-DESIGN.md` → `server/app/models/` → migration(流程见 DB-DESIGN §10) |
 | 加一个接口 | `server/app/api/`(新文件要在 `api/__init__.py` include)+ `server/app/schemas/` |
 | 改错误码 / 错误格式 | `server/app/core/errors.py`(前端只认 `{"error":{code,message,detail}}`) |
@@ -46,11 +50,13 @@
 ```
 用户提问
   └─ POST /api/agents/{id}/chat  (Step 5)
-       └─ run_chat()             core/chat.py —— 评测执行器与 HTTP 共用同一入口(D4)
+       └─ chat_events()          core/chat.py —— 唯一编排(事件流);
+          run_chat() 只是把它消费到底,所以评测执行器与 HTTP 共用一条链路(D4)
             ├─ [stage] route            S4 加
             ├─ [stage] retrieve_*       S1/S2/S3 各加一个
-            └─ [stage] generate         S0 已有形状
-       每个 stage 由 traced() 包住 → 落 traces 表 → 前端右侧轨迹面板 / GET /api/traces/{message_id}
+            └─ [stage] generate         S0 已有形状:providers.get_llm().stream()
+       每个 stage 由 traced() 包住 → 攒在 ChatContext → 助手消息落库后批量写 traces 表
+       → 前端右侧轨迹面板 / GET /api/traces/{message_id}
 
 知识入库(三类共用一条线)
   上传 ingest_sources → submit_job → ingest_jobs(steps/progress/step_logs)
@@ -66,5 +72,14 @@
 
 ## 6. 当前进度
 
-S0 Step 1–3 已完成(仓库骨架 / 30 张表 / 后端骨架)。
-下一步 Step 4:Provider 抽象层(`server/app/providers/`)。逐步进度见 `documents/S0-PLAN.md` §1。
+S0 Step 1–5 已完成:仓库骨架 / 30 张表 / 后端骨架 / Provider 抽象层 / Trace 框架 + 问答链路。
+现在 `make db && make migrate && make seed && make api` 之后,curl 就能流式聊天并查到 trace:
+
+```bash
+curl -N -X POST localhost:8000/api/agents/<agent_id>/chat \
+  -H 'Content-Type: application/json' -d '{"question":"..."}'
+curl localhost:8000/api/traces/<message_id>
+```
+
+下一步 Step 6:前端壳(Vite + React + 三栏布局 + `make types` 契约链路 + SSE client)。
+逐步进度见 `documents/S0-PLAN.md` §1。

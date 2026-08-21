@@ -36,3 +36,8 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.4",
 ]
+
+[tool.pytest.ini_options]
+# 不用给每个 async 测试挂 @pytest.mark.asyncio
+asyncio_mode = "auto"
+testpaths = ["tests"]

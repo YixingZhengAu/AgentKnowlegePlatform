@@ -45,6 +45,19 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
 
+    # ===== Provider 行为(超时/重试/批量) =====
+    # 推理型模型(gpt-5 系)的思考档位:low 让演示的响应延迟可接受
+    llm_reasoning_effort: Literal["minimal", "low", "medium", "high"] = "low"
+    # 推理 token 也算在 max_completion_tokens 里,给它留出的额外预算
+    # (不留的话思考吃满预算,content 会是空字符串)
+    llm_reasoning_headroom: int = 2048
+    llm_timeout_sec: float = 60.0
+    embedding_timeout_sec: float = 30.0
+    # 瞬时故障(限流/超时/5xx)的总尝试次数,含首次
+    provider_max_attempts: int = 3
+    # 一次 embedding 请求最多塞多少条文本(供应商有上限,超了要自己切批)
+    embedding_batch_size: int = 64
+
     # ===== 数据库 =====
     database_url: str
     biz_database_url: str | None = None

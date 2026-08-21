@@ -8,5 +8,6 @@
 | `knowledge.py` | `KnowledgeBaseOut` |
 | `agent.py` | `AgentOut` / `AgentDetailOut` / `AgentKbBindingOut` |
 | `conversation.py` | `ConversationOut` / `MessageOut` |
+| `chat.py` | `ChatRequest` / `ChatResponse` / `TraceSpanOut` / `TraceOut` |
 
 详见 `architect.md`。

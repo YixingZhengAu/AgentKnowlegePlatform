@@ -10,5 +10,7 @@
 | `kbs.py` | `GET /api/kbs`、`GET /api/kbs/{kb_id}` |
 | `agents.py` | `GET /api/agents`、`GET /api/agents/{agent_id}`(带 KB 绑定) |
 | `conversations.py` | `GET /api/conversations`、`GET /api/conversations/{id}/messages` |
+| `chat.py` | `POST /api/agents/{agent_id}/chat`(SSE 流式 / 非流式二合一) |
+| `traces.py` | `GET /api/traces/{message_id}`(一次问答的全部 stage) |
 
-详见 `architect.md`。
+详见 `architect.md`(含 SSE 事件协议)。

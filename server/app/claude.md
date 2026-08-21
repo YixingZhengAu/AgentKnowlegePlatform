@@ -10,8 +10,8 @@
 | `models/` | SQLAlchemy 模型(表结构代码出处) |
 | `schemas/` | Pydantic 出入参 |
 | `api/` | HTTP 路由 |
-| `core/` | 机制层:日志、错误、中间件(后续 trace / jobs / chat) |
-| `providers/` | LLM / Embedding / Rerank 抽象(Step 4 填充) |
+| `core/` | 机制层:日志、错误、中间件、Trace 框架、问答编排(后续 jobs) |
+| `providers/` | LLM / Embedding / Rerank 抽象与实现(tier 化调用、重试、计价) |
 | `services/` | 业务逻辑(S1 起填充) |
 
 详见 `architect.md`。

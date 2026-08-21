@@ -1,7 +1,7 @@
 # Clenergy 企业知识 Agent 系统 —— 开发命令入口
 # 详细说明见 README.md
 
-.PHONY: help db db-stop db-wait migrate seed db-reset api web dev types install psql
+.PHONY: help db db-stop db-wait migrate seed db-reset api web dev types install psql smoke test
 
 SHELL := /bin/bash
 COMPOSE := docker compose
@@ -57,6 +57,14 @@ dev:  ## 前后端一起起(Ctrl-C 一起停)
 	wait
 
 # ===== 契约与依赖 =====
+
+smoke:  ## 冒烟:真实调 LLM 与 Embedding(会花一点钱,验证 key/网络)
+	cd server && uv run python -m scripts.smoke_llm
+	cd server && uv run python -m scripts.smoke_embedding
+
+test:  ## 跑离线测试(不联网、不连 DB)
+	cd server && uv run pytest -q
+
 
 types:  ## openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 类型)
 	cd server && uv run python -m scripts.dump_openapi ../web/openapi.json

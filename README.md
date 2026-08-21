@@ -26,7 +26,18 @@ make install              # uv sync + npm install
 make db                   # 起 Postgres(pgvector),首次会建 clenergy_biz 与 biz_reader
 make migrate              # 建表
 make seed                 # 灌最小数据:1 用户 / 1 agent / 3 个空 KB
+make smoke                # 冒烟:确认 key 有效、网络通(真实调 LLM 与 Embedding)
 make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
+```
+
+起来之后可以直接用 curl 试问答(Step 6 的前端页面还没接上):
+
+```bash
+AGENT=$(curl -s localhost:8000/api/agents | python3 -c 'import sys,json;print(json.load(sys.stdin)["items"][0]["id"])')
+curl -N -X POST localhost:8000/api/agents/$AGENT/chat \
+  -H 'Content-Type: application/json' -d '{"question":"What can you help me with?"}'
+# 拿 done 事件里的 message_id 查执行轨迹(阶段/耗时/token/成本)
+curl localhost:8000/api/traces/<message_id>
 ```
 
 ## 常用命令
@@ -41,6 +52,8 @@ make db-reset   删库重建 + 迁移 + seed(会丢数据;改表阶段的常规�
 make api        只起后端
 make web        只起前端
 make dev        前后端一起起
+make smoke      冒烟:真实调 LLM 与 Embedding(验证 key/网络/代理)
+make test       跑离线测试(不联网、不连 DB)
 make types      openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 类型)
 ```
 

@@ -40,7 +40,7 @@
 
 ## 1. 步骤总览
 
-**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4– 待做
+**进度**(2026-08-21):Step 1 ✅ / Step 2 ✅ / Step 3 ✅ / Step 4 ✅ / Step 5 ✅ / Step 6– 待做
 
 ```
 Step 1  仓库与环境骨架        →  git init、目录结构、docker-compose、Makefile
@@ -199,7 +199,7 @@ Alembic 初始化 + **一次性把全部表建齐**(改表比建表贵,这是 D4
 
 ---
 
-### Step 4 · Provider 抽象层(S0 技术核心之一)
+### Step 4 · Provider 抽象层(S0 技术核心之一)✅ 已完成
 
 **做什么**
 
@@ -239,9 +239,37 @@ python -m scripts.smoke_embedding  # embed 三句话,打印维度和两两余弦
 
 **验收**:两个冒烟脚本全绿;拔掉 key 时报的是"配置缺失"类明确错误。
 
+**实际落地(与计划的差异)**:
+
+- 文件:`base.py`(Protocol + 返回类型)/ `registry.py`(按配置选实现,单例)/
+  `openai_llm.py` / `openai_embedding.py` / `passthrough_rerank.py` /
+  `pricing.py`(价格表,计划里没单列)/ `retry.py`(重试 + 异常翻译)
+- `EmbeddingProvider` 多一个 `embed_detailed()`:`embed()` 只返回向量,但 trace 要 token 和成本,
+  所以细节版单独给一个方法,接口仍然干净
+- **推理型模型的坑(计划没预料到)**:gpt-5 系的思考 token 与回答共用
+  `max_completion_tokens`。第一次冒烟传 `max_tokens=64`,64 个 token 全被思考吃光,
+  `content` 是空字符串 —— "调用成功但没有回答"。处理:对 gpt-5/o 系型号自动追加
+  `LLM_REASONING_HEADROOM`(默认 2048)并带 `reasoning_effort=low`,使 `max_tokens`
+  的语义恒定为"给回答的预算";另加 `_guard_empty()`,拿到空回复直接抛错并写明怎么修
+- **参数能力回退**:推理模型不接受 `temperature`。被 400 拒一次就记住"这个型号不支持这个参数",
+  去掉重发且本进程后续不再带 —— 换型号不用改业务代码
+- 配置多了 5 项:`LLM_REASONING_EFFORT / LLM_REASONING_HEADROOM / LLM_TIMEOUT_SEC /
+  EMBEDDING_TIMEOUT_SEC / PROVIDER_MAX_ATTEMPTS / EMBEDDING_BATCH_SIZE`
+- 顺手加了 `make smoke`(两个冒烟一起跑)与 `make test`(离线测试),以及
+  `server/tests/test_providers.py` 10 个离线用例
+
+**自测证据**:
+
+- `make smoke` 全绿:补全 `text='SMOKE OK'` / 流式 44 chunks、first_token 1204ms /
+  JSON 模式 `attempts=1` 且 `targets=["text2sql"]` 判对;embedding dim=1536、
+  同义句余弦 **0.9033** vs 无关句 **0.1424**(向量真的有语义,不只是"跑通")
+- 无效 key:报 `provider_auth_error` + "请检查 .env 里的 OPENAI_API_KEY";
+  空 key:`config.py` 在 import 期就报 `MissingConfigError: OPENAI_API_KEY`
+- `make test` 16 passed;`ruff check` 全绿
+
 ---
 
-### Step 5 · Trace 框架 + `run_chat()` 最小问答链路(S0 技术核心之二)
+### Step 5 · Trace 框架 + `run_chat()` 最小问答链路(S0 技术核心之二)✅ 已完成
 
 **做什么**
 
@@ -281,6 +309,49 @@ event: done          data: {"message_id": "...", "citations": []}
 **需要你做的**:无。
 
 **验收**:`curl -N` 调 chat 接口能看到 SSE 事件流;同一 message 的 trace 查询接口返回 generate 阶段的耗时和 token。
+
+**实际落地(与计划的差异)**:
+
+- **"单入口"的实现方式变了(更彻底)**:计划里 `run_chat(stream=bool)` 返回两种类型;
+  实际做成**唯一的 async generator `chat_events()`**(永远产出事件流),
+  `run_chat()` 只是把它消费到底拼成 `ChatResult`。于是流式与非流式不是两份代码,
+  S1–S4 插阶段不可能只改到一边 —— D4 落得更实
+- 事件协议比计划多一个 **`meta`**(第一个 token 之前就把 `message_id` /
+  `conversation_id` 交给前端,新开会话时必须有它)和一个 **`error`**
+- `conversation_id` 可以不传 = 新开一轮(前端"新对话"不需要先调建会话接口)
+- 接口是 SSE / 非流式二合一(`stream` 字段),非流式返回体带 `trace` 数组
+- 中断处理(计划没写,但演示一定会被问):客户端断开时按 `status="interrupted"` 落库
+
+**四个踩过的坑(都已修,值得记)**:
+
+1. **`stage_end` 不能在 `finally` 里 yield**。客户端断开时 finally 里 yield 会变成
+   `RuntimeError: async generator ignored GeneratorExit`。移到 try/except 之后。
+2. **中断落库不能直接 await**。捕获 `GeneratorExit/CancelledError` 时当前任务正在被取消,
+   再 await 会立刻又被取消(第一版就是这样:日志有 interrupted,DB 里什么都没写)。
+   改成 `_persist()` 自己开 session + `_detach()` 丢到后台任务(并持引用防 GC)后才真正落库。
+3. **`vars()` 用不了 slots dataclass**。`ChatResult(slots=True)` 没有 `__dict__`,
+   `ChatResponse(**vars(result))` 报 500;改用 `dataclasses.asdict()`。
+4. **流一旦开始,状态码就定死 200**。之后抛异常全局 handler 也改不了,客户端只看到连接断掉。
+   所以 `_sse_stream()` 把"编排还没开始就失败"也翻译成协议内的 `error` + `done`,
+   前端永远只需要认一个终止信号。
+
+**自测证据**:
+
+- `curl -N` 流式:`meta → stage_start → 22×token → stage_end → done` 全部到齐;
+  `stage_end` 带 `latency_ms=4807 / model=gpt-5 / usage / cost_usd=0.002354`
+- `GET /api/traces/{message_id}`:1 条 generate,input 里能看到完整 prompt(含 system_prompt),
+  output 带 `finish_reason=stop`,耗时/token/成本/型号齐全
+- 多轮:带 `conversation_id` 再问一次,`prompt_tokens` 从 99 涨到 213(历史确实带进去了)
+- 失败路径(故意用无效 key 起后端):`error` 事件 → 兜底话术走 `token` 事件 →
+  `stage_end status=error` 且 error 文本入库 → `done status=failed`;**进程不崩**
+- 中断路径:读 6 行就断开 → 日志 `chat_interrupted` → DB 里该消息
+  `status=interrupted`、内容是已生成的片段、trace 有一条(latency 有、usage 空)
+- DB 表实测:`messages` 里 user/assistant 成对,assistant 带 usage 与 latency_ms;
+  `traces` 五条,四条 ok(gpt-5,cost 0.000491–0.002354)一条中断
+- 回归:Step 3 的 6 个只读接口全 200;`404/422` 错误体格式未变;
+  `make db-stop` 后流式与非流式都返回 `db_error 503`、`/healthz` unhealthy、进程存活,
+  `make db` 后无需重启即自动恢复;`alembic check` 无新增变更;`ruff check` 全绿;
+  `make test` 16 passed(新增 `test_trace.py` 6 个用例);openapi 9 条 path
 
 ---
 
@@ -384,7 +455,7 @@ event: done          data: {"message_id": "...", "citations": []}
 | --- | --- | --- |
 | ~~开工前~~ | ~~U1–U7~~ **已全部拍板**(见第 0 节) | — |
 | Step 1 开始时 | 启动 Docker Desktop | 点一下 |
-| Step 4 完成时 | 亲手跑两个冒烟脚本,确认 key/网络/代理没问题 | 跑命令,贴结果 |
+| Step 4 完成时 | 亲手跑 `make smoke`,确认 key/网络/代理没问题(我已跑通一次,你再跑一次确认你的环境) | 跑命令,贴结果 |
 | Step 8 完成时 | **体验审核台假数据流程,从运营视角提意见** | 15 分钟试用 + 反馈 |
 | Step 9 | 按 README 从零起一遍系统(最好的文档测试就是你) | 半小时 |
 

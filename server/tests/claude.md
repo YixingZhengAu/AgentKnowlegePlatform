@@ -1,8 +1,13 @@
 # server/tests/
 
-**职责**:pytest 测试(pytest + pytest-asyncio + httpx)。
+**职责**:pytest 测试(pytest + pytest-asyncio,`asyncio_mode = "auto"`,不用挂 marker)。
 
-**当前为空** —— S0 的验收以真实命令自测为主(见 `documents/S0-PLAN.md` 各 Step 的验收小节),
-关键机制稳定后再补自动化测试。
+| 文件 | 覆盖 |
+| --- | --- |
+| `test_providers.py` | Protocol 一致性、单例、价格换算、JSON 轻量校验、透传 rerank |
+| `test_trace.py` | `traced()` 计时/异常记录、seq 递增、`summarize()` 截断、用量汇总 |
+
+跑:`cd server && uv run pytest`(全部离线,不打真实 API、不连 DB)。
+真实调用的验证在 `scripts/smoke_*.py`。
 
 详见 `architect.md`。
