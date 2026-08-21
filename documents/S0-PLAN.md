@@ -1,0 +1,363 @@
+# S0 地基阶段 · 详细计划
+
+**关联文档**:PRD.md §9(开发策略与顺序,同目录)
+**日期**:2026-08-21
+**阶段目标(DoD,一句话)**:`docker-compose up` + `make dev` 后能打开页面,发一句话,收到 LLM 流式回复,且 DB 里能查到这次对话的完整 trace。
+
+**S0 的边界纪律**(做之前先记住不做什么):
+
+- ❌ 不做任何一类知识的加工逻辑(那是 S1–S3 的事)
+- ❌ 不做路由(S4)、不做评测界面(S6,只建表)
+- ❌ 不做用户体系(硬编码一个 `default_user`)
+- ❌ 不上 Celery / Redis / MinIO(BackgroundTasks + 本地磁盘够用)
+- ✅ 只做「三个模块都确定会原样复用的东西」
+
+**每个 Step 的完成纪律(自测后才算完)**:
+
+任何一个 Step 做完,**不允许直接进入下一步**,必须依次完成:
+
+1. 跑通该 Step 自己的「验收」小节里列出的全部检查项(命令要真的执行,不能只看代码"应该没问题");
+2. 回归确认:前面 Step 已通过的验收项没有被本步改坏(至少重跑受影响的那几项,如 `make dev` 起服务、冒烟脚本);
+3. 汇报时附上自测证据(跑了什么命令、关键输出/截图),再标记该 Step 完成。
+
+自测不通过就修,修不动就如实报告卡点,**不允许带着已知失败进入下一个 Step**。
+
+---
+
+## 0. 开工前清单:已全部拍板(2026-08-21)
+
+| # | 事项 | 结论 |
+| --- | --- | --- |
+| U1 | LLM API Key | **OpenAI**,key 已在本地 `.env`(main=gpt-5,light=gpt-5-mini) |
+| U2 | Embedding | **OpenAI text-embedding-3-small,dim=1536**;Provider 接口保留可替换性 |
+| U3 | Docker | 已装 Docker 28.4(开工时启动 Docker Desktop 即可) |
+| U4 | Python / Node | 实测 **Python 3.13.5 + Node 24 + uv 0.8.19**,按此开发 |
+| U5 | Rerank | **S0/S2 先用 PassthroughReranker 透传**,S2 跑通 RAG 后按实测效果决定是否引入真实 Rerank |
+| U6 | 演示业务库位置 | **同一 Postgres 实例、单独 database `clenergy_biz`**,问数用只读账号连接 |
+| U7 | 界面语言 | **英文单语**(平台面向澳洲用户):前端文案、Agent 交互、演示知识内容全英文;无 i18n。开发文档/注释仍中文(D5) |
+
+---
+
+## 1. 步骤总览
+
+```
+Step 1  仓库与环境骨架        →  git init、目录结构、docker-compose、Makefile
+Step 2  数据库与全量建表      →  Alembic + 全部数据表一次建齐(含 eval 四张 + 摄取四张)
+Step 3  后端骨架              →  FastAPI 应用工厂、配置、日志、统一错误、健康检查
+Step 4  Provider 抽象层       →  LLM / Embedding / Rerank 三接口 + 默认实现 + CLI 冒烟脚本
+Step 5  Trace 框架 + run_chat →  @traced 装饰器、最小问答链路、SSE 流式接口
+Step 6  前端壳                →  Vite + React 脚手架、三栏布局、API client、类型生成
+Step 7  最小对话页 + Job 框架 →  能聊天;Job 提交/查进度的通用机制(用假任务验证)
+Step 8  通用审核台组件        →  泛型 Staging 审核界面(用假数据渲染验证)
+Step 9  收尾验收              →  跑一遍 DoD 清单、写 README、打 tag
+```
+
+依赖关系:Step 1→2→3 严格串行;Step 4 与 Step 2 可并行;Step 5 依赖 3+4;Step 6 依赖 3(要有 openapi.json);Step 7 依赖 5+6;Step 8 依赖 6+2;Step 9 收尾。
+
+---
+
+## 2. 分步详细计划
+
+### Step 1 · 仓库与环境骨架
+
+**做什么**
+
+1. `git init`,建立单仓(monorepo)目录结构:
+
+```
+agent-system/
+├── docker-compose.yml        # postgres(pgvector) 一个服务
+├── Makefile                  # make dev / make db / make types / make seed
+├── .env.example              # 所有需要的环境变量模板(不含真实 key)
+├── README.md
+├── server/                   # FastAPI 后端
+│   ├── pyproject.toml        # uv 管理依赖
+│   ├── app/
+│   │   ├── main.py           # 应用工厂
+│   │   ├── config.py         # pydantic-settings 读 .env
+│   │   ├── db.py             # engine / session
+│   │   ├── models/           # SQLAlchemy models(按域分文件)
+│   │   ├── schemas/          # Pydantic schemas
+│   │   ├── api/              # 路由,按模块分文件
+│   │   ├── providers/        # LLM / Embedding / Rerank 抽象与实现
+│   │   ├── core/             # trace / jobs / chat 等核心机制
+│   │   └── services/         # 业务逻辑(S1 起填充)
+│   ├── migrations/           # Alembic
+│   ├── scripts/              # CLI 工具(冒烟、灌数据)
+│   └── tests/
+├── web/                      # React 前端
+│   ├── package.json
+│   └── src/
+│       ├── api/              # client + types.gen.ts(自动生成)
+│       ├── components/       # 通用组件(审核台在这)
+│       ├── layouts/          # 三栏布局
+│       └── pages/            # chat / kb / agent / settings
+└── documents/                # PRD、本计划、后续设计文档(已建)
+```
+
+2. `docker-compose.yml`:`pgvector/pgvector:pg16` 镜像,挂本地卷,暴露 5432;init 脚本建两个 database:`agent_system`(系统库)与 `clenergy_biz`(演示业务库,U6)+ 一个只读账号 `biz_reader`(问数专用)。
+3. `Makefile` 五个命令:`make db`(起库)、`make dev`(前后端一起起)、`make types`(openapi → TS 类型)、`make migrate`(跑迁移)、`make db-reset`(删库重建+migrate+seed,改表零成本的底气)。
+4. `.env.example` 列出全部环境变量:`DATABASE_URL / LLM_PROVIDER / LLM_API_KEY / LLM_MODEL_MAIN / LLM_MODEL_LIGHT / EMBEDDING_PROVIDER / EMBEDDING_API_KEY / EMBEDDING_MODEL / EMBEDDING_DIM / FILE_STORAGE_DIR`。
+
+**产出**:空仓库跑 `make db` 能起库,`docker ps` 能看到 pgvector 容器。
+
+**需要你做的**:U3、U4(确认环境);把 U1 的 key 填进 `.env`(复制 `.env.example` 改名)。
+
+**验收**:`docker exec` 进容器 `SELECT * FROM pg_extension` 能看到 `vector` 扩展。
+
+---
+
+### Step 2 · 数据库与全量建表
+
+**做什么**
+
+Alembic 初始化 + **一次性把全部表建齐**(改表比建表贵,这是 D4 决策的落地)。**字段级定义以 `DB-DESIGN.md`(同目录)为唯一出处,migration 照它写**。按域分组:
+
+| 域 | 表 | S0 是否被使用 |
+| --- | --- | --- |
+| 知识库 | `knowledge_bases` | 建好,S1 用 |
+| 精准 QA | `exact_qa_items` / `exact_qa_vectors` | 建好,S1 用 |
+| 文档 | `documents` / `chunks` | 建好,S2 用 |
+| 问数 | `datasources / table_meta / column_meta / relations / metrics / terms / rules / sql_examples` | 建好,S3 用 |
+| **摄取骨架** | `ingest_sources / ingest_jobs / staging_items / publish_records` | **Step 7/8 就用(假任务验证)** |
+| Agent | `agents / agent_kb_bindings` | 建好,S0 建一条硬编码 agent |
+| 会话 | `conversations / messages / message_citations` | **Step 5 就用** |
+| 观测 | `traces / feedbacks` | **Step 5 就用** |
+| 评测 | `eval_sets / eval_cases / eval_runs / eval_results` | 建好,S6 用(D4 留口子) |
+| 其他 | `users`(单行占位) / `unanswered_pool` | 建好 |
+
+关键细节:
+
+- 向量列用 `vector(EMBEDDING_DIM)`,维度从环境变量读 —— **这就是为什么 U2 要先定**:换 embedding 供应商=换维度=重建向量列。migration 里把维度写成配置驱动。
+- `chunks.tsv` 建 `tsvector` 生成列 + GIN 索引(S2 的全文检索用),中文分词 S0 先用 `simple` 配置占位,S2 再评估 zhparser/jieba 方案。
+- `staging_items.payload` 为 jsonb;`traces` 按 `message_id + stage` 建索引。
+
+**产出**:`make migrate` 一次跑通;`scripts/seed_minimal.py` 灌入:1 个用户、1 个"默认助手" agent、3 个空 KB(三种类型各一)。
+
+**需要你做的**:无(U2 的结论会影响 `EMBEDDING_DIM`,在 Step 4 前给到即可)。
+
+**验收**:`\dt` 看到全部表;seed 后能查到默认 agent。
+
+---
+
+### Step 3 · 后端骨架
+
+**做什么**
+
+1. FastAPI 应用工厂:CORS、生命周期(启动时建连接池)、`/healthz`(含 DB 连通检查)。
+2. `config.py`:pydantic-settings,所有配置从 `.env` 读,启动时校验缺失项并给出明确报错(比如没配 key 时直接告诉你缺哪个变量,而不是运行到一半 500)。
+3. 统一错误体:`{"error": {"code": "...", "message": "...", "detail": ...}}`,全局异常 handler。
+4. 结构化日志(loguru 或 structlog),每个请求带 request_id。
+5. 第一批只读路由(为 Step 6 前端提供真实数据源):`GET /api/kbs`、`GET /api/agents`、`GET /api/conversations`。
+
+**产出**:`make dev` 起后端,`/docs` 能看到 Swagger,`/healthz` 返回 ok。
+
+**需要你做的**:无。
+
+**验收**:关掉数据库容器时 `/healthz` 报 unhealthy 而不是崩溃。
+
+---
+
+### Step 4 · Provider 抽象层(S0 技术核心之一)
+
+**做什么**
+
+1. 定义三个 Protocol 接口(全部 async):
+
+```python
+class LLMProvider(Protocol):
+    async def complete(self, messages, *, model_tier: Literal["main","light"],
+                       temperature=0.3, max_tokens=2048, json_schema=None) -> LLMResult: ...
+    async def stream(self, messages, *, model_tier="main", ...) -> AsyncIterator[StreamEvent]: ...
+
+class EmbeddingProvider(Protocol):
+    dim: int
+    async def embed(self, texts: list[str]) -> list[list[float]]: ...   # 内部处理批量上限
+
+class RerankProvider(Protocol):
+    async def rerank(self, query: str, docs: list[str], top_n: int) -> list[RerankHit]: ...
+```
+
+2. 设计要点:
+   - `model_tier`("main"/"light")而不是写死模型名 —— 业务代码只表达"要强模型还是快模型",具体型号在配置里映射。这是 PRD"分层用模型控成本"的落地,也是可讲的设计点。
+   - `LLMResult` 统一带 `usage(prompt_tokens/completion_tokens)` 和 `cost_estimate`,Trace 框架直接消费。
+   - `json_schema` 参数:结构化输出统一走这里(S1 抽取 QA、S4 路由决策都靠它),内部实现校验失败自动重试 2 次。
+   - 统一的重试(指数退避)与超时;供应商特定的报错翻译成统一异常类型。
+   - Rerank 先给 `PassthroughReranker`(原序返回),接口占位。
+3. 按 U1/U2 的答案写默认实现(一个供应商一个文件)。
+4. **CLI 冒烟脚本**(六步法第②步在 S0 的体现):
+
+```bash
+python -m scripts.smoke_llm        # 一次补全 + 一次流式 + 一次 JSON 模式,打印 token 与耗时
+python -m scripts.smoke_embedding  # embed 三句话,打印维度和两两余弦相似度
+```
+
+**产出**:接口 + 实现 + 冒烟脚本。
+
+**需要你做的**:**U1、U2 必须在此步前给到**;然后你亲手跑一遍两个冒烟脚本,确认 key 有效、网络通(如果你的网络需要代理访问 LLM API,这一步会暴露出来,请告诉我代理配置方式)。
+
+**验收**:两个冒烟脚本全绿;拔掉 key 时报的是"配置缺失"类明确错误。
+
+---
+
+### Step 5 · Trace 框架 + `run_chat()` 最小问答链路(S0 技术核心之二)
+
+**做什么**
+
+1. **Trace 框架**:一个 async context manager / 装饰器:
+
+```python
+async with traced(ctx, stage="generate", input={...}) as t:
+    result = await llm.complete(...)
+    t.output = {...}; t.usage = result.usage
+```
+
+   - 自动记录:阶段名、输入摘要、输出摘要、耗时 ms、token、成本、异常(异常也要落库,失败的 trace 更有价值)。
+   - 挂在 `ChatContext` 上,一次问答的所有 stage 共享一个 `message_id`。
+   - 写库用 buffer,请求结束统一 flush,不阻塞主链路。
+
+2. **`run_chat()` 统一入口**(评测执行器与 HTTP 共用,D4 落地):
+
+```python
+async def run_chat(agent_id, conversation_id, question, *, stream=False) -> ChatResult | AsyncIterator[ChatEvent]
+```
+
+   S0 版本的内部链路刻意简单:`加载 agent → 存用户消息 → [stage: generate] 用 agent 的 system_prompt 调 LLM → 存回复 → flush traces`。**没有检索、没有路由** —— 那些是 S1/S4 往这个骨架里插的阶段。但链路的"形状"(stage 序列化、事件流协议)现在就定下来。
+
+3. **SSE 接口** `POST /api/agents/{id}/chat`:事件协议现在定好,S1–S4 只增加事件类型不改协议:
+
+```
+event: stage_start   data: {"stage": "generate"}
+event: token         data: {"text": "..."}
+event: stage_end     data: {"stage": "generate", "latency_ms": 812, "usage": {...}}
+event: done          data: {"message_id": "...", "citations": []}
+```
+
+4. `GET /api/traces/{message_id}`:返回该次问答的全部 stage 记录(Step 7 前端执行轨迹的雏形要用)。
+
+**产出**:curl 能流式聊天;聊完 `traces` 表里有记录。
+
+**需要你做的**:无。
+
+**验收**:`curl -N` 调 chat 接口能看到 SSE 事件流;同一 message 的 trace 查询接口返回 generate 阶段的耗时和 token。
+
+---
+
+### Step 6 · 前端壳
+
+**做什么**
+
+1. Vite + React + TS + Tailwind + shadcn/ui 脚手架;ESLint + Prettier。**视觉规范以 `UI-STYLE.md`(同目录)为唯一出处**:Clenergy 官网风(navy #00205B 主色 + 黄 #FFCB02 强调),token 先行,组件禁裸色值。
+2. **三栏布局骨架**(对话工作台的形状现在定):左侧导航(对话 / 知识库 / Agent / 设置四个入口)、中间内容区、右侧可折叠面板(执行轨迹的位置)。
+3. API 层:
+   - `make types`:openapi.json → `types.gen.ts`(openapi-typescript),这条链路 S0 就跑通并写进 Makefile;
+   - fetch 封装(统一错误 toast、loading 态);
+   - **SSE client**:封装 Step 5 的事件协议,暴露 `onToken / onStageStart / onStageEnd / onDone` 回调 —— 这是前端最需要先趟平的技术点。
+4. 知识库列表页、Agent 列表页:纯只读表格,消费 Step 3 的接口(证明前后端类型链路是通的)。
+
+**产出**:`make dev` 一条命令起前后端,页面能看到 seed 的 3 个 KB 和 1 个 agent。
+
+**需要你做的**:无。语言已定(U7:英文单语),UI 风格已定(Clenergy 官网风,详见 `UI-STYLE.md`)。
+
+**验收**:改一个后端字段名 → `make types` → 前端编译报错(证明契约链路生效)。
+
+---
+
+### Step 7 · 最小对话页 + 通用 Job 框架
+
+**做什么**
+
+1. **对话页**:输入框、消息流、流式渲染(消费 SSE client)、会话列表(建/切/删)。右侧面板显示本次回答的 trace(阶段、耗时、token)—— 执行轨迹面板 v0。
+2. **通用 Job 框架**(后端,三个模块的摄取都靠它):
+   - `submit_job(job_type, source_id, params) -> job_id`:写 `ingest_jobs` + BackgroundTasks 派发;
+   - Job 执行器基类:子类实现 `steps` 列表,框架负责逐步执行、更新 `progress` 与 `step_logs`、捕获异常写 `error`、支持从失败步骤重跑;
+   - `GET /api/jobs/{id}`:进度查询。
+3. **用一个假任务验证框架**:`DemoSleepJob`,4 个步骤各睡 2 秒随机日志。别小看它 —— S1 的抽取任务写出来之前,前端进度条组件需要一个稳定的联调对象。
+4. 前端通用组件 `<JobProgress jobId>`:轮询 + 进度条 + 分步日志展开 + 失败重试按钮。
+
+**产出**:能在页面上聊天看轨迹;能提交假任务看进度条走完。
+
+**需要你做的**:无。
+
+**验收**:DoD 主体达成 —— 页面发一句话,流式回复,右侧看到 trace,DB 可查;假任务中途 kill 后端进程再重启,任务状态是 failed 而不是永远 running(僵尸任务处理)。
+
+---
+
+### Step 8 · 通用审核台组件(S0 前端核心)
+
+**做什么**
+
+前端泛型组件 `<StagingReview>`,S1/S2/S3 的审核界面都是它的实例化:
+
+```tsx
+<StagingReview
+  jobId={...}
+  itemRenderer={QaItemCard}        // 每类知识自己实现:列表项怎么画
+  editorRenderer={QaItemEditor}    // 每类知识自己实现:右侧编辑表单
+  originPanel={DocOriginViewer}    // 可选:原文对照面板
+/>
+```
+
+组件负责的通用能力:
+
+- 左列表 + 右编辑区布局;列表按 `review_status` / `confidence` 筛选排序;
+- 单条 通过/驳回/修改,修改走 `PATCH /api/staging/{id}`(patch payload 的 jsonb);
+- 批量勾选 → 批量通过/驳回;
+- 键盘流:`j/k` 上下条,`a` 通过,`x` 驳回(审核几十条时效率差 5 倍,也是演示亮点);
+- 底部"发布"按钮 → `POST /api/jobs/{id}/publish`(S0 后端只做通用骨架:把 approved 条目标记 published + 写 `publish_records`;各类型的"写正式表 + 建索引"由 S1–S3 各自实现的 publisher 完成)。
+
+**验证方式**:用脚本往 `staging_items` 灌 20 条假 QA payload,拿一个最简 `itemRenderer` 渲染,走通"筛选 → 修改 → 批量通过 → 发布"全流程。
+
+**产出**:审核台组件 + staging 通用 API。
+
+**需要你做的**:走一遍这个假数据审核流程,**从"未来每天要审几百条"的运营视角提体验意见**(列表密度、快捷键、批量交互)。这是 S0 唯一需要你认真体验反馈的界面,因为它定型后 S1–S3 都长这样。
+
+**验收**:20 条假数据全流程走通;审核状态刷新页面不丢。
+
+---
+
+### Step 9 · 收尾验收
+
+**做什么**
+
+1. 全新环境模拟:删掉本地容器和 venv,从 `git clone` 开始按 README 走一遍,凡是卡住的地方补文档或补自动化。
+2. DoD 核对清单逐项打勾(见下)。
+3. `git tag s0-done`。
+
+**S0 最终验收清单**
+
+- [ ] `cp .env.example .env` 填 key → `make db && make migrate && make seed && make dev` 四条命令起全系统
+- [ ] 对话页流式聊天,右侧面板显示 trace(阶段/耗时/token/成本)
+- [ ] `traces` / `messages` / `conversations` 表数据完整
+- [ ] 两个冒烟脚本全绿
+- [ ] 假任务:提交 → 进度条 → 完成;kill 重启后无僵尸任务
+- [ ] 审核台:假数据全流程(筛选/编辑/批量/发布)走通
+- [ ] 改后端 schema → `make types` → 前端编译报错
+- [ ] README 支持陌生人从零起系统
+
+---
+
+## 3. 你的参与点汇总(按时间顺序)
+
+| 时点 | 事项 | 形式 |
+| --- | --- | --- |
+| ~~开工前~~ | ~~U1–U7~~ **已全部拍板**(见第 0 节) | — |
+| Step 1 开始时 | 启动 Docker Desktop | 点一下 |
+| Step 4 完成时 | 亲手跑两个冒烟脚本,确认 key/网络/代理没问题 | 跑命令,贴结果 |
+| Step 8 完成时 | **体验审核台假数据流程,从运营视角提意见** | 15 分钟试用 + 反馈 |
+| Step 9 | 按 README 从零起一遍系统(最好的文档测试就是你) | 半小时 |
+
+## 4. S0 完成后的状态(交接给 S1 的东西)
+
+S1(精准 QA)开工时,以下东西已经存在、直接用,不需要再造:
+
+1. 全部数据表(含 `exact_qa_items` / `exact_qa_vectors` / staging 四张表)
+2. `LLMProvider.complete(json_schema=...)` —— 抽取 QA 对直接用 JSON 模式
+3. `EmbeddingProvider` —— 一问一向量直接调
+4. Job 框架 —— S1 只写一个 `QaExtractJob(steps=[parse, extract, expand, dedupe])`
+5. `<StagingReview>` —— S1 只写 `QaItemCard` + `QaItemEditor` 两个渲染器
+6. `run_chat()` 骨架 —— S1 在 generate 前插入一个 `retrieve_exact_qa` stage
+7. SSE 协议与前端执行轨迹面板 —— S1 的检索 stage 自动出现在轨迹里
+8. CLI 脚手架模式 —— S1 第一件事就是写 `scripts/extract_qa.py` 调 prompt
+
+也就是说:**S1 的全部工作 = 1 个 Job 子类 + 2 个前端渲染器 + 1 个检索 stage + 1 个 publisher + 调 prompt**。这就是 S0 值 15% 投入的原因。
