@@ -18,17 +18,31 @@
 | Node | 22+(实测 24) |
 | Docker | 28+(跑 Postgres 16 + pgvector) |
 
-## 从零起系统
+## 从零起系统:一条命令
+
+新克隆下来只跑这个 —— `bootstrap.sh` 会检查工具链、生成 `.env`(自动生成 `SECRET_KEY`、
+交互式问你的 `OPENAI_API_KEY`)、装前后端依赖、起 Postgres、建表、灌演示数据,
+最后跑一遍离线测试 + lint + LLM 冒烟:
 
 ```bash
-cp .env.example .env      # 填 OPENAI_API_KEY;SECRET_KEY 按注释里的命令生成
-make install              # uv sync + npm install
-make db                   # 起 Postgres(pgvector),首次会建 clenergy_biz 与 biz_reader
-make migrate              # 建表
-make seed                 # 灌最小数据:1 用户 / 1 agent / 3 个空 KB
-make smoke                # 冒烟:确认 key 有效、网络通(真实调 LLM 与 Embedding)
+./bootstrap.sh            # 或 make bootstrap
 make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
 ```
+
+它是幂等的,随时可以重跑(不会覆盖已有 `.env`)。常用开关:
+
+| 开关 | 作用 |
+| --- | --- |
+| `--with-mineru` | 连 PDF 解析容器一起装(build 镜像 + 下 1GB 权重,约 10 分钟;上传 PDF 走 S1 流水线要它) |
+| `--skip-smoke` | 跳过真实调 LLM/Embedding 的冒烟(省钱,但也就不验 key 是否可用) |
+| `--reset` | 先删库重建(丢演示数据;只删 pg 的卷,不碰 MinerU 权重) |
+| `-y` | 非交互(CI / 无人值守) |
+| `--help` | 看全部说明 |
+
+**它装不了的两样**(需要系统级安装,脚本只检查并告诉你装法):Docker 28+、Node 22+。
+Python 3.13 不用手装,`uv` 会自己拉。
+
+手动分步等价于:`make install` → `make db` → `make migrate` → `make seed` → `make smoke`。
 
 起来之后打开 http://localhost:5173:
 
@@ -70,6 +84,7 @@ curl localhost:8000/api/traces/<message_id>
 
 ```
 make help       列出全部命令
+make bootstrap  一键装环境(等于 ./bootstrap.sh,新机器接手就跑这个)
 make db         起数据库(等到健康)
 make mineru     起 MinerU PDF 解析容器(18001,S1 上传解析要用)
 make psql       进系统库 psql
@@ -91,6 +106,7 @@ make types      openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 
 ## 目录结构
 
 ```
+bootstrap.sh     一键装环境:工具链检查 + .env + 依赖 + 库 + 迁移 + seed + 自检
 docker/          容器配置:Postgres 初始化脚本 + MinerU 解析镜像
 server/          FastAPI 后端(uv 管理),详见 server/claude.md
 web/             React + Vite 前端,详见 web/claude.md

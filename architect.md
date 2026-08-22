@@ -15,8 +15,8 @@
 | `documents/` | 需求与设计文档(无代码) | 见下方第 2 节 |
 | `server/` | FastAPI 后端全部代码,uv 管理 | `server/claude.md` |
 | `web/` | React + Vite 前端(三栏工作台) | `web/claude.md` |
-| `docker/` | Postgres init 脚本(建业务库与只读账号) | `docker/claude.md` |
-| 根目录 | `Makefile` / `docker-compose.yml` / `.env.example` / `README.md` | 见下方第 3 节 |
+| `docker/` | Postgres init 脚本(建业务库与只读账号)+ MinerU 解析镜像 | `docker/claude.md` |
+| 根目录 | `bootstrap.sh` / `Makefile` / `docker-compose.yml` / `.env.example` / `README.md` | 见下方第 3 节 |
 
 ## 2. 文档的唯一出处(改之前先确认改的是哪份)
 
@@ -49,6 +49,7 @@
 | 改命中阈值或那两道关 | `.env` 的 `EXACT_QA_*` 三项;**改前先读 `documents/S1-PLAN.md` §5 M4** |
 | 改容器/数据库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
+| 新机器从零装环境 / 改装机步骤 | 根目录 `bootstrap.sh`(工具链检查 → .env → 依赖 → 库 → 迁移 → seed → 自检);**新增外部依赖或初始化步骤必须同步进它** |
 | 改颜色 / 字体 / 圆角 | `documents/UI-STYLE.md` → `web/src/index.css` 的品牌层(**全仓唯一 hex 出处**) |
 | 加一个知识域(前后端各一处落点) | 前端 `web/src/domains/<域>/` + `domains/index.ts` 加一行;后端 `server/app/services/<域>/` + `services/__init__.py` 加一行 |
 | 改某个域的摄取页面 | `web/src/domains/<域>/`(页面、渲染器、module.ts 都在域内,不动共享文件) |

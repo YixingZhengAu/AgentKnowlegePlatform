@@ -1,7 +1,7 @@
 # Clenergy 企业知识 Agent 系统 —— 开发命令入口
 # 详细说明见 README.md
 
-.PHONY: help db db-stop db-wait migrate seed db-reset mineru mineru-stop api web dev types install psql smoke smoke-s1 smoke-sse test lint demo
+.PHONY: help bootstrap db db-stop db-wait migrate seed db-reset mineru mineru-stop api web dev types install psql smoke smoke-s1 smoke-sse test lint demo
 
 SHELL := /bin/bash
 COMPOSE := docker compose
@@ -10,6 +10,11 @@ MINERU_CONTAINER := agent_system_mineru
 
 help:  ## 列出所有命令
 	grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+
+# ===== 一键装环境 =====
+
+bootstrap:  ## 新机器从零装:工具链检查 + .env + 依赖 + 库 + 迁移 + seed + 自检(细节见 bootstrap.sh --help)
+	./bootstrap.sh
 
 # ===== 数据库 =====
 
@@ -38,7 +43,10 @@ seed:  ## 灌最小演示数据(1 用户 / 1 agent / 3 个空 KB)
 	cd server && uv run python -m scripts.seed_minimal
 
 db-reset:  ## 删库重建 + 迁移 + seed(改表零成本的底气,会丢数据)
-	$(COMPOSE) down -v
+	@# 只删 pg 的数据卷:compose down -v 会把 MinerU 那 1GB 权重卷也删掉,重下很贵
+	@vol=$$(docker inspect $(PG_CONTAINER) --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}' 2>/dev/null); \
+		$(COMPOSE) rm -sf postgres >/dev/null 2>&1 || true; \
+		if [ -n "$$vol" ]; then docker volume rm -f "$$vol" >/dev/null; echo "已删数据卷 $$vol"; fi
 	@$(MAKE) --no-print-directory db
 	@$(MAKE) --no-print-directory migrate
 	@$(MAKE) --no-print-directory seed

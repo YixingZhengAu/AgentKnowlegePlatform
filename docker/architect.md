@@ -31,7 +31,7 @@ docker exec -e PGPASSWORD=biz_reader agent_system_pg psql -U biz_reader -d agent
   模型加载一次约 13s,一次性 CLI 每次都要重加载,所以常驻。
 - 模型权重 1.0GB 落 named volume `mineru_models`（compose 里写死卷名,换项目名也不丢权重）。
 - 后端按 `.env` 的 `MINERU_API_URL` 调它;那 4.9GB 依赖树**永不进 server 镜像**。
-- 起停:`make mineru` / `make mineru-stop`。健康检查打容器内 `/health`。
+- 起停:`make mineru`(或装机时 `./bootstrap.sh --with-mineru`) / `make mineru-stop`。健康检查打容器内 `/health`。
 
 ## 注意
 

@@ -12,6 +12,11 @@
 - 异步任务:FastAPI BackgroundTasks(刻意不用 Celery/Redis)
 - 编排:自研轻量编排,不引入 LangChain 等重框架(面试可解释性优先)
 
+## 环境安装:根目录 `bootstrap.sh`
+
+- 新机器接手项目:`./bootstrap.sh`(= `make bootstrap`)。幂等,细节 `./bootstrap.sh --help`
+- **凡是新增了外部依赖或初始化步骤(新容器、新服务、新环境变量、新一次性命令),当场同步进 `bootstrap.sh`** —— 它是"从零到能跑"的唯一出处,不能靠口头交接
+
 ## Python 环境:统一用 uv
 
 - 依赖管理只用 uv,**加任何包一律 `uv add <pkg>`**,禁止 pip install / 手改 pyproject 依赖段
