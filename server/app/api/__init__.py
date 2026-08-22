@@ -2,7 +2,18 @@
 
 from fastapi import APIRouter
 
-from app.api import agents, chat, conversations, health, jobs, kbs, staging, traces
+from app.api import (
+    agents,
+    chat,
+    conversations,
+    exact_qa,
+    files,
+    health,
+    jobs,
+    kbs,
+    staging,
+    traces,
+)
 
 api_router = APIRouter()
 api_router.include_router(health.router)
@@ -13,5 +24,8 @@ api_router.include_router(chat.router)
 api_router.include_router(traces.router)
 api_router.include_router(jobs.router)
 api_router.include_router(staging.router)
+# S1:精准问答的域接口 + 解析产物图片出口(M1.5)
+api_router.include_router(exact_qa.router)
+api_router.include_router(files.router)
 
 __all__ = ["api_router"]

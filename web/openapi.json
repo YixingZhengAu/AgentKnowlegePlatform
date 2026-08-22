@@ -889,6 +889,702 @@
           }
         }
       }
+    },
+    "/api/exact-qa/documents": {
+      "post": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Upload Document",
+        "description": "上传 PDF → 建 source + document → **立刻派发解析 Job**。\n\n一次请求做完三件事而不是让前端分三步:上传后必然要解析,拆开只会多两个来回,\n而且中间任何一步失败都会留下孤儿数据。",
+        "operationId": "upload_document_api_exact_qa_documents_post",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_api_exact_qa_documents_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "List Documents",
+        "operationId": "list_documents_api_exact_qa_documents_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_DocumentOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/documents/{document_id}": {
+      "get": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Get Document",
+        "operationId": "get_document_api_exact_qa_documents__document_id__get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Delete Document",
+        "description": "删掉一份文档:两个 Job(级联带走候选)、文档行、上传原件、解析产物目录。\n\n**有已发布问答的文档不许删**(409):正式 QA 的出处存在候选行的 `origin_ref` 里\n(`exact_qa_items.source_staging_id` 指过去),删了文档,引用里\"跳到第 N 页\"就悬空了。\n要清掉这类文档,先把它的正式 QA 逐条下线 —— 那是个显式动作,不该由删文档顺手替人做。\n\n这是给演示现场准备的:传错文件、解析失败的文档能自己清掉,不用去翻数据库。",
+        "operationId": "delete_document_api_exact_qa_documents__document_id__delete",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/documents/{document_id}/review-text": {
+      "get": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Get Review Text",
+        "description": "校对页的数据源。**图片路径在这里改写成文件服务 URL**(入库仍是相对路径)。",
+        "operationId": "get_review_text_api_exact_qa_documents__document_id__review_text_get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewTextOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Save Review Text",
+        "description": "保存校对结果到 reviewed.md。抽取用的就是这一份(没有它才退回 paged.md)。",
+        "operationId": "save_review_text_api_exact_qa_documents__document_id__review_text_put",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewTextUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewTextOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/documents/{document_id}/confirm-extract": {
+      "post": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Confirm Extract",
+        "description": "第一道人工关的出口:「确认,开始抽取」。派发 qa_extract Job。",
+        "operationId": "confirm_extract_api_exact_qa_documents__document_id__confirm_extract_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmExtractResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/candidates/{item_id}/accept": {
+      "post": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Accept",
+        "description": "★ 采纳即发布:一个事务里写 `exact_qa_items` + 建向量索引,立刻参与检索。",
+        "operationId": "accept_api_exact_qa_candidates__item_id__accept_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StagingItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/candidates/{item_id}/reject": {
+      "post": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Reject",
+        "description": "不采纳:留痕不入库,理由必填。",
+        "operationId": "reject_api_exact_qa_candidates__item_id__reject_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StagingItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/items": {
+      "get": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "List Items",
+        "description": "正式 QA 列表:**不带答案正文**(列表轻详情重),带索引面行数好确认它真的可被检索。",
+        "operationId": "list_items_api_exact_qa_items_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_ExactQaItemOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/items/{item_id}": {
+      "get": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Get Item Detail",
+        "operationId": "get_item_detail_api_exact_qa_items__item_id__get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExactQaItemDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exact-qa/items/{item_id}/disable": {
+      "post": {
+        "tags": [
+          "exact_qa"
+        ],
+        "summary": "Disable",
+        "description": "下线:置 disabled + 删向量行(正式行留着,历史消息里的引用不悬空)。",
+        "operationId": "disable_api_exact_qa_items__item_id__disable_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExactQaItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/parses/{document_id}/images/{name}": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Get Parse Image",
+        "description": "`GET /api/files/parses/{document_id}/images/{name}` —— 契约见 schemas/exact_qa.py。",
+        "operationId": "get_parse_image_api_files_parses__document_id__images__name__get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/files/documents/{document_id}/pdf": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Get Source Pdf",
+        "description": "上传原件(校对页左侧的 PDF 预览)。\n\n路径不从 URL 拼,而是从 `documents.raw_uri` 取(入库时由 storage 层写的相对路径),\n再断言它落在 FILE_STORAGE_DIR 之内 —— 库里的值也不当可信输入。",
+        "operationId": "get_source_pdf_api_files_documents__document_id__pdf_get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1106,6 +1802,21 @@
         ],
         "title": "AgentOut"
       },
+      "Body_upload_document_api_exact_qa_documents_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "PDF only (S1 boundary)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_api_exact_qa_documents_post"
+      },
       "ChatRequest": {
         "properties": {
           "question": {
@@ -1174,12 +1885,16 @@
           },
           "citations": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/MessageCitationOut"
             },
             "type": "array",
             "title": "Citations",
             "default": []
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified",
+            "default": false
           },
           "trace": {
             "items": {
@@ -1201,6 +1916,104 @@
           "latency_ms"
         ],
         "title": "ChatResponse"
+      },
+      "CitationExtra": {
+        "properties": {
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "matched_question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Question"
+          },
+          "is_standard_question": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Standard Question"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "page_idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Idx"
+          },
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "CitationExtra",
+        "description": "引用的附加信息。**故意允许多余字段**(`extra=\"allow\"`):\nS1 只用得到分数/命中面/页码,S2 的文档引用会带 chunk 序号、S3 的问数会带 SQL 与行数;\n在这里把已知字段写出来是为了让前端有类型可用,不是为了封死结构。"
+      },
+      "ConfirmExtractResult": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "document_id"
+        ],
+        "title": "ConfirmExtractResult"
       },
       "ConversationOut": {
         "properties": {
@@ -1257,6 +2070,336 @@
           "created_at"
         ],
         "title": "ConversationOut"
+      },
+      "DocumentFunnel": {
+        "properties": {
+          "candidates": {
+            "type": "integer",
+            "title": "Candidates",
+            "description": "抽取出的候选条数",
+            "default": 0
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending",
+            "description": "还没裁决的候选",
+            "default": 0
+          },
+          "accepted": {
+            "type": "integer",
+            "title": "Accepted",
+            "description": "已采纳(= 已发布,在库有索引)",
+            "default": 0
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DocumentFunnel",
+        "description": "漏斗计数:一眼看到\"抽了多少、采纳了多少\",即知识转化率(S1-plan §4 决策 4)。"
+      },
+      "DocumentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "parse_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Error"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage",
+            "description": "uploaded/parsing/review_text/extracting/review_qa/done/failed"
+          },
+          "parse_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Job Id"
+          },
+          "extract_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extract Job Id"
+          },
+          "parse_stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParseStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/DocumentFunnel",
+            "default": {
+              "candidates": 0,
+              "pending": 0,
+              "accepted": 0,
+              "rejected": 0
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kb_id",
+          "name",
+          "file_type",
+          "size_bytes",
+          "parse_status",
+          "parse_error",
+          "stage",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DocumentOut",
+        "description": "文档列表/详情的一行。\n\n`stage` 是给界面用的**推导态**:文档表只存解析态(4 态),\n\"待校对 / 抽取中 / 待采纳 / 已完成\"由关联 Job 的状态推出来(S1-plan §8.4)。"
+      },
+      "ExactQaItemDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "standard_question": {
+            "type": "string",
+            "title": "Standard Question"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Keywords"
+          },
+          "similar_count": {
+            "type": "integer",
+            "title": "Similar Count",
+            "default": 0
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "index_faces": {
+            "type": "integer",
+            "title": "Index Faces",
+            "description": "索引面行数(标准问 + 相似问)",
+            "default": 0
+          },
+          "source_staging_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Staging Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "similar_questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Similar Questions"
+          },
+          "origin_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OriginRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kb_id",
+          "standard_question",
+          "keywords",
+          "status",
+          "source_staging_id",
+          "created_at",
+          "updated_at",
+          "answer",
+          "similar_questions"
+        ],
+        "title": "ExactQaItemDetail"
+      },
+      "ExactQaItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "standard_question": {
+            "type": "string",
+            "title": "Standard Question"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Keywords"
+          },
+          "similar_count": {
+            "type": "integer",
+            "title": "Similar Count",
+            "default": 0
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "index_faces": {
+            "type": "integer",
+            "title": "Index Faces",
+            "description": "索引面行数(标准问 + 相似问)",
+            "default": 0
+          },
+          "source_staging_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Staging Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kb_id",
+          "standard_question",
+          "keywords",
+          "status",
+          "source_staging_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExactQaItemOut",
+        "description": "正式 QA 列表的一行(**不带长答案正文**,S1-plan §4 决策 5:列表轻详情重)。"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1592,6 +2735,48 @@
         ],
         "title": "ListResponse[ConversationOut]"
       },
+      "ListResponse_DocumentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[DocumentOut]"
+      },
+      "ListResponse_ExactQaItemOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExactQaItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[ExactQaItemOut]"
+      },
       "ListResponse_JobOut_": {
         "properties": {
           "items": {
@@ -1697,6 +2882,52 @@
         ],
         "title": "ListResponse[TraceOut]"
       },
+      "MessageCitationOut": {
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "citation_type": {
+            "type": "string",
+            "title": "Citation Type"
+          },
+          "ref_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ref Id"
+          },
+          "snippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snippet"
+          },
+          "extra": {
+            "$ref": "#/components/schemas/CitationExtra",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "seq",
+          "citation_type"
+        ],
+        "title": "MessageCitationOut",
+        "description": "一条引用(message_citations 表的一行)。\n\n以前它在 openapi 里是裸 `dict`,前端只能手写一份约定型 —— 违反\"前端不许手写 API 类型\"。\n出处:`app/core/chat.py::_exact_qa_citations`。"
+      },
       "MessageOut": {
         "properties": {
           "id": {
@@ -1760,6 +2991,19 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/MessageCitationOut"
+            },
+            "type": "array",
+            "title": "Citations",
+            "default": []
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified",
+            "default": false
           }
         },
         "type": "object",
@@ -1775,6 +3019,120 @@
           "created_at"
         ],
         "title": "MessageOut"
+      },
+      "OriginRef": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "page_idx": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Idx"
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Quote",
+            "description": "原文片段,逐字摘录,不许改写"
+          },
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "page_idx",
+          "quote"
+        ],
+        "title": "OriginRef",
+        "description": "原文出处,整体存 `staging_items.origin_ref`(jsonb)。\n\nquote 用于审核台文本对照(必须能在源文本里定位到,否则该候选在 M2 就被丢弃);\npage_idx + bbox 用于在原 PDF 上定位/高亮。bbox 可空(quote 跨块时给不出唯一框)。"
+      },
+      "PageInfo": {
+        "properties": {
+          "page_idx": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Page Idx"
+          },
+          "width_pt": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Width Pt"
+          },
+          "height_pt": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Height Pt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page_idx",
+          "width_pt",
+          "height_pt"
+        ],
+        "title": "PageInfo",
+        "description": "一页的物理尺寸(PDF point),前端把归一化 bbox 换算回 PDF 坐标做高亮时要用。"
+      },
+      "ParseStats": {
+        "properties": {
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count",
+            "default": 0
+          },
+          "block_count": {
+            "type": "integer",
+            "title": "Block Count",
+            "default": 0
+          },
+          "noise_dropped": {
+            "type": "integer",
+            "title": "Noise Dropped",
+            "description": "过滤掉的 aside_text/page_number 数",
+            "default": 0
+          },
+          "table_count": {
+            "type": "integer",
+            "title": "Table Count",
+            "default": 0
+          },
+          "image_count": {
+            "type": "integer",
+            "title": "Image Count",
+            "description": "image + chart",
+            "default": 0
+          },
+          "equation_count": {
+            "type": "integer",
+            "title": "Equation Count",
+            "default": 0
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "title": "Elapsed Ms",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ParseStats",
+        "description": "解析统计,给校对页/日志看,也是质量回归的抓手。"
       },
       "PublishResult": {
         "properties": {
@@ -1818,6 +3176,86 @@
         ],
         "title": "PublishResult",
         "description": "发布结果 = 一条审计记录 + 发布后的 job 状态。"
+      },
+      "RejectRequest": {
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "note"
+        ],
+        "title": "RejectRequest",
+        "description": "不采纳必须填理由:它是下一轮调 prompt 的原始素材。"
+      },
+      "ReviewTextOut": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "paged.md(原始解析) 或 reviewed.md(已校对过)"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "图片路径**已改写**成文件服务 URL,可直接渲染"
+          },
+          "pages": {
+            "items": {
+              "$ref": "#/components/schemas/PageInfo"
+            },
+            "type": "array",
+            "title": "Pages"
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images",
+            "default": []
+          },
+          "reviewed": {
+            "type": "boolean",
+            "title": "Reviewed",
+            "description": "是否存在 reviewed.md"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "source",
+          "text",
+          "pages",
+          "reviewed"
+        ],
+        "title": "ReviewTextOut",
+        "description": "校对页要的一切:文本 + 页尺寸(bbox 换算)+ 是否已经校对过。"
+      },
+      "ReviewTextUpdate": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ReviewTextUpdate",
+        "description": "保存校对结果。永不覆盖 paged.md —— 原始解析件留着可对比。"
       },
       "StagingBulkRequest": {
         "properties": {
@@ -2294,6 +3732,33 @@
         ],
         "title": "TraceSpanOut",
         "description": "流式/非流式返回体里附带的轻量 trace(前端执行轨迹面板直接用)。"
+      },
+      "UploadResult": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "source_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "source_id",
+          "job_id"
+        ],
+        "title": "UploadResult",
+        "description": "上传即建 Job:前端拿到 job_id 就能直接轮询进度条,不用再问一次。"
       },
       "ValidationError": {
         "properties": {

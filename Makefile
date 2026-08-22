@@ -1,14 +1,15 @@
 # Clenergy 企业知识 Agent 系统 —— 开发命令入口
 # 详细说明见 README.md
 
-.PHONY: help db db-stop db-wait migrate seed db-reset api web dev types install psql smoke smoke-sse test lint demo
+.PHONY: help db db-stop db-wait migrate seed db-reset mineru mineru-stop api web dev types install psql smoke smoke-s1 smoke-sse test lint demo
 
 SHELL := /bin/bash
 COMPOSE := docker compose
 PG_CONTAINER := agent_system_pg
+MINERU_CONTAINER := agent_system_mineru
 
 help:  ## 列出所有命令
-	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+	grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
 # ===== 数据库 =====
 
@@ -42,6 +43,20 @@ db-reset:  ## 删库重建 + 迁移 + seed(改表零成本的底气,会丢数据
 	@$(MAKE) --no-print-directory migrate
 	@$(MAKE) --no-print-directory seed
 
+# ===== PDF 解析服务(S1)=====
+
+mineru:  ## 起 MinerU 解析容器(18001;首次会 build 镜像 + 下 1GB 权重)
+	$(COMPOSE) up -d mineru-api
+	@echo "等待 MinerU 就绪..."
+	@for i in $$(seq 1 60); do \
+		if [ "$$(docker inspect $(MINERU_CONTAINER) --format '{{.State.Health.Status}}' 2>/dev/null)" = healthy ]; then \
+			echo "MinerU 就绪(http://127.0.0.1:18001)"; exit 0; \
+		fi; sleep 3; \
+	done; echo "MinerU 启动超时"; exit 1
+
+mineru-stop:  ## 停 MinerU 解析容器(保留模型权重卷)
+	$(COMPOSE) stop mineru-api
+
 # ===== 开发服务 =====
 
 api:  ## 只起后端(8000)
@@ -61,6 +76,12 @@ dev:  ## 前后端一起起(Ctrl-C 一起停)
 smoke:  ## 冒烟:真实调 LLM 与 Embedding(会花一点钱,验证 key/网络)
 	cd server && uv run python -m scripts.smoke_llm
 	cd server && uv run python -m scripts.smoke_embedding
+
+smoke-s1:  ## 冒烟:S1 精准问答全链路(LLM 三点 + 存储/pgvector 对数 + HTTP 13 步 + chat 三问)
+	cd server && uv run python -m scripts.smoke_exact_qa
+	cd server && uv run python -m scripts.smoke_exact_qa_store
+	cd server && ./scripts/smoke_s1_api.sh
+	cd server && uv run python -m scripts.smoke_s1_chat
 
 smoke-sse:  ## 冒烟:前端 SSE 客户端打真后端(需先 make api / make dev)
 	cd web && npm run smoke:sse

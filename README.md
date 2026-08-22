@@ -3,7 +3,7 @@
 企业知识分层治理 + Agent 路由问答的演示系统。三类知识按容错率分层:**精准问答对**(零改写)、**文档知识**(RAG + 强制引用)、**智能问数**(语义层 + Text2SQL)。
 
 - 需求与架构:[documents/PRD.md](documents/PRD.md)
-- 当前阶段计划:[documents/S0-PLAN.md](documents/S0-PLAN.md)
+- 阶段计划:[S0](documents/S0-PLAN.md)(地基)· [S1](documents/S1-PLAN.md)(精准问答,已完成)
 - 表结构唯一出处:[documents/DB-DESIGN.md](documents/DB-DESIGN.md)
 - 前端风格唯一出处:[documents/UI-STYLE.md](documents/UI-STYLE.md)
 
@@ -34,11 +34,21 @@ make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
 
 - **Chat** —— 发一句话就能看到流式回复,右侧执行轨迹面板列出每个阶段的耗时 / token / 成本;
   点历史消息可以展开看当时实际发出去的 prompt。流式期间 Send 会变成 Stop(真中断,
-  这条消息会按 `interrupted` 落库)
+  这条消息会按 `interrupted` 落库)。
+  命中已采纳的精准问答时,气泡上会有 **Verified Answer** 标注 + 引用(命中的问法、相似度、页码),
+  而且 trace 里**只有 `retrieve_exact_qa` 没有 `generate`** —— 答案是库里的原话,零改写。
+  标注与引用刷新页面后仍在(历史消息接口自带),**没被采纳过的知识不会带标注** ——
+  同一份文档里没采纳的那条事实,问它只会得到"我不知道"
+- **Exact Q&A ingestion**(`/ingest/exact-qa`)—— S1 的完整流水线:上传 PDF → 等解析
+  (列表状态自己走)→ **校对页**(左边原件 PDF、右边解析出的 markdown,可编辑可预览)→
+  「Confirm & extract Q&A」→ 审核台逐条 **Accept & publish**(采纳即发布,立刻可被检索)
+  / Reject(必须填理由)/ 勾选多条**批量采纳** → 页面下方 **Published Q&A** 能看到每条的
+  索引面数与下线开关;文档列表那一行的垃圾桶可以删掉传错的文档(两步确认;
+  有已发布问答的会被拒 —— 先把那几条下线)
 - **Knowledge Bases / Agents** —— seed 的 3 个 KB 与默认 agent(含 system prompt 与 KB 绑定)
 - **Ingestion** —— 提交一个假任务(`demo_sleep`)看进度条走完四步;
   `Inject a failure at` 可以让某一步失败,然后用"从失败步骤重跑"恢复
-- **Review**(任务跑完后点行尾的 Review)—— 20 条待审条目:按置信度排序、按状态筛选、
+- **Review**(演示任务跑完后点行尾的 Review;S1 的候选审核走同一个审核台)—— 20 条待审条目:按置信度排序、按状态筛选、
   改内容、批量通过驳回、键盘流(`j/k` 走条目 / `a` 通过 / `x` 驳回 / 空格勾选),
   最后点右上角 **Publish** 发布(写 `publish_records` 审计,发布后审核台变只读)
 - `/styleguide` 是 UI 验收对照页(隐藏路由)
@@ -61,6 +71,7 @@ curl localhost:8000/api/traces/<message_id>
 ```
 make help       列出全部命令
 make db         起数据库(等到健康)
+make mineru     起 MinerU PDF 解析容器(18001,S1 上传解析要用)
 make psql       进系统库 psql
 make migrate    跑 Alembic 迁移
 make seed       灌最小演示数据
@@ -69,6 +80,7 @@ make api        只起后端
 make web        只起前端
 make dev        前后端一起起
 make smoke      冒烟:真实调 LLM 与 Embedding(验证 key/网络/代理)
+make smoke-s1   冒烟:S1 精准问答全链路(需先 make api + make mineru;会真花钱)
 make smoke-sse  冒烟:前端 SSE 客户端打真后端(需先起后端)
 make test       跑离线测试(不联网、不连 DB)
 make lint       后端 ruff + 前端 eslint + TS 编译
@@ -79,7 +91,7 @@ make types      openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 
 ## 目录结构
 
 ```
-docker/          Postgres 初始化脚本(建业务库与只读账号)
+docker/          容器配置:Postgres 初始化脚本 + MinerU 解析镜像
 server/          FastAPI 后端(uv 管理),详见 server/claude.md
 web/             React + Vite 前端,详见 web/claude.md
 documents/       PRD / 阶段计划 / 数据库设计 / UI 规范

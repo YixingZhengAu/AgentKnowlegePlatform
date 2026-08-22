@@ -14,6 +14,12 @@
 
 ## 右侧面板插槽的实现
 
+`RightPanelContext` 与 `useRightPanel` 住在 `rightPanel.tsx`,不在 AppLayout 里 ——
+**为了断依赖环**:AppLayout 要遍历 `DOMAINS`,而域页面(S1 校对页)要用 `useRightPanel`,
+两边互相 import 就成 `domains/index → 域 module → 域页 → AppLayout → domains/index`。
+ESM 的环不报编译错,只在运行时炸 `Cannot access 'DOMAINS' before initialization`
+(Step 7b 的浏览器自测抓到的)。拆开后依赖单向:AppLayout 与各页面都只依赖 rightPanel。
+
 `RightPanelContext` 只暴露一个 `setPanel`;页面用 `useRightPanel(title, node, deps)`:
 effect 里 set,卸载 return 里清空。**没有内容时整个 `<aside>` 不渲染** ——
 列表页不该白让出 360px,而对话页一进去就该看到"轨迹会出现在这里"。

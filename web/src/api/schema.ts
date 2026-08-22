@@ -75,6 +75,11 @@ export type JobStepLog = {
 
 export type JobStepDef = { name: string; title: string }
 
+/** 一条引用的形状。**由 openapi 生成**(后端 `MessageCitationOut`)——
+ *  以前它在 openapi 里是裸 dict,前端只能手写一份约定型;S1 把它写成真 schema 后
+ *  这里就只是取个短名。出处 `server/app/core/chat.py::_exact_qa_citations`。 */
+export type MessageCitation = S['MessageCitationOut']
+
 /** 审核状态(出处 server/app/models/ingest.py REVIEW_STATUSES)。
  *  顺序就是审核台筛选标签的顺序:先看没审的。 */
 export const REVIEW_STATUSES = ['pending', 'approved', 'modified', 'rejected'] as const

@@ -18,10 +18,11 @@ import {
   PanelRightOpen,
   Settings,
 } from 'lucide-react'
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { DOMAINS } from '@/domains'
+import { RightPanelContext, type PanelSlot } from '@/layouts/rightPanel'
 import { cn } from '@/lib/utils'
 
 const NAV_MAIN = [
@@ -41,22 +42,6 @@ const TITLES: { prefix: string; title: string }[] = [
   { prefix: '/settings', title: 'Settings' },
   { prefix: '/styleguide', title: 'Style Guide' },
 ]
-
-type PanelSlot = { title: string; content: ReactNode } | null
-
-const RightPanelContext = createContext<{
-  setPanel: (slot: PanelSlot) => void
-}>({ setPanel: () => {} })
-
-/** 页面调用它把内容挂到右侧面板;依赖变化时自动替换,卸载时自动清空。 */
-export function useRightPanel(title: string, content: ReactNode, deps: unknown[] = []) {
-  const { setPanel } = useContext(RightPanelContext)
-  useEffect(() => {
-    setPanel({ title, content })
-    return () => setPanel(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, ...deps])
-}
 
 /** 侧栏顶级项(分组头与普通链接共用的外观) */
 const navItemClass = (isActive: boolean) =>
@@ -152,7 +137,7 @@ export function AppLayout() {
             ))}
           </div>
           <div className="mt-auto px-5 py-4 font-mono text-[11px] text-white/40">
-            S0 · demo build
+            S1 · demo build
           </div>
         </nav>
 

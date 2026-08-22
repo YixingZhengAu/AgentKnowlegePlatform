@@ -14,7 +14,8 @@ from sqlalchemy import select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core.errors import NotFoundError
-from app.models import Conversation, Message
+from app.models import Conversation, Message, MessageCitation
+from app.schemas.chat import MessageCitationOut
 from app.schemas.common import ListResponse
 from app.schemas.conversation import ConversationOut, MessageOut
 
@@ -49,7 +50,30 @@ async def list_messages(conversation_id: uuid.UUID, session: SessionDep) -> List
         .scalars()
         .all()
     )
-    items = [MessageOut.model_validate(r) for r in rows]
+    # 引用一次查完再按消息分组 —— 每条消息各查一次就是 N+1,消息多了一眼可见
+    cites: dict[uuid.UUID, list[MessageCitation]] = {}
+    if rows:
+        cite_rows = (
+            (
+                await session.execute(
+                    select(MessageCitation)
+                    .where(MessageCitation.message_id.in_([m.id for m in rows]))
+                    .order_by(MessageCitation.seq)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for c in cite_rows:
+            cites.setdefault(c.message_id, []).append(c)
+
+    items = []
+    for r in rows:
+        out = MessageOut.model_validate(r)
+        out.citations = [MessageCitationOut.model_validate(c) for c in cites.get(r.id, [])]
+        # verified 的判定规则只写在后端这一处:有 exact_qa 引用 = 答案是采纳过的标准答案原样返回
+        out.verified = any(c.citation_type == "exact_qa" for c in out.citations)
+        items.append(out)
     return ListResponse[MessageOut](items=items, total=len(items))
 
 

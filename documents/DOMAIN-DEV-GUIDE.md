@@ -22,15 +22,27 @@
 
 ## 2. 前端:写在 `web/src/domains/<你的域>/`
 
-你的域文件夹里现在有一个空白壳 `IngestPage.tsx` 和一个描述符 `module.ts`,开发就是充实它们:
+你的域文件夹里现在有一个空白壳 `IngestPage.tsx` 和一个描述符 `module.ts`,开发就是充实它们
+(**已经做完的 `domains/exact-qa/` 就是一份可抄的样板**:域内路由壳 + 三个页面 + 渲染器 + 动作层):
 
 1. **摄取页面**:替换 `IngestPage.tsx` 的空状态,上传/表单/进度条(`<JobProgress jobId>` 现成)
    都写在你的文件夹里。页面多了就拆子组件,仍然全部放在域文件夹内。
+   **域内二级页**(比如 S1 的校对页)自己在 `IngestPage.tsx` 里摆一层 `<Routes>` ——
+   共享路由表给了每个域一个 `/ingest/<域>/*` 空间,加页面不用碰 `App.tsx`。
 2. **审核渲染器**:写 `ItemCard`(列表项怎么画)+ `ItemEditor`(右侧编辑表单),
    在你的 `module.ts` 的 `renderers` 字段登记(key = 你的 item_type)。
    登记前审核台走 JSON 兜底渲染 —— 所以后端先行完全可行,不必等前端。
-3. **路由 / 侧栏导航 / 顶栏标题**:不用写。它们由 `domains/index.ts` 的 `DOMAINS`
+3. **审核动作层(可选)**:如果你的域"通过"不是 S0 的默认语义(标 approved、最后批量发布),
+   在域内写一个 `ReviewActions` 并登记进 `renderers.<item_type>.actions`。
+   S1 就是这么把"采纳即发布 + 驳回必须填理由"接上去的,审核台本体一行没改。
+   批量也在这一层:给 `bulkApprove(items)` 就用你的实现(S1 的采纳要建向量,只能逐条打接口),
+   `bulkReject: false` 可以只关掉批量驳回而保留批量勾选。
+4. **路由 / 侧栏导航 / 顶栏标题**:不用写。它们由 `domains/index.ts` 的 `DOMAINS`
    数组自动生成,你的 `module.ts` 改了 label/icon 会自动生效。
+
+⚠ **一个真踩过的坑**:域页面要用右侧面板就 import `@/layouts/rightPanel`,
+**不要 import `AppLayout`** —— AppLayout 要遍历 DOMAINS,反向 import 会成 ESM 环,
+运行时炸 `Cannot access 'DOMAINS' before initialization`(S1 Step 7b 抓到过)。
 
 **不能碰的(shared 层,只读)**:`src/{api,components,layouts,lib}`、`App.tsx`、
 `AppLayout.tsx`、`components/staging/registry.ts`。要改公共契约(比如审核台组件加能力、
@@ -91,6 +103,8 @@ SSE 协议加事件),**单独提出来与集成者讨论**,不要顺手改。
 ## 6. 联调工具(S0 已交付,直接用)
 
 - `make dev` 前后端一起起;`make smoke` / `make smoke-sse` 冒烟;`make types` 契约同步
+- 域冒烟的参照实现:`make smoke-s1`(精准 QA 的四个脚本 —— LLM 调用点 / 存储与 pgvector
+  对数 / HTTP 全链路 / chat 三问)。**自己的域照这个套路各写一份**,回归时零成本重跑
 - Job 框架联调:`demo_sleep` 假任务可调慢、可注入失败、可产出待审条目 ——
   `curl -X POST localhost:8000/api/jobs -H 'Content-Type: application/json' \
   -d '{"job_type":"demo_sleep","kb_id":"<kb_id>","params":{"step_seconds":0}}'`

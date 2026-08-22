@@ -44,6 +44,9 @@
 | 加一类异步任务(摄取) | 本域文件夹写 `JobRunner` 子类 + `@register_job`,注册行加在 `server/app/services/__init__.py`(唯一注册点) |
 | 改错误码 / 错误格式 | `server/app/core/errors.py`(前端只认 `{"error":{code,message,detail}}`) |
 | 加一个 CLI 脚本 | `server/scripts/`,跑法 `cd server && uv run python -m scripts.<name>` |
+| 改精准问答的解析/抽取/相似问/检索/采纳 | `server/app/services/exact_qa/`(该目录 claude.md 有文件索引) |
+| 改精准问答的接口 / 图片出口 | `server/app/api/exact_qa.py` / `server/app/api/files.py` |
+| 改命中阈值或那两道关 | `.env` 的 `EXACT_QA_*` 三项;**改前先读 `documents/S1-PLAN.md` §5 M4** |
 | 改容器/数据库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
 | 改颜色 / 字体 / 圆角 | `documents/UI-STYLE.md` → `web/src/index.css` 的品牌层(**全仓唯一 hex 出处**) |
@@ -56,6 +59,13 @@
 | 改执行轨迹面板 | `web/src/components/TracePanel.tsx` |
 | 改任务进度条 | `web/src/components/JobProgress.tsx`(只依赖 Job 框架的四个字段) |
 | 改审核台的流程(筛选/批量/键盘/发布) | `web/src/components/StagingReview.tsx`(泛型,不认识 payload) |
+| 改某一类知识"通过/驳回"到底做了什么 | 该域的 `actions.ts`(`ReviewActions` 动作层;S1 = 采纳即发布) |
+| 改精准问答的上传/校对/文档列表页 | `web/src/domains/exact-qa/`(域内路由在 `IngestPage.tsx`) |
+| 改答案上的 Verified 标注与引用展示 | `web/src/components/{ChatMessages,Citations}.tsx` |
+| 改上传原件的 PDF 预览出口 | `server/app/api/files.py` 的 `/api/files/documents/{id}/pdf` |
+| 改"命中复核关"放不放行的取向 | `server/app/services/exact_qa/retriever.py` 的 `GATE_PROMPT`(改完跑 `smoke_exact_qa.py` 的用例表) |
+| 改历史消息要不要带引用/标注 | `server/app/api/conversations.py`(verified 的判定规则只在这一处) |
+| 删一份文档要清哪些东西 | `server/app/api/exact_qa.py::delete_document` + `services/exact_qa/storage.py::remove_document_files` |
 | 加一类知识的审核界面 | `web/src/domains/<域>/` 写一对渲染器 + 在该域 `module.ts` 的 `renderers` 登记(registry 自动聚合;没登记走 JSON 兜底) |
 | 改审核/发布的后端规则 | `server/app/core/staging.py`(状态推导、浅合并、发布状态机) |
 | 加一类知识的 publisher(写正式表) | `@register_publisher("qa_pair")`,见 `server/app/core/architect.md` |
@@ -104,7 +114,8 @@ Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型
 `make db && make migrate && make seed && make dev` 之后:
 
 - 页面 http://localhost:5173 —— `/chat` 能真聊天并看执行轨迹,`/agents` 是只读列表,
-  `/ingest/{exact-qa,document,text2sql}` 是三个域的空白壳(结构调整后待各域开发),
+  `/ingest/exact-qa` 是精准问答的完整流水线(上传 → 校对 → 采纳 → 已发布库,S1 Step 7),
+  `/ingest/{document,text2sql}` 仍是两个域的空白壳(待各域开发),
   `/jobs/{id}/review` 是审核台(直链进入;筛选/改/批量/键盘流/发布),`/styleguide` 是 UI 验收对照页
   (`/kbs`、`/jobs` 页面已删,重定向回 `/chat`;接口与表保留)
 - curl 也能直接流式聊天并查 trace:
@@ -123,6 +134,9 @@ curl localhost:8000/api/traces/<message_id>
 删了 KbListPage / JobsPage / QA 渲染器三个演示页面件。三类 ingestion 的真实流程
 **待需求方确认写入 PRD 后**由各域开发者在自己的域文件夹里并行开发,互不打架。
 
-**S1(精准 QA)的落点**:后端 `services/exact_qa/`(Job 子类 + publisher + 检索 stage + prompt),
-前端 `domains/exact-qa/`(摄取页 + 渲染器,module.ts 登记)。
-其余骨架 S0 已交付。逐步进度与自测证据见 `documents/S0-PLAN.md`。
+**S1(精准 QA)已闭环**:后端(`services/exact_qa/` 的两个 Job + publisher +
+`retrieve_exact_qa` stage + 12 个域接口 + 文件出口)+ 前端四个页面
+(`domains/exact-qa/` 的上传/文档列表、校对页、审核台动作层、对话页 Verified 标注)。
+Step 8 用一份 4 页 Clenergy 业务手册从浏览器走完全程:上传 → 校对(修掉 7 处 MinerU 瑕疵)
+→ 抽取 23 条候选 → 采纳 8 条 → 对话命中并原样返回标准答案,刷新后标注仍在。
+计划与实施记录见 `documents/S1-PLAN.md`;S0 的见 `documents/S0-PLAN.md`。

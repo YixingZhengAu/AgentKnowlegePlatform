@@ -58,6 +58,18 @@ class Settings(BaseSettings):
     # 一次 embedding 请求最多塞多少条文本(供应商有上限,超了要自己切批)
     embedding_batch_size: int = 64
 
+    # ===== 精准问答(S1)=====
+    # MinerU 常驻解析服务(docker/mineru 的容器,`make mineru` 起;那 4.9GB 依赖树永不进 server 镜像)
+    mineru_api_url: str = "http://127.0.0.1:18001"
+    mineru_timeout_sec: float = 600.0
+    # 命中分档阈值(Step 5 用 27 条人写评测集实测定稿,见 S1-plan §5 M4):
+    # 正例 0.613–0.912 / 越界负例 0.129–0.384 / 困难负例 0.613–0.827
+    # —— 阈值只切得开"越界",切不开"同领域没答案",所以另有两道正交的关(护栏 + 复核)。
+    exact_qa_hit_threshold: float = 0.55
+    exact_qa_borderline_threshold: float = 0.40
+    # 命中前用 light 模型复核一次(挡纯语义邻近的困难负例;实测 23/27 → 26/27,命中时 +2.9s)
+    exact_qa_hit_gate: bool = True
+
     # ===== 数据库 =====
     database_url: str
     biz_database_url: str | None = None
@@ -78,6 +90,14 @@ class Settings(BaseSettings):
     def storage_path(self) -> Path:
         p = Path(self.file_storage_dir)
         return p if p.is_absolute() else (REPO_ROOT / p).resolve()
+
+    @field_validator("exact_qa_hit_threshold")
+    @classmethod
+    def _hit_threshold_range(cls, v: float) -> float:
+        """0.90 是计划早期的臆测值,实测只剩 2/14 正例 —— 写错方向的值在这里就拦住。"""
+        if not 0.0 < v <= 1.0:
+            raise ValueError("EXACT_QA_HIT_THRESHOLD 必须在 (0, 1] 区间内")
+        return v
 
     def model_for_tier(self, tier: Literal["main", "light"]) -> str:
         """业务代码只说要强模型还是快模型,型号在这里映射。"""

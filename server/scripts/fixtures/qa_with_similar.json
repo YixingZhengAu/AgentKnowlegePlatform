@@ -1,0 +1,1026 @@
+{
+  "document_id": "sample-paper-3p",
+  "source_md": "/Users/zhengyixing/Desktop/claude projects/Agent system/tmp/s1-dev/out/parse/sample-paper-3p/paged.md",
+  "candidates": [
+    {
+      "standard_question": "What loss function does YOLOv3 use for bounding box coordinate training?",
+      "answer": "YOLOv3 uses sum of squared error loss for bounding box coordinate training.",
+      "keywords": [
+        "YOLOv3",
+        "loss",
+        "sum of squared error",
+        "bounding box"
+      ],
+      "similar_questions": [
+        "What loss function does YOLOv3 use to train bounding box coordinates?",
+        "YOLOv3 bounding box coordinate loss?",
+        "Which loss function does YOLOv3 use for bounding box coordinate training?",
+        "Tell me the loss function used by YOLOv3 for training its bounding box coordinates."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "During training we use sum of squared error loss.",
+        "bbox": [
+          498,
+          750,
+          893,
+          839
+        ]
+      },
+      "confidence": 1.0
+    },
+    {
+      "standard_question": "What loss function does YOLOv3 use for class predictions during training?",
+      "answer": "YOLOv3 uses binary cross-entropy loss for class predictions during training.",
+      "keywords": [
+        "YOLOv3",
+        "class loss",
+        "binary cross-entropy"
+      ],
+      "similar_questions": [
+        "Which loss function does YOLOv3 use for class predictions during training?",
+        "During training, what loss function does YOLOv3 use for class predictions?",
+        "YOLOv3 class predictions loss function during training?",
+        "Tell me the loss function used by YOLOv3 for class predictions during training."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "During training we use binary cross-entropy loss for the class predictions.",
+        "bbox": [
+          75,
+          550,
+          470,
+          641
+        ]
+      },
+      "confidence": 0.99
+    },
+    {
+      "standard_question": "At how many scales does YOLOv3 predict bounding boxes?",
+      "answer": "YOLOv3 predicts bounding boxes at 3 different scales.",
+      "keywords": [
+        "YOLOv3",
+        "multi-scale",
+        "3 scales",
+        "predictions"
+      ],
+      "similar_questions": [
+        "YOLOv3 bounding box prediction scales?",
+        "How many different scales does YOLOv3 use to predict bounding boxes?",
+        "Tell me the number of scales at which YOLOv3 predicts bounding boxes.",
+        "For YOLOv3, how many scales are used to predict bounding boxes?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "YOLOv3 predicts boxes at 3 different scales.",
+        "bbox": [
+          75,
+          763,
+          470,
+          901
+        ]
+      },
+      "confidence": 0.99
+    },
+    {
+      "standard_question": "What framework is used to train and test YOLOv3?",
+      "answer": "The Darknet neural network framework is used for training and testing YOLOv3.",
+      "keywords": [
+        "YOLOv3",
+        "Darknet",
+        "framework",
+        "training"
+      ],
+      "similar_questions": [
+        "Which framework is used to train and test YOLOv3?",
+        "What neural network framework is YOLOv3 trained and tested with?",
+        "YOLOv3 training and testing framework?",
+        "Tell me the framework used for training and testing YOLOv3."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "We use the Darknet neural network framework for training and testing [14].",
+        "bbox": [
+          75,
+          502,
+          470,
+          579
+        ]
+      },
+      "confidence": 0.99
+    },
+    {
+      "standard_question": "What throughput and mAP does YOLOv3 achieve at 320×320 resolution?",
+      "answer": "At 320×320 resolution, YOLOv3 runs in 22 ms and achieves 28.2 mAP.",
+      "keywords": [
+        "YOLOv3",
+        "320×320",
+        "mAP",
+        "22 ms",
+        "performance"
+      ],
+      "similar_questions": [
+        "YOLOv3 320×320 throughput and mAP?",
+        "What is YOLOv3's runtime (in milliseconds) and mAP at 320×320 resolution?",
+        "How fast does YOLOv3 run and what mAP does it achieve when using 320×320 inputs?",
+        "Give me the throughput and mean average precision for YOLOv3 at 320×320."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "At 320 × 320 YOLOv3 runs in 22 ms at 28.2 mAP, as accurate as SSD but three times faster.",
+        "bbox": [
+          75,
+          281,
+          470,
+          452
+        ]
+      },
+      "confidence": 0.98
+    },
+    {
+      "standard_question": "How does YOLOv3 predict the objectness score for each bounding box?",
+      "answer": "YOLOv3 predicts the objectness score using logistic regression.",
+      "keywords": [
+        "YOLOv3",
+        "objectness",
+        "logistic regression"
+      ],
+      "similar_questions": [
+        "How is the objectness score for each bounding box estimated by YOLOv3?",
+        "For each bounding box, how does YOLOv3 predict the objectness score?",
+        "Tell me how YOLOv3 predicts the objectness score for each bounding box.",
+        "YOLOv3 objectness score per bounding box?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "YOLOv3 predicts an objectness score for each bounding box using logistic regression.",
+        "bbox": [
+          496,
+          840,
+          893,
+          901
+        ]
+      },
+      "confidence": 0.98
+    },
+    {
+      "standard_question": "How many bounding box priors does YOLOv3 assign to each ground truth object?",
+      "answer": "YOLOv3 assigns only one bounding box prior to each ground truth object.",
+      "keywords": [
+        "YOLOv3",
+        "bounding box prior",
+        "assignment"
+      ],
+      "similar_questions": [
+        "How many bounding box priors does YOLOv3 assign for each ground truth object?",
+        "For each ground truth object, how many bounding box priors are assigned by YOLOv3?",
+        "YOLOv3 bounding box priors per ground truth object?",
+        "Tell me the number of bounding box priors YOLOv3 assigns to each ground truth object."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "Unlike [17] our system only assigns one bounding box prior for each ground truth object.",
+        "bbox": [
+          496,
+          840,
+          893,
+          901
+        ]
+      },
+      "confidence": 0.98
+    },
+    {
+      "standard_question": "For a bounding box prior not assigned to any ground truth object, what losses are applied in YOLOv3?",
+      "answer": "A prior not assigned to any ground truth incurs no loss for coordinate or class predictions, only objectness loss.",
+      "keywords": [
+        "YOLOv3",
+        "loss",
+        "objectness",
+        "unassigned prior"
+      ],
+      "similar_questions": [
+        "In YOLOv3, for a bounding box prior not assigned to any ground truth object, which losses are applied?",
+        "If a YOLOv3 bounding box prior has no matching ground-truth object, what losses does it incur?",
+        "Bounding box prior with no assigned ground truth in YOLOv3: coordinate loss, class loss, or objectness loss?",
+        "YOLOv3 unassigned bounding box prior losses?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "If a bounding box prior is not assigned to a ground truth object it incurs no loss for coordinate or class predictions, only objectness.",
+        "bbox": [
+          496,
+          840,
+          893,
+          901
+        ]
+      },
+      "confidence": 0.98
+    },
+    {
+      "standard_question": "Where is the YOLOv3 code available online?",
+      "answer": "The YOLOv3 code is available at https://pjreddie.com/yolo/.",
+      "keywords": [
+        "YOLOv3",
+        "code",
+        "URL",
+        "pjreddie"
+      ],
+      "similar_questions": [
+        "Where can I find the YOLOv3 code online?",
+        "What's the web address for the YOLOv3 code?",
+        "YOLOv3 code URL?",
+        "Where is the YOLOv3 code hosted online?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "As always, all the code is online at https://pjreddie.com/yolo/.",
+        "bbox": [
+          75,
+          281,
+          470,
+          452
+        ]
+      },
+      "confidence": 0.98
+    },
+    {
+      "standard_question": "How does YOLOv3 perform class prediction for each bounding box?",
+      "answer": "Each box predicts classes using multilabel classification with independent logistic classifiers; a softmax is not used.",
+      "keywords": [
+        "YOLOv3",
+        "class prediction",
+        "multilabel",
+        "logistic",
+        "softmax"
+      ],
+      "similar_questions": [
+        "How does YOLOv3 predict classes for each bounding box?",
+        "How does YOLOv3 predict class probabilities for each bounding box?",
+        "Describe how YOLOv3 performs class prediction for each bounding box.",
+        "Does YOLOv3 use softmax for class prediction per bounding box?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "Each box predicts the classes the bounding box may contain using multilabel classification. We do not use a softmax as we have found it is unnecessary for good performance, instead we simply use independent logistic classifiers.",
+        "bbox": [
+          75,
+          550,
+          470,
+          641
+        ]
+      },
+      "confidence": 0.98
+    },
+    {
+      "standard_question": "What are the ImageNet Top-1 and Top-5 accuracies of Darknet-53?",
+      "answer": "On ImageNet, Darknet-53 achieves 77.2% Top-1 accuracy and 93.8% Top-5 accuracy.",
+      "keywords": [
+        "Darknet-53",
+        "ImageNet",
+        "Top-1",
+        "Top-5"
+      ],
+      "similar_questions": [
+        "What Top-1 and Top-5 accuracy does Darknet-53 achieve on ImageNet?",
+        "Tell me Darknet-53's ImageNet Top-1 and Top-5 accuracies.",
+        "Darknet-53 ImageNet Top-1 Top-5 accuracies?",
+        "On ImageNet, what are the Top-1 and Top-5 accuracy numbers for Darknet-53?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "<tr><td>Darknet-53</td><td>77.2</td><td>93.8</td><td>18.7</td><td>1457</td><td>78</td></tr>",
+        "bbox": [
+          80,
+          150,
+          482,
+          223
+        ]
+      },
+      "confidence": 0.98
+    },
+    {
+      "standard_question": "Does YOLOv3 training use hard negative mining?",
+      "answer": "No. YOLOv3 is trained on full images with no hard negative mining.",
+      "keywords": [
+        "YOLOv3",
+        "training",
+        "hard negative mining"
+      ],
+      "similar_questions": [
+        "Is hard negative mining used in training YOLOv3?",
+        "Does the training procedure of YOLOv3 employ hard negative mining?",
+        "YOLOv3 hard negative mining?",
+        "Tell me whether YOLOv3 is trained using hard negative mining."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "We still train on full images with no hard negative mining or any of that stuff.",
+        "bbox": [
+          75,
+          502,
+          470,
+          579
+        ]
+      },
+      "confidence": 0.97
+    },
+    {
+      "standard_question": "How does Darknet-53 compare to ResNet-101 and ResNet-152 in performance and speed?",
+      "answer": "Darknet-53 is better than ResNet-101 and 1.5× faster. It has similar performance to ResNet-152 and is 2× faster.",
+      "keywords": [
+        "Darknet-53",
+        "ResNet-101",
+        "ResNet-152",
+        "speed"
+      ],
+      "similar_questions": [
+        "Compare Darknet-53 to ResNet-101 and ResNet-152 in terms of performance and speed.",
+        "What are the performance and speed differences between Darknet-53 and ResNet-101 and ResNet-152?",
+        "Darknet-53 vs ResNet-101 vs ResNet-152 performance and speed",
+        "How does Darknet-53's performance and inference speed stack up against ResNet-101 and ResNet-152?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "Darknet-53 is better than ResNet-101 and 1.5× faster. Darknet-53 has similar performance to ResNet-152 and is 2× faster.",
+        "bbox": [
+          75,
+          286,
+          470,
+          391
+        ]
+      },
+      "confidence": 0.96
+    },
+    {
+      "standard_question": "What training techniques are used for YOLOv3?",
+      "answer": "YOLOv3 uses multi-scale training, lots of data augmentation, and batch normalization.",
+      "keywords": [
+        "YOLOv3",
+        "multi-scale training",
+        "data augmentation",
+        "batch normalization"
+      ],
+      "similar_questions": [
+        "Which training techniques does YOLOv3 use?",
+        "What training techniques does YOLOv3 employ?",
+        "List the training techniques used by YOLOv3.",
+        "YOLOv3 training techniques?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "We use multi-scale training, lots of data augmentation, batch normalization, all the standard stuff.",
+        "bbox": [
+          75,
+          502,
+          470,
+          579
+        ]
+      },
+      "confidence": 0.96
+    },
+    {
+      "standard_question": "How does YOLOv3’s detection performance change as the IoU threshold increases?",
+      "answer": "YOLOv3’s performance drops significantly as the IoU threshold increases, indicating difficulty in perfectly aligning boxes with objects.",
+      "keywords": [
+        "YOLOv3",
+        "IoU threshold",
+        "performance drop"
+      ],
+      "similar_questions": [
+        "What happens to YOLOv3's detection performance when the IoU threshold is raised?",
+        "Explain how raising the IoU threshold affects YOLOv3's detection performance.",
+        "Describe how YOLOv3's detection performance varies with increasing IoU threshold.",
+        "YOLOv3 detection performance vs IoU threshold"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "However, performance drops significantly as the IOU threshold increases indicating YOLOv3 struggles to get the boxes perfectly aligned with the object.",
+        "bbox": [
+          496,
+          106,
+          893,
+          227
+        ]
+      },
+      "confidence": 0.96
+    },
+    {
+      "standard_question": "What is the ImageNet Top-1 and Top-5 accuracy of ResNet-101 in the backbone comparison?",
+      "answer": "ResNet-101 achieves 77.1% Top-1 accuracy and 93.7% Top-5 accuracy on ImageNet.",
+      "keywords": [
+        "ResNet-101",
+        "ImageNet",
+        "Top-1",
+        "Top-5"
+      ],
+      "similar_questions": [
+        "ResNet-101 ImageNet Top-1 and Top-5 accuracy in the backbone comparison?",
+        "What are the ImageNet Top-1 and Top-5 accuracies for ResNet-101 reported in the backbone comparison?",
+        "Tell me ResNet-101's ImageNet Top-1 and Top-5 accuracy from the backbone comparison.",
+        "ImageNet Top-1/Top-5 accuracy of ResNet-101 in backbone comparison"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "<tr><td>ResNet-101[5]</td><td>77.1</td><td>93.7</td><td>19.7</td><td>1039</td><td>53</td></tr>",
+        "bbox": [
+          80,
+          150,
+          482,
+          223
+        ]
+      },
+      "confidence": 0.96
+    },
+    {
+      "standard_question": "What IoU threshold does YOLOv3 use to ignore predictions from non-best bounding box priors?",
+      "answer": "YOLOv3 ignores non-best priors that overlap a ground truth object by more than a threshold of 0.5 IoU.",
+      "keywords": [
+        "YOLOv3",
+        "threshold",
+        ".5 IoU",
+        "ignore priors"
+      ],
+      "similar_questions": [
+        "What IoU cutoff does YOLOv3 use to discard predictions from non-best bounding box priors?",
+        "YOLOv3 IoU threshold to ignore non-best bounding box priors?",
+        "For YOLOv3, above what IoU with a ground-truth box are predictions from non-best bounding box priors ignored?",
+        "Tell me the IoU overlap threshold YOLOv3 applies to filter out predictions from non-best bounding box priors."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "If the bounding box prior is not the best but does overlap a ground truth object by more than some threshold we ignore the prediction, following [17]. We use the threshold of .5.",
+        "bbox": [
+          496,
+          840,
+          893,
+          901
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "What feature extractor does YOLOv3 use and how many convolutional layers does it have?",
+      "answer": "YOLOv3 uses the Darknet-53 feature extractor, which has 53 convolutional layers.",
+      "keywords": [
+        "YOLOv3",
+        "Darknet-53",
+        "backbone",
+        "53 layers"
+      ],
+      "similar_questions": [
+        "Which feature extractor is used by YOLOv3, and how many convolutional layers are in it?",
+        "YOLOv3 feature extractor and convolutional layer count?",
+        "Tell me the feature extractor for YOLOv3 and the number of convolutional layers it contains.",
+        "What feature extractor does YOLOv3 employ, and what is the count of its convolutional layers?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "It has 53 convolutional layers so we call it.... wait for it..... Darknet-53!",
+        "bbox": [
+          496,
+          415,
+          893,
+          522
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "What are the BFLOP/s and FPS of Darknet-53 in the backbone comparison?",
+      "answer": "Darknet-53 delivers 1457 BFLOP/s and 78 FPS.",
+      "keywords": [
+        "Darknet-53",
+        "BFLOP/s",
+        "FPS",
+        "backbone"
+      ],
+      "similar_questions": [
+        "What BFLOP/s and FPS does Darknet-53 have in the backbone comparison?",
+        "Darknet-53 BFLOP/s and FPS?",
+        "How many BFLOP/s and what FPS does Darknet-53 deliver in the backbone comparison?",
+        "Tell me the BFLOP/s and FPS for Darknet-53 in the backbone comparison."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "<table><tr><td>Backbone</td><td>Top-1</td><td>Top-5</td><td>Bn Ops</td><td>BFLOP/s</td><td>FPS</td></tr><tr><td>Darknet-",
+        "bbox": [
+          80,
+          150,
+          482,
+          223
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "How many billion operations does Darknet-53 require in the ImageNet backbone comparison?",
+      "answer": "Darknet-53 requires 18.7 billion operations (Bn Ops).",
+      "keywords": [
+        "Darknet-53",
+        "Bn Ops",
+        "ImageNet",
+        "operations"
+      ],
+      "similar_questions": [
+        "What is the number of billion operations (Bn Ops) required by Darknet-53 in the ImageNet backbone comparison?",
+        "Darknet-53 Bn Ops in ImageNet backbone comparison?",
+        "Tell me how many billion operations Darknet-53 needs in the ImageNet backbone comparison.",
+        "In the ImageNet backbone comparison, how many Bn Ops does Darknet-53 use?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "<tr><td>Darknet-53</td><td>77.2</td><td>93.8</td><td>18.7</td><td>1457</td><td>78</td></tr>",
+        "bbox": [
+          80,
+          150,
+          482,
+          223
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "Which backbone achieves the highest measured floating point operations per second in the comparison?",
+      "answer": "Darknet-53 achieves the highest measured floating point operations per second.",
+      "keywords": [
+        "Darknet-53",
+        "floating point operations per second",
+        "throughput"
+      ],
+      "similar_questions": [
+        "Which backbone has the highest measured FLOPS in the comparison?",
+        "In the comparison, which backbone records the greatest measured floating-point operations per second?",
+        "Backbone with highest measured floating point ops/sec in the comparison?",
+        "Tell me which backbone achieves the largest measured floating-point operations per second in the comparison."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "Darknet-53 also achieves the highest measured floating point operations per second.",
+        "bbox": [
+          75,
+          391,
+          470,
+          469
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "What was the effect of using anchor box x, y offset predictions as multiples of box size with a linear activation?",
+      "answer": "This approach decreased model stability and did not work very well.",
+      "keywords": [
+        "YOLOv3",
+        "anchor box",
+        "x,y offset",
+        "stability"
+      ],
+      "similar_questions": [
+        "How did predicting anchor box x,y offsets as multiples of the box size with a linear activation affect the model?",
+        "What impact did using linear-activation anchor box x and y offset predictions scaled by box size have?",
+        "anchor box x,y offsets as multiples of box size linear activation effect",
+        "Describe the result of using anchor box x,y offset predictions scaled by box size with a linear activation."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "We tried using the normal anchor box prediction mechanism where you predict the $x , y$ offset as a multiple of the box width or height using a linear activation. We found this formulation decreased model stability and didn’t work very well.",
+        "bbox": [
+          496,
+          446,
+          893,
+          522
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "What happened when linear x, y predictions were used instead of logistic for YOLOv3?",
+      "answer": "Using linear x, y predictions instead of logistic led to a couple point drop in mAP.",
+      "keywords": [
+        "YOLOv3",
+        "linear predictions",
+        "logistic",
+        "mAP drop"
+      ],
+      "similar_questions": [
+        "How did using linear x and y predictions instead of logistic affect YOLOv3?",
+        "What happened to YOLOv3 when linear x,y predictions were used rather than logistic?",
+        "What was the change in mAP for YOLOv3 when using linear x and y predictions instead of logistic?",
+        "YOLOv3 linear x,y vs logistic — effect on performance?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "Linear x, y predictions instead of logistic. We tried using a linear activation to directly predict the $x , y$ offset instead of the logistic activation. This led to a couple point drop in mAP.",
+        "bbox": [
+          496,
+          522,
+          893,
+          583
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "What was the observed impact of focal loss on YOLOv3’s mAP?",
+      "answer": "Focal loss dropped the mAP by about 2 points.",
+      "keywords": [
+        "YOLOv3",
+        "focal loss",
+        "mAP"
+      ],
+      "similar_questions": [
+        "How did applying focal loss affect YOLOv3's mAP?",
+        "By how much did focal loss change YOLOv3’s mAP?",
+        "What change in mAP did YOLOv3 experience when using focal loss?",
+        "Focal loss YOLOv3 mAP drop?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "Focal loss. We tried using focal loss. It dropped our mAP about 2 points.",
+        "bbox": [
+          496,
+          583,
+          895,
+          675
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "standard_question": "How does YOLOv3 determine bounding box priors, and how many clusters and scales are used?",
+      "answer": "YOLOv3 uses k-means clustering to determine priors, choosing 9 clusters and 3 scales, divided evenly across scales.",
+      "keywords": [
+        "YOLOv3",
+        "k-means",
+        "priors",
+        "9 clusters",
+        "3 scales"
+      ],
+      "similar_questions": [
+        "YOLOv3 bounding box priors: method, number of clusters, number of scales?",
+        "How are bounding box priors determined in YOLOv3, and specifically how many clusters and scales does it use?",
+        "What algorithm does YOLOv3 use to compute its bounding box priors, and what are the counts of clusters and scales and how are they distributed?",
+        "Describe the way YOLOv3 selects bounding box priors and state the number of clusters and the number of scales it employs."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "We still use k-means clustering to determine our bounding box priors. We just sort of chose 9 clusters and 3 scales arbitrarily and then divide up the clusters evenly across scales.",
+        "bbox": [
+          498,
+          289,
+          893,
+          381
+        ]
+      },
+      "confidence": 0.94
+    },
+    {
+      "standard_question": "How does YOLOv3 combine features across scales before predicting at a higher resolution?",
+      "answer": "YOLOv3 upsamples by 2× a feature map from two layers earlier and concatenates it with an earlier feature map to merge semantic and fine-grained information.",
+      "keywords": [
+        "YOLOv3",
+        "upsample",
+        "concatenation",
+        "feature pyramid"
+      ],
+      "similar_questions": [
+        "How does YOLOv3 merge multi-scale feature maps before predicting at a higher resolution?",
+        "In YOLOv3, what operation combines features across scales prior to a higher-resolution prediction?",
+        "YOLOv3 feature fusion before higher-resolution prediction",
+        "Explain how YOLOv3 combines features across scales before making a prediction at a higher resolution."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "Next we take the feature map from 2 layers previous and upsample it by 2×. We also take a feature map from earlier in the network and merge it with our upsampled features using concatenation.",
+        "bbox": [
+          498,
+          90,
+          893,
+          227
+        ]
+      },
+      "confidence": 0.93
+    },
+    {
+      "standard_question": "On the COCO dataset, how many boxes per scale does YOLOv3 predict and what is the output tensor shape per scale?",
+      "answer": "On COCO, YOLOv3 predicts 3 boxes at each scale, producing a tensor of size N × N × [3 × (4 + 1 + 80)] for 4 box offsets, 1 objectness score, and 80 class predictions.",
+      "keywords": [
+        "YOLOv3",
+        "COCO",
+        "tensor shape",
+        "anchors",
+        "80 classes"
+      ],
+      "similar_questions": [
+        "For YOLOv3 on the COCO dataset, how many boxes are predicted at each scale and what is the shape of the output tensor per scale?",
+        "On COCO, how many bounding boxes does YOLOv3 predict per scale and what is the per-scale output tensor size?",
+        "YOLOv3 COCO boxes per scale and output tensor shape per scale?",
+        "Tell me the number of boxes per scale and the output tensor dimensions per scale for YOLOv3 on COCO."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "In our experiments with COCO [10] we predict 3 boxes at each scale so the tensor is $N \\times N \\times [ 3 * ( 4 + 1 + 8 0 ) ]$ ] for the 4 bounding box offsets, 1 objectness prediction, and 80 class predictions.",
+        "bbox": [
+          75,
+          763,
+          470,
+          901
+        ]
+      },
+      "confidence": 0.9
+    },
+    {
+      "standard_question": "What architectural elements are used in YOLOv3's feature extractor Darknet-53?",
+      "answer": "Darknet-53 uses successive 3×3 and 1×1 convolutional layers with shortcut connections and is significantly larger than prior versions.",
+      "keywords": [
+        "Darknet-53",
+        "shortcut connections",
+        "3×3",
+        "1×1",
+        "architecture"
+      ],
+      "similar_questions": [
+        "Which architectural components make up YOLOv3's Darknet-53 feature extractor?",
+        "List the architectural elements used in the YOLOv3 feature extractor Darknet-53.",
+        "Describe the architecture used in YOLOv3's Darknet-53 feature extractor.",
+        "YOLOv3 Darknet-53 architecture elements?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "Our network uses successive 3 × 3 and 1 × 1 convolutional layers but now has some shortcut connections as well and is significantly larger.",
+        "bbox": [
+          496,
+          415,
+          893,
+          522
+        ]
+      },
+      "confidence": 0.9
+    },
+    {
+      "standard_question": "Which prior networks does YOLOv3’s feature extractor Darknet-53 draw from?",
+      "answer": "Darknet-53 is a hybrid of the YOLOv2 network Darknet-19 and residual networks.",
+      "keywords": [
+        "Darknet-53",
+        "Darknet-19",
+        "residual network",
+        "YOLOv3"
+      ],
+      "similar_questions": [
+        "What earlier networks is YOLOv3’s feature extractor Darknet-53 based on?",
+        "Which prior networks influenced Darknet-53, the feature extractor used by YOLOv3?",
+        "Tell me the networks Darknet-53 (the YOLOv3 feature extractor) draws from.",
+        "YOLOv3 Darknet-53 origins?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "Our new network is a hybrid approach between the network used in YOLOv2, Darknet-19, and that newfangled residual network stuff.",
+        "bbox": [
+          496,
+          415,
+          893,
+          522
+        ]
+      },
+      "confidence": 0.9
+    },
+    {
+      "standard_question": "On COCO’s average AP metric, how does YOLOv3 compare to SSD variants and RetinaNet, and how does its speed compare to SSD variants?",
+      "answer": "YOLOv3 is on par with SSD variants in average AP but is 3× faster; it is still quite a bit behind RetinaNet in this metric.",
+      "keywords": [
+        "YOLOv3",
+        "COCO AP",
+        "SSD",
+        "RetinaNet",
+        "speed"
+      ],
+      "similar_questions": [
+        "YOLOv3 COCO average AP vs SSD variants and RetinaNet; speed compared to SSD variants?",
+        "How does YOLOv3 perform on COCO’s average AP compared with SSD variants and with RetinaNet, and how does YOLOv3’s speed compare to SSD variants?",
+        "Compare YOLOv3 to SSD variants and to RetinaNet on COCO average AP, and indicate how YOLOv3’s inference speed compares to SSD variants.",
+        "On the COCO average AP metric, is YOLOv3 on par with SSD variants or closer to RetinaNet, and is YOLOv3 faster or slower than SSD variants?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "In terms of COCOs weird average mean AP metric it is on par with the SSD variants but is 3× faster. It is still quite a bit behind other models like RetinaNet in this metric though.",
+        "bbox": [
+          75,
+          618,
+          472,
+          665
+        ]
+      },
+      "confidence": 0.9
+    },
+    {
+      "standard_question": "On the AP50 metric, how does YOLOv3 compare to RetinaNet and SSD variants?",
+      "answer": "On AP50, YOLOv3 is almost on par with RetinaNet and far above the SSD variants.",
+      "keywords": [
+        "YOLOv3",
+        "AP50",
+        "RetinaNet",
+        "SSD"
+      ],
+      "similar_questions": [
+        "How does YOLOv3 perform on AP50 compared to RetinaNet and the SSD variants?",
+        "Compare YOLOv3, RetinaNet, and SSD variants on the AP50 metric.",
+        "YOLOv3 AP50 vs RetinaNet and SSD variants",
+        "On AP50, is YOLOv3 closer to RetinaNet or to the SSD variants?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "However, when we look at the “old” detection metric of mAP at IOU= .5 (or $\\mathrm { { A P } _ { 5 0 } }$ in the chart) YOLOv3 is very strong. It is almost on par with RetinaNet and far above the SSD variants.",
+        "bbox": [
+          496,
+          106,
+          893,
+          227
+        ]
+      },
+      "confidence": 0.9
+    },
+    {
+      "standard_question": "How does YOLOv3 perform on small objects compared to medium and large objects?",
+      "answer": "YOLOv3 shows relatively high AP_S performance on small objects but comparatively worse performance on medium and larger size objects.",
+      "keywords": [
+        "YOLOv3",
+        "AP_S",
+        "small objects",
+        "medium",
+        "large"
+      ],
+      "similar_questions": [
+        "How does YOLOv3's AP on small objects compare with its AP on medium and large objects?",
+        "YOLOv3 performance: small vs medium vs large objects?",
+        "Is YOLOv3 better at detecting small objects than medium or large objects?",
+        "Compare YOLOv3 AP_S on small objects to its performance on medium and large objects."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "With the new multi-scale predictions we see YOLOv3 has relatively high $\\mathsf { A P } _ { S }$ performance. However, it has comparatively worse performance on medium and larger size objects.",
+        "bbox": [
+          496,
+          227,
+          893,
+          318
+        ]
+      },
+      "confidence": 0.9
+    },
+    {
+      "standard_question": "What gradient is used for coordinate predictions during YOLOv3 training?",
+      "answer": "For a coordinate with ground truth t̂, the gradient is the ground truth value minus the prediction: t̂_* − t_*.",
+      "keywords": [
+        "YOLOv3",
+        "gradient",
+        "coordinates",
+        "training"
+      ],
+      "similar_questions": [
+        "During YOLOv3 training, what gradient is used for coordinate predictions?",
+        "YOLOv3 coordinate prediction gradient?",
+        "What gradient is used for a coordinate with ground truth t̂ during YOLOv3 training?",
+        "For YOLOv3 coordinate targets, what gradient formula is used during training?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 0,
+        "quote": "If the ground truth for some coordinate prediction is t",
+        "bbox": [
+          498,
+          750,
+          893,
+          839
+        ]
+      },
+      "confidence": 0.86
+    },
+    {
+      "standard_question": "At what resolution were the networks tested and on what GPU were run times measured?",
+      "answer": "Networks were tested at 256 × 256 single-crop accuracy, and run times were measured on a Titan X at 256 × 256.",
+      "keywords": [
+        "256×256",
+        "Titan X",
+        "run times",
+        "single crop"
+      ],
+      "similar_questions": [
+        "What resolution were the networks tested at, and on which GPU were run times measured?",
+        "At what image size were the networks evaluated, and which GPU was used to record their run times?",
+        "Tell me the networks' test resolution and the GPU used for the run-time measurements.",
+        "Networks test resolution; GPU used for timing measurements?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "Each network is trained with identical settings and tested at $2 5 6 \\times 2 5 6 ,$ , single crop accuracy. Run times are measured on a Titan X at $2 5 6 \\times 2 5 6$ .",
+        "bbox": [
+          75,
+          286,
+          470,
+          391
+        ]
+      },
+      "confidence": 0.86
+    },
+    {
+      "standard_question": "What are the nine anchor box dimensions used by YOLOv3 on the COCO dataset?",
+      "answer": "The nine anchor box dimensions on COCO are (10×13), (16×30), (33×23), (30×61), (62×45), (59×119), (116×90), (156×198), and (373×326).",
+      "keywords": [
+        "YOLOv3",
+        "COCO",
+        "anchor boxes",
+        "priors",
+        "dimensions"
+      ],
+      "similar_questions": [
+        "List the nine anchor box dimensions used by YOLOv3 for the COCO dataset.",
+        "Provide the nine anchor box width×height pairs YOLOv3 uses on the COCO dataset.",
+        "YOLOv3 COCO anchor box dimensions?",
+        "Give the nine anchor box sizes for YOLOv3 on the COCO dataset."
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 1,
+        "quote": "On the COCO dataset the 9 clusters were: $( 1 0 \\times 1 3 ) , ( 1 6 \\times 3 0 ) , ( 3 3 \\times 2 3 ) , ( 3 0 \\times 6 1 ) , ( 6 2 \\times 4 5 )$ , (59 × $1 1 9 ) , ( 1 1 6 \\times 9 0 ) , ( 1 5 6 \\times 1 9 8 ) , ( 3 7 3 \\times 3 2 6 )$",
+        "bbox": [
+          498,
+          289,
+          893,
+          381
+        ]
+      },
+      "confidence": 0.82
+    },
+    {
+      "standard_question": "What are the COCO AP_S, AP_M, and AP_L scores reported for YOLOv3 at 608 × 608 resolution?",
+      "answer": "YOLOv3 at 608 × 608 reports AP_S 18.3, AP_M 35.4, and AP_L 41.9.",
+      "keywords": [
+        "YOLOv3",
+        "COCO",
+        "AP_S",
+        "AP_M",
+        "AP_L"
+      ],
+      "similar_questions": [
+        "What are the COCO AP_S, AP_M, and AP_L scores for YOLOv3 when evaluated at 608 × 608?",
+        "Give the COCO AP_S, AP_M and AP_L values reported for YOLOv3 at 608 × 608 resolution.",
+        "YOLOv3 608 × 608 COCO AP_S AP_M AP_L?",
+        "For YOLOv3 with input size 608 × 608, what are the COCO AP_S, AP_M, and AP_L scores?"
+      ],
+      "origin_ref": {
+        "document_id": "sample-paper-3p",
+        "page_idx": 2,
+        "quote": "<td rowspan=1 colspan=1>33.0   57.9   34.4</td><td rowspan=1 colspan=1>18.3   35.4   41.9</td>",
+        "bbox": [
+          171,
+          686,
+          794,
+          854
+        ]
+      },
+      "confidence": 0.82
+    }
+  ],
+  "stats": {
+    "model": "gpt-5",
+    "chunk_count": 2,
+    "raw_count": 39,
+    "kept_count": 36,
+    "dropped": {
+      "quote_not_found": 3
+    },
+    "elapsed_ms": 263382
+  }
+}

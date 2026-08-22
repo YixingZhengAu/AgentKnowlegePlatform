@@ -15,10 +15,13 @@
  * 2. **选中项是推导出来的,不是一个状态**:`selectedId` 在当前列表里找不到就落到第一条。
  *    所以筛选变化、条目审完消失都不需要 effect 去同步选中态(effect 里同步 setState
  *    既会多一轮渲染,新版 react-hooks 规则也直接报错)。
+ * 3. **动作是传进来的(S1-plan Step 7a)**:流程归本组件,"通过/驳回到底做了什么"归各域。
+ *    S1 是采纳即发布(写正式表 + 建向量,没有批量发布),它只换 `actions`,本文件不认识它。
+ *    不传 `actions` 就是 S0 的默认语义(标 approved,最后批量发布)。
  */
 
 import { Check, Loader2, Send, Undo2, X } from 'lucide-react'
-import { useEffect, useState, type ComponentType } from 'react'
+import { useEffect, useRef, useState, type ComponentType } from 'react'
 
 import { apiPatch, apiPost } from '@/api/client'
 import { useApi } from '@/api/hooks'
@@ -35,11 +38,32 @@ import { EmptyState } from '@/components/EmptyState'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { pushToast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
-import type { ItemCardProps, ItemEditorProps, OriginPanelProps, Payload } from './staging/types'
+import type {
+  ItemCardProps,
+  ItemEditorProps,
+  OriginPanelProps,
+  Payload,
+  ReviewActions,
+} from './staging/types'
+
+/** S0 的默认动作语义:标状态,最后由 job 批量发布。 */
+const DEFAULT_ACTIONS: ReviewActions = {
+  approveLabel: 'Approve',
+  publish: true,
+  bulk: true,
+  approve: (item, payload) =>
+    apiPatch<StagingItem>(`/api/staging/${item.id}`, { review_status: 'approved', payload }),
+  reject: (item) =>
+    apiPatch<StagingItem>(`/api/staging/${item.id}`, {
+      review_status: 'rejected',
+      payload: null,
+    }),
+}
 
 const SORTS = [
   { value: 'confidence_asc', label: 'Least confident' },
@@ -54,6 +78,10 @@ type Props = {
   itemRenderer: ComponentType<ItemCardProps>
   editorRenderer: ComponentType<ItemEditorProps>
   originPanel?: ComponentType<OriginPanelProps>
+  /** 本类知识的动作层;不给走 S0 默认(见 DEFAULT_ACTIONS) */
+  actions?: ReviewActions
+  /** 一条被裁决之后回调(S1 用它刷新正式 QA 列表 —— 采纳即发布,那边立刻多一行) */
+  onDecided?: () => void
   onPublished?: () => void
 }
 
@@ -63,14 +91,20 @@ export function StagingReview({
   itemRenderer: Card,
   editorRenderer: Editor,
   originPanel: Origin,
+  actions: actionsProp,
+  onDecided,
   onPublished,
 }: Props) {
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const actions = actionsProp ?? DEFAULT_ACTIONS
+  const [statusFilter, setStatusFilter] = useState<string>(actions.defaultStatusFilter ?? 'all')
   const [sort, setSort] = useState<string>('confidence_asc')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [draft, setDraft] = useState<{ id: string; payload: Payload } | null>(null)
   const [busy, setBusy] = useState(false)
+  // 驳回理由:必填时点 Reject 先展开输入框,填了才真的提交(S1 的"不采纳"必须留痕)
+  const [rejectNote, setRejectNote] = useState<string | null>(null)
+  const noteRef = useRef<HTMLInputElement>(null)
   // 发布成功的那一刻就把界面切成只读:等 job 状态那一次往返(约一个轮询)期间,
   // 界面不该还允许"通过" —— 那一条通过了也永远发不出去(后端也会 409 拦住)
   const [justPublished, setJustPublished] = useState(false)
@@ -101,14 +135,17 @@ export function StagingReview({
     summary.reload()
   }
 
-  const patchOne = async (item: StagingItem, body: StagingPatch, advance: boolean) => {
+  /** 一次裁决 = 跑动作 + 清草稿 + 可选前进 + 刷新。动作本身由 actions 决定(见文件头 3)。 */
+  const runAction = async (item: StagingItem, fn: () => Promise<unknown>, advance: boolean) => {
     setBusy(true)
     const next = advance ? nextAfter(item.id) : null
     try {
-      await apiPatch<StagingItem>(`/api/staging/${item.id}`, body)
+      await fn()
       setDraft(null)
+      setRejectNote(null)
       if (advance) setSelectedId(next)
       refresh()
+      onDecided?.()
     } catch {
       pushToast('error', 'review_failed', 'Could not save this item.')
     } finally {
@@ -118,25 +155,55 @@ export function StagingReview({
 
   // 通过时带上未保存的改动:审到一半改了内容再点通过,不该丢掉改动
   const approve = (item: StagingItem) =>
-    void patchOne(
+    void runAction(
       item,
-      { review_status: 'approved', payload: dirty && draft.id === item.id ? draft.payload : null },
+      () => actions.approve(item, dirty && draft.id === item.id ? draft.payload : null),
       true,
     )
-  const reject = (item: StagingItem) =>
-    void patchOne(item, { review_status: 'rejected', payload: null }, true)
+
+  /** 驳回:要理由时第一次点只展开输入框(rejectNote===null 表示还没进驳回态)。 */
+  const reject = (item: StagingItem) => {
+    if (actions.requireRejectNote && rejectNote === null) {
+      setRejectNote('')
+      // 展开就聚焦,键盘流(x)不用再摸鼠标
+      setTimeout(() => noteRef.current?.focus(), 0)
+      return
+    }
+    const note = rejectNote ?? ''
+    if (actions.requireRejectNote && !note.trim()) return
+    void runAction(item, () => actions.reject(item, note), true)
+  }
+
   const save = (item: StagingItem) =>
-    void patchOne(item, { payload: dirty ? draft.payload : null }, false)
+    void runAction(
+      item,
+      () =>
+        apiPatch<StagingItem>(`/api/staging/${item.id}`, {
+          payload: dirty ? draft.payload : null,
+        } satisfies StagingPatch),
+      false,
+    )
 
   const bulk = async (review_status: string) => {
     const ids = [...checked]
     if (!ids.length) return
     setBusy(true)
     try {
-      const res = await apiPost<{ updated: number }>('/api/staging/bulk', { ids, review_status })
+      // 本域给了 bulkApprove 就用它(S1 的采纳=发布,一条条走本域接口);
+      // 没给就是 S0 语义:一次请求只改 review_status
+      const useDomain = review_status === 'approved' && actions.bulkApprove
+      const updated = useDomain
+        ? await actions.bulkApprove!(items.filter((i) => checked.has(i.id)))
+        : (await apiPost<{ updated: number }>('/api/staging/bulk', { ids, review_status })).updated
       setChecked(new Set())
       refresh()
-      pushToast('success', `${res.updated} items ${review_status}`, '')
+      onDecided?.()
+      const suffix = updated < ids.length ? ` (${ids.length - updated} failed)` : ''
+      pushToast(
+        updated < ids.length ? 'error' : 'success',
+        `${updated} items ${review_status}${suffix}`,
+        '',
+      )
     } catch {
       pushToast('error', 'bulk_failed', 'Could not apply the bulk action.')
     } finally {
@@ -182,13 +249,14 @@ export function StagingReview({
         if (to) {
           setSelectedId(to.id)
           setDraft(null)
+          setRejectNote(null)
         }
       }
       if (e.key === 'j') move(1)
       else if (e.key === 'k') move(-1)
       else if (e.key === 'a' && !readOnly) approve(selected)
       else if (e.key === 'x' && !readOnly) reject(selected)
-      else if (e.key === ' ') {
+      else if (e.key === ' ' && actions.bulk) {
         e.preventDefault()
         toggleCheck(selected.id)
       } else return
@@ -197,7 +265,7 @@ export function StagingReview({
     return () => window.removeEventListener('keydown', onKey)
     // approve/reject 每次渲染都是新函数,但它们只读上面这些值 —— 依赖列到这些值就够
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selected, busy, readOnly, dirty])
+  }, [items, selected, busy, readOnly, dirty, rejectNote])
 
   // ---------------------------------------------------------------- 渲染
 
@@ -238,11 +306,18 @@ export function StagingReview({
               </option>
             ))}
           </select>
-          {/* 强调 CTA 一屏只有一个(UI-STYLE §3):发布 */}
-          <Button variant="accent" disabled={!canPublish || busy} onClick={() => void publish()}>
-            <Send />
-            {jobStatus === 'published' ? 'Published' : `Publish ${publishable} approved`}
-          </Button>
+          {/* 强调 CTA 一屏只有一个(UI-STYLE §3):发布。
+              采纳即发布的域没有这一步 —— 不留一个永远点不动的按钮,改显示已入库条数 */}
+          {actions.publish ? (
+            <Button variant="accent" disabled={!canPublish || busy} onClick={() => void publish()}>
+              <Send />
+              {jobStatus === 'published' ? 'Published' : `Publish ${publishable} approved`}
+            </Button>
+          ) : (
+            <span className="text-muted-foreground font-mono text-[11px] whitespace-nowrap">
+              {publishable} accepted · live
+            </span>
+          )}
         </div>
       </div>
 
@@ -251,7 +326,9 @@ export function StagingReview({
         <div className="bg-card flex w-[380px] shrink-0 flex-col overflow-hidden rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]">
           <div className="text-muted-foreground flex items-center gap-2 border-b px-4 py-2 font-mono text-[11px] whitespace-nowrap">
             <span>{items.length} items</span>
-            <span className="ml-auto">j / k · a approve · x reject · space select</span>
+            <span className="ml-auto">
+              j / k · a approve · x reject{actions.bulk ? ' · space select' : ''}
+            </span>
           </div>
           {items.length === 0 ? (
             <EmptyState
@@ -267,6 +344,7 @@ export function StagingReview({
                     onClick={() => {
                       setSelectedId(item.id)
                       setDraft(null)
+                      setRejectNote(null)
                     }}
                     className={cn(
                       'flex h-12 cursor-pointer items-center gap-3 border-b px-3 transition-colors',
@@ -275,14 +353,16 @@ export function StagingReview({
                         : 'hover:bg-subtle',
                     )}
                   >
-                    <input
-                      type="checkbox"
-                      checked={checked.has(item.id)}
-                      onChange={() => toggleCheck(item.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="accent-primary size-3.5 shrink-0"
-                      aria-label="Select item"
-                    />
+                    {actions.bulk && (
+                      <input
+                        type="checkbox"
+                        checked={checked.has(item.id)}
+                        onChange={() => toggleCheck(item.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="accent-primary size-3.5 shrink-0"
+                        aria-label="Select item"
+                      />
+                    )}
                     <div className="min-w-0 flex-1">
                       <Card item={item} />
                     </div>
@@ -305,14 +385,16 @@ export function StagingReview({
               >
                 <Check /> Approve
               </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                disabled={busy}
-                onClick={() => void bulk('rejected')}
-              >
-                <X /> Reject
-              </Button>
+              {actions.bulkReject !== false && (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  disabled={busy}
+                  onClick={() => void bulk('rejected')}
+                >
+                  <X /> Reject
+                </Button>
+              )}
               <button
                 className="text-muted-foreground hover:text-foreground ml-auto px-1 text-[12px]"
                 onClick={() => setChecked(new Set())}
@@ -360,14 +442,32 @@ export function StagingReview({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 border-t px-5 py-3">
+              <div className="flex flex-wrap items-center gap-2 border-t px-5 py-3">
                 <Button disabled={readOnly || busy} onClick={() => approve(selected)}>
                   {busy ? <Loader2 className="animate-spin" /> : <Check />}
-                  Approve
+                  {actions.approveLabel}
                 </Button>
+                {/* 理由必填时,Reject 先展开输入框(第二次点才真提交) */}
+                {rejectNote !== null && (
+                  <Input
+                    ref={noteRef}
+                    value={rejectNote}
+                    disabled={busy}
+                    onChange={(e) => setRejectNote(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') reject(selected)
+                      if (e.key === 'Escape') setRejectNote(null)
+                    }}
+                    placeholder="Why is this rejected? (required)"
+                    className="w-[260px]"
+                    aria-label="Rejection reason"
+                  />
+                )}
                 <Button
                   variant="danger"
-                  disabled={readOnly || busy}
+                  disabled={
+                    readOnly || busy || (rejectNote !== null && rejectNote.trim() === '')
+                  }
                   onClick={() => reject(selected)}
                 >
                   <X /> Reject

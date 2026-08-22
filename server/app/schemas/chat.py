@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.common import ORMModel
 
@@ -33,6 +33,36 @@ class TraceSpanOut(BaseModel):
     error: str | None = None
 
 
+class CitationExtra(BaseModel):
+    """引用的附加信息。**故意允许多余字段**(`extra="allow"`):
+    S1 只用得到分数/命中面/页码,S2 的文档引用会带 chunk 序号、S3 的问数会带 SQL 与行数;
+    在这里把已知字段写出来是为了让前端有类型可用,不是为了封死结构。
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    score: float | None = None
+    matched_question: str | None = None
+    is_standard_question: bool | None = None
+    document_id: uuid.UUID | None = None
+    page_idx: int | None = None
+    bbox: list[float] | None = None
+
+
+class MessageCitationOut(ORMModel):
+    """一条引用(message_citations 表的一行)。
+
+    以前它在 openapi 里是裸 `dict`,前端只能手写一份约定型 —— 违反"前端不许手写 API 类型"。
+    出处:`app/core/chat.py::_exact_qa_citations`。
+    """
+
+    seq: int
+    citation_type: str
+    ref_id: uuid.UUID | None = None
+    snippet: str | None = None
+    extra: CitationExtra = CitationExtra()
+
+
 class ChatResponse(BaseModel):
     message_id: uuid.UUID
     conversation_id: uuid.UUID
@@ -41,7 +71,9 @@ class ChatResponse(BaseModel):
     usage: dict
     cost_usd: Decimal
     latency_ms: int
-    citations: list[dict] = []
+    citations: list[MessageCitationOut] = []
+    # true = 命中精准问答,内容是人工采纳过的标准答案原样返回(零改写、没过生成模型)
+    verified: bool = False
     trace: list[TraceSpanOut] = []
 
 

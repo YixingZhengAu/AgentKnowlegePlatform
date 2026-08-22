@@ -56,8 +56,28 @@ async with traced(ctx, "generate", input={...}) as span:
 `run_chat()` 只是把它消费到底拼成 `ChatResult`(S6 评测执行器用这个)。
 流式与非流式共用一份代码,S1–S4 插阶段不可能只改到一边(D4)。
 
-S0 链路:`加载 agent → 存用户消息(先 commit)→ [stage: generate] → 存助手消息 → flush traces`。
-没有检索、没有路由;S1 在 generate 前插 `retrieve_exact_qa`,S4 插 `route`,事件协议不变。
+S1 链路:
+
+```
+加载 agent → 存用户消息(先 commit)→ [stage: retrieve_exact_qa]
+   ├─ HIT       → 原样返回标准答案 + 写 message_citations + verified 事件,**不调生成模型**
+   └─ 其他       → [stage: generate] 调 LLM
+→ 存助手消息(+ citations)→ flush traces
+```
+
+★ **命中即短路**是零幻觉承诺的落地点:答案是人工采纳过的原文,不让模型碰它,
+连润色都不做 —— 一旦过生成模型,"已验证"这个标注就不成立了。机器可证明的形式是
+"trace 里没有 generate 这个 stage"(`scripts/smoke_s1_chat.py` 就是这么断言的)。
+
+检索 stage 的三条纪律:
+
+- **检索失败不许弄死问答**:`retrieve_exact_qa` 整段包在 try/except 里,
+  异常退化成"没命中",照常走生成(库挂了不该让对话页变白屏)
+- **BORDERLINE 也要留 trace**:分数 + 命中面 + 是哪道关否决的(护栏差集 / 复核理由),
+  这是后续调阈值的唯一依据(见 `chat.py::_retrieval_trace`)
+- light 模型复核的 usage 也 `span.record_llm()`,否则那 2.9s 和几分钱是黑账
+
+S4 插 `route` 同理:加一个 `async with traced(...)` 块,事件协议只增不改。
 
 四个已经踩过/想清楚的点:
 

@@ -5,6 +5,8 @@
  *
  * 事件协议出处:server/app/api/architect.md(改协议要前后端一起改)
  *   meta -> stage_start -> token* -> stage_end -> done
+ * S1 起,命中精准问答时中间会多一个 `verified` 事件,且**没有 generate 阶段**
+ * (答案原样返回,零改写)——协议只增不改,老逻辑照跑。
  * 三条后端给的保证,前端直接依赖:
  *   1. `done` 是唯一终止信号(哪怕编排根本没开始就失败,也会补一个 error + done)
  *   2. 失败时的兜底话术也走 `token`,所以渲染路径只有一条
@@ -14,13 +16,19 @@
 // 这里的 `.ts` 后缀是故意的:scripts/smoke_sse.ts 用 Node 原生跑这份文件,
 // Node 的 ESM 不做扩展名补全(Vite 两种写法都认)。
 import { API_BASE, ApiError, toApiError } from './client.ts'
-import type { ChatResponse, TraceSpan } from './schema'
+import type { ChatResponse, MessageCitation, TraceSpan } from './schema'
 
 export type ChatStreamHandlers = {
   onMeta?: (data: { message_id: string; conversation_id: string }) => void
   onStageStart?: (data: { stage: string }) => void
   onToken?: (text: string) => void
   onStageEnd?: (span: TraceSpan) => void
+  /** S1 新增:这次回答命中了人工采纳过的精准问答,内容是标准答案原样返回(没过生成模型) */
+  onVerified?: (data: {
+    score?: number | null
+    matched_question?: string | null
+    citations?: MessageCitation[]
+  }) => void
   /** 流内错误:这次回答失败了,但连接是正常的(后面还会有 done) */
   onError?: (data: { stage?: string; message: string }) => void
   onDone?: (data: ChatResponse) => void
@@ -117,6 +125,9 @@ function dispatch(event: string, data: unknown, h: ChatStreamHandlers) {
       break
     case 'stage_end':
       h.onStageEnd?.(data as TraceSpan)
+      break
+    case 'verified':
+      h.onVerified?.(data as { score?: number; matched_question?: string; citations?: MessageCitation[] })
       break
     case 'error':
       h.onError?.(data as { stage?: string; message: string })

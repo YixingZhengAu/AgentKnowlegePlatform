@@ -4,6 +4,9 @@ import { Badge } from '@/components/ui/badge'
 const TONE: Record<string, 'success' | 'danger' | 'info' | 'neutral' | 'navy'> = {
   ok: 'success',
   active: 'success',
+  // 正式 QA 的状态(exact_qa_items.status):enabled 才在索引里,disabled 是下线不是删除
+  enabled: 'success',
+  disabled: 'neutral',
   completed: 'success',
   approved: 'success',
   published: 'navy',

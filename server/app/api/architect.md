@@ -14,20 +14,44 @@
 - `/api/agents/{id}`:agents + agent_kb_bindings JOIN knowledge_bases,按 priority 升序
   (priority 越小越优先,seed 里精准 QA=10 最优先)
 
+## 两个 Step 8 的补充规则
+
+- **`DELETE /api/exact-qa/documents/{id}`**:删文档 = 两个 Job(候选随之级联)+ 文档行 +
+  上传原件 + 解析产物目录。**有已发布问答的文档 409 `document_has_published_qa`** ——
+  正式 QA 的出处存在候选行的 `origin_ref` 里(`exact_qa_items.source_staging_id` 指过去),
+  删了文档,引用里"跳到第 N 页"就悬空。要清这类文档,先逐条下线它的正式 QA。
+- **`GET /api/conversations/{id}/messages` 带 `citations` 与 `verified`**:标注不能只活在
+  流式那一次的事件里(刷新页面就没了)。`verified` 由后端判定(有 exact_qa 引用即为真),
+  规则只写在这一处,前端不猜。引用一次查完再按 message 分组,不做 N+1。
+
 ## SSE 事件协议(chat.py)
 
 **S1–S4 只增加事件类型,不改协议**:
 
 ```
 event: meta         data: {"message_id": "...", "conversation_id": "..."}
-event: stage_start  data: {"stage": "generate"}
+event: stage_start  data: {"stage": "retrieve_exact_qa"}          # S1 起,链路的第一个 stage
+event: stage_end    data: {"stage": "retrieve_exact_qa", ...}
+event: verified     data: {"source": "exact_qa", "score": 0.86,   # ★ S1 新增,仅命中精准 QA 时
+                           "matched_question": "...", "citations": [...]}
+event: stage_start  data: {"stage": "generate"}                   # 命中时**不会出现**
 event: token        data: {"text": "..."}
 event: stage_end    data: {"stage": "generate", "seq": 1, "status": "ok",
                            "latency_ms": 812, "model": "gpt-5", "usage": {...}, "cost_usd": "..."}
 event: done         data: {"message_id", "conversation_id", "status", "usage",
-                           "cost_usd", "latency_ms", "citations": [], "trace": [...], "error": null}
+                           "cost_usd", "latency_ms", "citations": [...], "verified": bool,
+                           "trace": [...], "error": null}
 event: error        data: {"stage": "generate", "message": "..."}    # 仅失败时
 ```
+
+**S1 对协议的改动只有"加"**:新增 `verified` 事件、`done` 新增 `verified` 布尔字段、
+`citations` 从恒空变成命中时有一条。已有事件的形状一个字没改。
+
+命中精准 QA 时的事件序列(实测):
+`meta → stage_start(retrieve_exact_qa) → stage_end → verified → token → done`
+—— **没有 generate 的 stage_start**:命中就原样返回人工采纳过的答案,不调生成模型。
+前端据此打 "Verified Answer" 标注:看 `verified` 事件(流式)或 `done.verified`(非流式),
+不要自己去猜"是不是只有一个 token 事件"。
 
 `meta` 是对 S0-PLAN 里四个事件的补充:新开会话时前端必须在第一个 token 之前就拿到
 conversation_id / message_id,否则没法把这条消息挂到正确的会话上。

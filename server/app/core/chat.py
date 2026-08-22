@@ -4,13 +4,19 @@
 非流式的 `run_chat()` 只是把这个事件流消费到底再拼成 `ChatResult`。
 所以"流式"和"非流式"不是两份代码 —— S1–S4 往编排里插阶段,两条路径同时生效,不可能只改到一边。
 
-S0 版本的链路刻意简单:
+S1 之后的链路:
 
-    加载 agent → 存用户消息 → [stage: generate] 调 LLM → 存回复 → flush traces
+    加载 agent → 存用户消息 → [stage: retrieve_exact_qa] → 命中?
+        命中 → 原样返回标准答案(**不调生成模型**)+ 写 message_citations + 标 Verified Answer
+        未命中 → [stage: generate] 调 LLM
+    → 存回复 → flush traces
 
-**没有检索、没有路由**。但"形状"现在就定死了:stage 序列 + 事件协议 + trace 落库时机。
-S1 插 `retrieve_exact_qa`、S4 插 `route`,都是往这里加一个 `async with traced(...)` 块,
-事件协议一个字不用改。
+★ **命中时零改写、零生成调用**是 PRD 的零幻觉承诺落地的地方:答案是人工采纳过的原文,
+不让模型碰它,连"润色一下"都不做 —— 一旦过生成模型,"已验证"这个标注就不成立了。
+
+S4 插 `route` 同理:往这里加一个 `async with traced(...)` 块,
+**事件协议只增加事件类型,不改已有事件的形状**(S1 新增 `verified` 事件,
+`done` 新增 `verified` 布尔字段与真正有内容的 `citations`)。
 """
 
 import asyncio
@@ -28,9 +34,11 @@ from app.core.errors import NotFoundError
 from app.core.logging import get_logger
 from app.core.trace import ChatContext, flush_traces, spans_as_dicts, traced
 from app.db import SessionLocal
-from app.models import Agent, Conversation, Message, User
+from app.models import Agent, Conversation, Message, MessageCitation, User
 from app.models.user import DEFAULT_USERNAME
 from app.providers import ChatMessage, get_llm
+from app.schemas.exact_qa import HitTier, RetrievalResult
+from app.services.exact_qa.retriever import agent_exact_qa_kb_ids, retrieve
 
 log = get_logger(__name__)
 
@@ -69,6 +77,8 @@ class ChatResult:
     cost_usd: Decimal
     latency_ms: int
     citations: list[dict] = field(default_factory=list)
+    # 这条回答是不是"人工采纳过的标准答案原样返回"(前端据此打 Verified Answer 标注)
+    verified: bool = False
     trace: list[dict] = field(default_factory=list)
 
 
@@ -134,7 +144,14 @@ async def _history(session: AsyncSession, conversation_id: uuid.UUID) -> list[Ch
     return [{"role": m.role, "content": m.content} for m in reversed(rows)]
 
 
-async def _persist(ctx: ChatContext, *, content: str, status: str, question: str) -> None:
+async def _persist(
+    ctx: ChatContext,
+    *,
+    content: str,
+    status: str,
+    question: str,
+    citations: list[dict] | None = None,
+) -> None:
     """助手消息 + trace 落库。**自己开 session**:
 
     中断路径要在"请求已被取消"之后再落库,那时原来的 session 所属任务已经死了,
@@ -154,6 +171,17 @@ async def _persist(ctx: ChatContext, *, content: str, status: str, question: str
             )
         )
         await session.flush()
+        for c in citations or []:
+            session.add(
+                MessageCitation(
+                    message_id=ctx.message_id,
+                    seq=c["seq"],
+                    citation_type=c["citation_type"],
+                    ref_id=uuid.UUID(c["ref_id"]) if c.get("ref_id") else None,
+                    snippet=c.get("snippet"),
+                    extra=c.get("extra") or {},
+                )
+            )
         n = await flush_traces(session, ctx)
         conv = await session.get(Conversation, ctx.conversation_id)
         if conv is not None:
@@ -166,9 +194,59 @@ async def _persist(ctx: ChatContext, *, content: str, status: str, question: str
         message_id=str(ctx.message_id),
         status=status,
         traces=n,
+        citations=len(citations or []),
         **usage.as_dict(),
         cost_usd=str(ctx.total_cost),
     )
+
+
+# ---------------------------------------------------------------- 精准 QA 命中(S1)
+
+#: stage 名。前端轨迹面板按 stage 名分组,改名等于改公共契约
+STAGE_EXACT_QA = "retrieve_exact_qa"
+
+
+def _retrieval_trace(result: RetrievalResult) -> dict:
+    """★ 落 trace 的内容:分数 + 命中面 + 两道关的否决理由。
+
+    BORDERLINE 也必须留下这些(S1-plan §5 M5)—— 它们是后续调阈值的**唯一**依据。
+    只记"未命中"的话,以后既不知道差多少,也不知道是被哪道关挡下的。
+    """
+    return {
+        "tier": result.tier.value,
+        "best_score": round(result.top[0].score, 4) if result.top else None,
+        "best_face": result.top[0].question_text if result.top else None,
+        "top": [
+            {"score": round(c.score, 4), "face": c.question_text, "standard": c.is_standard}
+            for c in result.top
+        ],
+        "guard_missing": result.guard_missing or None,
+        "gate_reason": result.gate_reason,
+    }
+
+
+def _exact_qa_citations(result: RetrievalResult) -> list[dict]:
+    """命中 → 一条 exact_qa 引用。**强制引用**:命中必须能点回原文(PRD 的硬要求)。"""
+    if not result.top:
+        return []
+    best = result.top[0]
+    origin = result.origin_ref
+    return [
+        {
+            "seq": 1,
+            "citation_type": "exact_qa",
+            "ref_id": best.item_id,
+            "snippet": origin.quote if origin else best.question_text,
+            "extra": {
+                "score": round(best.score, 4),
+                "matched_question": best.question_text,
+                "is_standard_question": best.is_standard,
+                "document_id": origin.document_id if origin else None,
+                "page_idx": origin.page_idx if origin else None,
+                "bbox": origin.bbox if origin else None,
+            },
+        }
+    ]
 
 
 # ---------------------------------------------------------------- 编排
@@ -214,8 +292,68 @@ async def chat_events(
     status = "completed"
     error: str | None = None
     final = None
+    citations: list[dict] = []
+    verified: RetrievalResult | None = None
 
     try:
+        # ---- stage: retrieve_exact_qa(S1)
+        # 检索失败绝不能弄死一次问答:退化成"没命中",照常走生成
+        yield ChatEvent("stage_start", {"stage": STAGE_EXACT_QA})
+        try:
+            async with traced(ctx, STAGE_EXACT_QA, input={"question": question}) as span:
+                async with SessionLocal() as session:
+                    kb_ids = await agent_exact_qa_kb_ids(session, agent_id)
+                    result, gate_usages = await retrieve(session, question, kb_ids=kb_ids)
+                for usage in gate_usages:  # light 模型复核的账也要记
+                    span.record_llm(usage)
+                span.output = _retrieval_trace(result)
+                if result.tier is HitTier.HIT:
+                    verified = result
+        except Exception as exc:
+            log.warning("chat_exact_qa_failed", agent_id=str(agent_id), error=str(exc))
+            yield ChatEvent("error", {"stage": STAGE_EXACT_QA, "message": str(exc)})
+        yield ChatEvent(
+            "stage_end", {**spans_as_dicts(ctx.spans)[-1], "stage": STAGE_EXACT_QA}
+        )
+
+        if verified is not None:
+            # ★ 命中:原样返回人工采纳过的答案,**不调生成模型**(零改写才敢叫已验证)
+            content = verified.answer or ""
+            citations = _exact_qa_citations(verified)
+            parts.append(content)
+            yield ChatEvent(
+                "verified",
+                {
+                    "source": "exact_qa",
+                    "score": citations[0]["extra"]["score"] if citations else None,
+                    "matched_question": citations[0]["extra"]["matched_question"]
+                    if citations
+                    else None,
+                    "citations": citations,
+                },
+            )
+            # 命中也走 token 事件:前端只有一条渲染路径(与失败兜底同一个理由)
+            yield ChatEvent("token", {"text": content})
+            await _persist(
+                ctx, content=content, status=status, question=question, citations=citations
+            )
+            yield ChatEvent(
+                "done",
+                {
+                    "message_id": str(ctx.message_id),
+                    "conversation_id": str(conv_id),
+                    "status": status,
+                    "usage": ctx.total_usage.as_dict(),
+                    "cost_usd": str(ctx.total_cost),
+                    "latency_ms": ctx.total_latency_ms,
+                    "citations": citations,
+                    "verified": True,
+                    "trace": spans_as_dicts(ctx.spans),
+                    "error": None,
+                },
+            )
+            return
+
         yield ChatEvent("stage_start", {"stage": "generate"})
         try:
             async with traced(
@@ -260,8 +398,9 @@ async def chat_events(
                 "usage": ctx.total_usage.as_dict(),
                 "cost_usd": str(ctx.total_cost),
                 "latency_ms": ctx.total_latency_ms,
-                # S1/S2 起这里会有内容;S0 固定为空(没有检索就不该有引用)
+                # 未命中时没有引用:引用只能来自检索到的证据,生成的内容不许编引用
                 "citations": [],
+                "verified": False,
                 "trace": span_dicts,
                 "error": error,
             },
@@ -310,5 +449,6 @@ async def run_chat(
         cost_usd=Decimal(done["cost_usd"]),
         latency_ms=done["latency_ms"],
         citations=done["citations"],
+        verified=bool(done.get("verified")),
         trace=done["trace"],
     )

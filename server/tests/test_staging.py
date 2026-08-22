@@ -57,6 +57,10 @@ def test_modified_is_publishable():
     assert set(PUBLISHABLE_STATUSES) == {"approved", "modified"}
 
 
-def test_s0_has_no_type_publisher_registered():
-    """S0 刻意不写正式表:发布只做通用骨架,各类型的 publisher 由 S1–S3 注册。"""
-    assert known_publishers() == []
+def test_qa_pair_publisher_is_registered_by_s1():
+    """S0 时这里断言的是"没有任何 publisher"(骨架不认识正式表长什么样)。
+    S1 落地后 `qa_pair` 必须在册 —— 否则批量发布会静默跳过写正式表这一步,
+    界面上看着发布成功,库里一条正式 QA 都没有。"""
+    import app.services.exact_qa.publisher  # noqa: F401  注册靠 import 副作用
+
+    assert "qa_pair" in known_publishers()

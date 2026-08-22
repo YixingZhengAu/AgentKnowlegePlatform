@@ -7,9 +7,10 @@
 | `common.py` | `ORMModel`(from_attributes)、`ListResponse[T]`、`HealthResponse` |
 | `knowledge.py` | `KnowledgeBaseOut` |
 | `agent.py` | `AgentOut` / `AgentDetailOut` / `AgentKbBindingOut` |
-| `conversation.py` | `ConversationOut` / `MessageOut` |
-| `chat.py` | `ChatRequest` / `ChatResponse` / `TraceSpanOut` / `TraceOut` |
+| `conversation.py` | `ConversationOut` / `MessageOut`(带 `citations` + `verified`:刷新后标注不能丢) |
+| `chat.py` | `ChatRequest` / `ChatResponse` / **`MessageCitationOut` + `CitationExtra`**(引用的真 schema,前端不再手写)/ `TraceSpanOut` / `TraceOut` |
 | `job.py` | `JobSubmitRequest` / `JobOut`(jsonb 字段保持宽松,结构由 Job 框架约定) |
+| `exact_qa.py` | **S1 精准问答契约**:产物文件名/图片 URL 常量 + ContentBlock/ParseResult + OriginRef/QaCandidate + HitTier/RetrievalResult |
 | `staging.py` | `StagingItemOut` / `StagingItemPatch` / `StagingBulkRequest` / `StagingSummary` / `PublishResult` |
 
 详见 `architect.md`。

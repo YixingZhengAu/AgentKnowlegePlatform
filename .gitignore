@@ -15,3 +15,9 @@ storage/
 # 生成物 / 缓存
 .pytest_cache/
 .ruff_cache/
+
+# playwright-mcp 自测产物(snapshot / 截图),见 documents/S1-PLAN.md §7.1
+.playwright-mcp/
+
+# 一次性沙箱 / 临时产物(阶段收尾必须清空,不入库)
+tmp/

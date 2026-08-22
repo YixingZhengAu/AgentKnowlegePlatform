@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ApiError, apiFetch } from './client'
-import type { MessageList, TraceSpan } from './schema'
+import type { MessageCitation, MessageList, TraceSpan } from './schema'
 import { streamChat } from './sse'
 import { pushToast } from '@/lib/toast'
 
@@ -32,6 +32,9 @@ export type ChatTurn = {
   /** 流式期间由 stage_end 事件累积;历史消息为空(要看就去查 traces 接口) */
   trace?: TraceSpan[]
   error?: string | null
+  /** true = 命中精准问答:内容是人工采纳过的标准答案原样返回(S1) */
+  verified?: boolean
+  citations?: MessageCitation[]
 }
 
 export type ChatState = {
@@ -91,6 +94,10 @@ export function useChat(
           status: m.status,
           usage: m.usage,
           latency_ms: m.latency_ms,
+          // 历史消息也带标注与引用:刷新一次页面就丢掉"凭什么可信"是不能接受的。
+          // verified 由后端判定(规则只在一处),前端不在这里猜。
+          verified: m.verified,
+          citations: m.citations,
         })),
       )
     } catch (err) {
@@ -140,6 +147,9 @@ export function useChat(
               setTurns((prev) =>
                 prev.map((t) => (t.id === assistantId ? { ...t, content: t.content + chunk } : t)),
               ),
+            // 命中精准问答:先立起标注,`done` 里还会再带一次(两条路径都要能标)
+            onVerified: (data) =>
+              patchTurn(assistantId, { verified: true, citations: data.citations ?? [] }),
             onStageEnd: (span) =>
               setTurns((prev) =>
                 prev.map((t) =>
@@ -156,6 +166,8 @@ export function useChat(
                 usage: { ...done.usage, cost_usd: done.cost_usd },
                 latency_ms: done.latency_ms,
                 trace: done.trace,
+                verified: done.verified,
+                citations: (done.citations ?? []) as MessageCitation[],
               }),
           },
         })

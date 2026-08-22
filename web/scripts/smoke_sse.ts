@@ -80,11 +80,28 @@ async function main() {
   line('text', JSON.stringify(text.length > 80 ? text.slice(0, 80) + '…' : text))
   line('done', `status=${done.status} cost=${done.cost_usd} trace=${done.trace.length} stage(s)`)
 
-  // 断言:顺序、内容、终止信号
-  const expected = ['meta', 'stage_start', 'token', 'stage_end', 'done']
-  if (order.join(' -> ') !== expected.join(' -> ')) {
-    throw new Error(`事件顺序不对:${order.join(' -> ')}`)
+  // 断言:顺序、内容、终止信号。
+  //
+  // **不断言一条固定的事件串**:S1 起链路前面多了 retrieve_exact_qa 一个 stage,
+  // S2/S3 还会再多(路由、检索、生成 SQL…)。写死顺序的话每加一个 stage 这个脚本就红一次,
+  // 而它要守的其实是协议的三条不变量 —— 那才是前端渲染真正依赖的东西:
+  //   1. meta 在最前(新会话的 id 必须先到,不然第一个 token 无处可放)
+  //   2. stage_start / stage_end 成对出现,且第一个 token 之前至少有过一个 stage
+  //   3. done 是唯一终止信号,且在最后
+  const starts = order.filter((e) => e === 'stage_start').length
+  const ends = order.filter((e) => e === 'stage_end').length
+  if (order[0] !== 'meta') throw new Error(`meta 不在最前:${order.join(' -> ')}`)
+  if (order.at(-1) !== 'done') throw new Error(`done 不在最后:${order.join(' -> ')}`)
+  if (order.filter((e) => e === 'done').length !== 1) {
+    throw new Error(`done 不止一个:${order.join(' -> ')}`)
   }
+  if (starts === 0 || starts !== ends) {
+    throw new Error(`stage_start/stage_end 不成对(${starts}/${ends}):${order.join(' -> ')}`)
+  }
+  if (order.indexOf('token') !== -1 && order.indexOf('token') < order.indexOf('stage_start')) {
+    throw new Error(`token 出现在任何 stage 之前:${order.join(' -> ')}`)
+  }
+  line('order', order.join(' -> '))
   if (tokens < 1) throw new Error('一个 token 都没收到')
   if (!text.trim()) throw new Error('拼出来的回答是空的')
   if (done.status !== 'completed') throw new Error(`status=${done.status}`)

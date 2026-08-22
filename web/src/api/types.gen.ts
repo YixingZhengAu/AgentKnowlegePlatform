@@ -347,6 +347,241 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/exact-qa/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_exact_qa_documents_get"];
+        put?: never;
+        /**
+         * Upload Document
+         * @description 上传 PDF → 建 source + document → **立刻派发解析 Job**。
+         *
+         *     一次请求做完三件事而不是让前端分三步:上传后必然要解析,拆开只会多两个来回,
+         *     而且中间任何一步失败都会留下孤儿数据。
+         */
+        post: operations["upload_document_api_exact_qa_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Document */
+        get: operations["get_document_api_exact_qa_documents__document_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Document
+         * @description 删掉一份文档:两个 Job(级联带走候选)、文档行、上传原件、解析产物目录。
+         *
+         *     **有已发布问答的文档不许删**(409):正式 QA 的出处存在候选行的 `origin_ref` 里
+         *     (`exact_qa_items.source_staging_id` 指过去),删了文档,引用里"跳到第 N 页"就悬空了。
+         *     要清掉这类文档,先把它的正式 QA 逐条下线 —— 那是个显式动作,不该由删文档顺手替人做。
+         *
+         *     这是给演示现场准备的:传错文件、解析失败的文档能自己清掉,不用去翻数据库。
+         */
+        delete: operations["delete_document_api_exact_qa_documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/documents/{document_id}/review-text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Review Text
+         * @description 校对页的数据源。**图片路径在这里改写成文件服务 URL**(入库仍是相对路径)。
+         */
+        get: operations["get_review_text_api_exact_qa_documents__document_id__review_text_get"];
+        /**
+         * Save Review Text
+         * @description 保存校对结果到 reviewed.md。抽取用的就是这一份(没有它才退回 paged.md)。
+         */
+        put: operations["save_review_text_api_exact_qa_documents__document_id__review_text_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/documents/{document_id}/confirm-extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Extract
+         * @description 第一道人工关的出口:「确认,开始抽取」。派发 qa_extract Job。
+         */
+        post: operations["confirm_extract_api_exact_qa_documents__document_id__confirm_extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/candidates/{item_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept
+         * @description ★ 采纳即发布:一个事务里写 `exact_qa_items` + 建向量索引,立刻参与检索。
+         */
+        post: operations["accept_api_exact_qa_candidates__item_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/candidates/{item_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject
+         * @description 不采纳:留痕不入库,理由必填。
+         */
+        post: operations["reject_api_exact_qa_candidates__item_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Items
+         * @description 正式 QA 列表:**不带答案正文**(列表轻详情重),带索引面行数好确认它真的可被检索。
+         */
+        get: operations["list_items_api_exact_qa_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Item Detail */
+        get: operations["get_item_detail_api_exact_qa_items__item_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exact-qa/items/{item_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable
+         * @description 下线:置 disabled + 删向量行(正式行留着,历史消息里的引用不悬空)。
+         */
+        post: operations["disable_api_exact_qa_items__item_id__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/parses/{document_id}/images/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Parse Image
+         * @description `GET /api/files/parses/{document_id}/images/{name}` —— 契约见 schemas/exact_qa.py。
+         */
+        get: operations["get_parse_image_api_files_parses__document_id__images__name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/documents/{document_id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Source Pdf
+         * @description 上传原件(校对页左侧的 PDF 预览)。
+         *
+         *     路径不从 URL 拼,而是从 `documents.raw_uri` 取(入库时由 storage 层写的相对路径),
+         *     再断言它落在 FILE_STORAGE_DIR 之内 —— 库里的值也不当可信输入。
+         */
+        get: operations["get_source_pdf_api_files_documents__document_id__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -440,6 +675,14 @@ export interface components {
              */
             updated_at: string;
         };
+        /** Body_upload_document_api_exact_qa_documents_post */
+        Body_upload_document_api_exact_qa_documents_post: {
+            /**
+             * File
+             * @description PDF only (S1 boundary)
+             */
+            file: string;
+        };
         /** ChatRequest */
         ChatRequest: {
             /** Question */
@@ -480,14 +723,52 @@ export interface components {
              * Citations
              * @default []
              */
-            citations: {
-                [key: string]: unknown;
-            }[];
+            citations: components["schemas"]["MessageCitationOut"][];
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
             /**
              * Trace
              * @default []
              */
             trace: components["schemas"]["TraceSpanOut"][];
+        };
+        /**
+         * CitationExtra
+         * @description 引用的附加信息。**故意允许多余字段**(`extra="allow"`):
+         *     S1 只用得到分数/命中面/页码,S2 的文档引用会带 chunk 序号、S3 的问数会带 SQL 与行数;
+         *     在这里把已知字段写出来是为了让前端有类型可用,不是为了封死结构。
+         */
+        CitationExtra: {
+            /** Score */
+            score?: number | null;
+            /** Matched Question */
+            matched_question?: string | null;
+            /** Is Standard Question */
+            is_standard_question?: boolean | null;
+            /** Document Id */
+            document_id?: string | null;
+            /** Page Idx */
+            page_idx?: number | null;
+            /** Bbox */
+            bbox?: number[] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ConfirmExtractResult */
+        ConfirmExtractResult: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
         };
         /** ConversationOut */
         ConversationOut: {
@@ -512,6 +793,185 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * DocumentFunnel
+         * @description 漏斗计数:一眼看到"抽了多少、采纳了多少",即知识转化率(S1-plan §4 决策 4)。
+         */
+        DocumentFunnel: {
+            /**
+             * Candidates
+             * @description 抽取出的候选条数
+             * @default 0
+             */
+            candidates: number;
+            /**
+             * Pending
+             * @description 还没裁决的候选
+             * @default 0
+             */
+            pending: number;
+            /**
+             * Accepted
+             * @description 已采纳(= 已发布,在库有索引)
+             * @default 0
+             */
+            accepted: number;
+            /**
+             * Rejected
+             * @default 0
+             */
+            rejected: number;
+        };
+        /**
+         * DocumentOut
+         * @description 文档列表/详情的一行。
+         *
+         *     `stage` 是给界面用的**推导态**:文档表只存解析态(4 态),
+         *     "待校对 / 抽取中 / 待采纳 / 已完成"由关联 Job 的状态推出来(S1-plan §8.4)。
+         */
+        DocumentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Name */
+            name: string;
+            /** File Type */
+            file_type: string | null;
+            /** Size Bytes */
+            size_bytes: number | null;
+            /** Parse Status */
+            parse_status: string;
+            /** Parse Error */
+            parse_error: string | null;
+            /**
+             * Stage
+             * @description uploaded/parsing/review_text/extracting/review_qa/done/failed
+             */
+            stage: string;
+            /** Parse Job Id */
+            parse_job_id?: string | null;
+            /** Extract Job Id */
+            extract_job_id?: string | null;
+            parse_stats?: components["schemas"]["ParseStats"] | null;
+            /**
+             * @default {
+             *       "candidates": 0,
+             *       "pending": 0,
+             *       "accepted": 0,
+             *       "rejected": 0
+             *     }
+             */
+            funnel: components["schemas"]["DocumentFunnel"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ExactQaItemDetail */
+        ExactQaItemDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Standard Question */
+            standard_question: string;
+            /** Keywords */
+            keywords: string[];
+            /**
+             * Similar Count
+             * @default 0
+             */
+            similar_count: number;
+            /** Status */
+            status: string;
+            /**
+             * Index Faces
+             * @description 索引面行数(标准问 + 相似问)
+             * @default 0
+             */
+            index_faces: number;
+            /** Source Staging Id */
+            source_staging_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Answer */
+            answer: string;
+            /** Similar Questions */
+            similar_questions: string[];
+            origin_ref?: components["schemas"]["OriginRef"] | null;
+        };
+        /**
+         * ExactQaItemOut
+         * @description 正式 QA 列表的一行(**不带长答案正文**,S1-plan §4 决策 5:列表轻详情重)。
+         */
+        ExactQaItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Standard Question */
+            standard_question: string;
+            /** Keywords */
+            keywords: string[];
+            /**
+             * Similar Count
+             * @default 0
+             */
+            similar_count: number;
+            /** Status */
+            status: string;
+            /**
+             * Index Faces
+             * @description 索引面行数(标准问 + 相似问)
+             * @default 0
+             */
+            index_faces: number;
+            /** Source Staging Id */
+            source_staging_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -644,6 +1104,20 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ListResponse[DocumentOut] */
+        ListResponse_DocumentOut_: {
+            /** Items */
+            items: components["schemas"]["DocumentOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[ExactQaItemOut] */
+        ListResponse_ExactQaItemOut_: {
+            /** Items */
+            items: components["schemas"]["ExactQaItemOut"][];
+            /** Total */
+            total: number;
+        };
         /** ListResponse[JobOut] */
         ListResponse_JobOut_: {
             /** Items */
@@ -679,6 +1153,25 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * MessageCitationOut
+         * @description 一条引用(message_citations 表的一行)。
+         *
+         *     以前它在 openapi 里是裸 `dict`,前端只能手写一份约定型 —— 违反"前端不许手写 API 类型"。
+         *     出处:`app/core/chat.py::_exact_qa_citations`。
+         */
+        MessageCitationOut: {
+            /** Seq */
+            seq: number;
+            /** Citation Type */
+            citation_type: string;
+            /** Ref Id */
+            ref_id?: string | null;
+            /** Snippet */
+            snippet?: string | null;
+            /** @default {} */
+            extra: components["schemas"]["CitationExtra"];
+        };
         /** MessageOut */
         MessageOut: {
             /**
@@ -712,6 +1205,91 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Citations
+             * @default []
+             */
+            citations: components["schemas"]["MessageCitationOut"][];
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
+        };
+        /**
+         * OriginRef
+         * @description 原文出处,整体存 `staging_items.origin_ref`(jsonb)。
+         *
+         *     quote 用于审核台文本对照(必须能在源文本里定位到,否则该候选在 M2 就被丢弃);
+         *     page_idx + bbox 用于在原 PDF 上定位/高亮。bbox 可空(quote 跨块时给不出唯一框)。
+         */
+        OriginRef: {
+            /** Document Id */
+            document_id: string;
+            /** Page Idx */
+            page_idx: number;
+            /**
+             * Quote
+             * @description 原文片段,逐字摘录,不许改写
+             */
+            quote: string;
+            /** Bbox */
+            bbox?: number[] | null;
+        };
+        /**
+         * PageInfo
+         * @description 一页的物理尺寸(PDF point),前端把归一化 bbox 换算回 PDF 坐标做高亮时要用。
+         */
+        PageInfo: {
+            /** Page Idx */
+            page_idx: number;
+            /** Width Pt */
+            width_pt: number;
+            /** Height Pt */
+            height_pt: number;
+        };
+        /**
+         * ParseStats
+         * @description 解析统计,给校对页/日志看,也是质量回归的抓手。
+         */
+        ParseStats: {
+            /**
+             * Page Count
+             * @default 0
+             */
+            page_count: number;
+            /**
+             * Block Count
+             * @default 0
+             */
+            block_count: number;
+            /**
+             * Noise Dropped
+             * @description 过滤掉的 aside_text/page_number 数
+             * @default 0
+             */
+            noise_dropped: number;
+            /**
+             * Table Count
+             * @default 0
+             */
+            table_count: number;
+            /**
+             * Image Count
+             * @description image + chart
+             * @default 0
+             */
+            image_count: number;
+            /**
+             * Equation Count
+             * @default 0
+             */
+            equation_count: number;
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms: number;
         };
         /**
          * PublishResult
@@ -741,6 +1319,55 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * RejectRequest
+         * @description 不采纳必须填理由:它是下一轮调 prompt 的原始素材。
+         */
+        RejectRequest: {
+            /** Note */
+            note: string;
+        };
+        /**
+         * ReviewTextOut
+         * @description 校对页要的一切:文本 + 页尺寸(bbox 换算)+ 是否已经校对过。
+         */
+        ReviewTextOut: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /**
+             * Source
+             * @description paged.md(原始解析) 或 reviewed.md(已校对过)
+             */
+            source: string;
+            /**
+             * Text
+             * @description 图片路径**已改写**成文件服务 URL,可直接渲染
+             */
+            text: string;
+            /** Pages */
+            pages: components["schemas"]["PageInfo"][];
+            /**
+             * Images
+             * @default []
+             */
+            images: string[];
+            /**
+             * Reviewed
+             * @description 是否存在 reviewed.md
+             */
+            reviewed: boolean;
+        };
+        /**
+         * ReviewTextUpdate
+         * @description 保存校对结果。永不覆盖 paged.md —— 原始解析件留着可对比。
+         */
+        ReviewTextUpdate: {
+            /** Text */
+            text: string;
         };
         /**
          * StagingBulkRequest
@@ -917,6 +1544,27 @@ export interface components {
             cost_usd?: string | null;
             /** Error */
             error?: string | null;
+        };
+        /**
+         * UploadResult
+         * @description 上传即建 Job:前端拿到 job_id 就能直接轮询进度条,不用再问一次。
+         */
+        UploadResult: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1519,6 +2167,454 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StagingBulkResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_exact_qa_documents_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_DocumentOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_document_api_exact_qa_documents_post: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_api_exact_qa_documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_api_exact_qa_documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_api_exact_qa_documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_review_text_api_exact_qa_documents__document_id__review_text_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewTextOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_review_text_api_exact_qa_documents__document_id__review_text_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewTextUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewTextOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_extract_api_exact_qa_documents__document_id__confirm_extract_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmExtractResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_api_exact_qa_candidates__item_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StagingItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_api_exact_qa_candidates__item_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StagingItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_items_api_exact_qa_items_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+                status?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_ExactQaItemOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_item_detail_api_exact_qa_items__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExactQaItemDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_api_exact_qa_items__item_id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExactQaItemOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_parse_image_api_files_parses__document_id__images__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_source_pdf_api_files_documents__document_id__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

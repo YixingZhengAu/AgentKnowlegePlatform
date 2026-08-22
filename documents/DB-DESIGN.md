@@ -277,6 +277,15 @@
 索引:`(status)`、`(kb_id, created_at DESC)`。
 状态机:`queued → running → review →(用户点发布)publishing → published`;`running/publishing → failed`(可从失败步骤重跑);`review → cancelled`。
 
+**S1 的两点收窄**(实现见 `server/app/services/exact_qa/`):
+
+1. **逐条采纳即发布**,没有批量发布动作,于是 `publishing` 这个中间态在 S1 的
+   `qa_extract` 上不出现:`review` 表示"采纳进行中",全部候选裁决完毕(没有 pending)
+   自动置 `published`,它只作终态统计,漏斗数字记在 `publish_records.item_counts`。
+   批量入口 `POST /api/jobs/{id}/publish` 仍然可用(走同一个 publisher),两条路不冲突。
+2. **不产出待审内容的 Job 直接进终态**:`qa_parse` 跑完就是 `published`
+   (等人校对这件事由 `documents.parse_status` + 推导态表达,不占用 job 状态)。
+
 ### staging_items(待审核的加工产物)
 
 | 列 | 类型 | 约束 | 说明 |
@@ -286,7 +295,7 @@
 | kb_id | uuid | FK→knowledge_bases, NOT NULL | |
 | item_type | text | CHECK IN ('qa_pair','chunk','table_meta','metric','term') | 决定前端用哪个渲染器 |
 | payload | jsonb | NOT NULL | 结构按 item_type 定义,见 §8 |
-| origin_ref | jsonb | NULL | `{"source_id":"...","page":3,"quote":"原文片段"}` 溯源定位 |
+| origin_ref | jsonb | NULL | 溯源定位。**S1 定稿形状**(`schemas/exact_qa.py::OriginRef`):`{"document_id":"...","page_idx":3,"quote":"原文片段","bbox":[x0,y0,x1,y1]}` —— `page_idx` **0 起**(与 MinerU 一致,前端显示 +1),`bbox` 每轴归一化到 0–1000(原点左上、页面尺寸无关),**可空**(quote 跨块时给不出唯一框)。早期示例写的 `{source_id,page,quote}` 已按此更正 |
 | confidence | real | NULL, CHECK (0<=confidence AND confidence<=1) | 抽取置信度,审核列表按它排序 |
 | review_status | text | CHECK IN ('pending','approved','rejected','modified') DEFAULT 'pending' | modified=人工改过再通过 |
 | review_note | text | | |
@@ -488,6 +497,17 @@
 
 ---
 
+### S1 落地补充:exact_qa_items / exact_qa_vectors 的两条使用约定
+
+- **正式表不存 origin_ref**:出处经 `source_staging_id` 回 `staging_items.origin_ref` 取
+  (复制一份就多一处会不同步的数据)。
+- **下线 = `status='disabled'` + 删该 item 的全部向量行**,正式行不物理删
+  (它可能被 `message_citations.ref_id` 引用过,删了历史消息的引用会悬空)。
+- 索引面 = 标准问 + 每条相似问各一行;问题集合一变就**全删重建**该 item 的向量行,
+  不做增量 diff。检索用 `1 - cosine_distance`(HNSW 建在 `vector_cosine_ops` 上)。
+
+---
+
 ## 8. staging_items.payload 结构(按 item_type)
 
 Pydantic 侧为每种 payload 建 schema,PATCH 审核修改时校验。
@@ -501,6 +521,10 @@ Pydantic 侧为每种 payload 建 schema,PATCH 审核修改时校验。
   "keywords": ["质保", "HC-215"]
 }
 ```
+> S1 实现说明:`origin_ref`(原文出处)与 `confidence`(抽取置信度)**不在 payload 里** ——
+> 它们各有专属列。payload 就是采纳后原样写进 `exact_qa_items` 的那四个字段
+> (`QaCandidate.as_payload()`),这样发布时不用做字段裁剪。
+> 抽取阶段的硬约束:答案非空 + quote 必须能在校对文本里逐字定位到,不满足的候选直接丢弃。
 
 **chunk**(S2):`{"content": "...", "heading_path": "...", "summary": "...", "hypo_questions": [...]}`
 

@@ -19,9 +19,11 @@ export default function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/agents" element={<AgentListPage />} />
           <Route path="/agents/:agentId" element={<AgentDetailPage />} />
-          {/* 三个知识域的 ingestion 页由域清单生成(src/domains/index.ts) */}
+          {/* 三个知识域的 ingestion 页由域清单生成(src/domains/index.ts)。
+              `/*` 是给域自己开的子路由空间:S1 的校对页这类"域内二级页"由该域的
+              IngestPage 内部再摆一层 <Routes>,共享路由表不认识任何具体域的子页 */}
           {DOMAINS.map((d) => (
-            <Route key={d.key} path={d.path} element={<d.IngestPage />} />
+            <Route key={d.key} path={`${d.path}/*`} element={<d.IngestPage />} />
           ))}
           <Route path="/jobs/:jobId/review" element={<ReviewPage />} />
           <Route path="/settings" element={<SettingsPage />} />

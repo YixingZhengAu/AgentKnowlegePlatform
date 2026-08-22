@@ -14,7 +14,8 @@
 | `TracePanel.tsx` | 执行轨迹面板:流式 span 或 `GET /api/traces/{id}`(可展开 input/output) |
 | `JobProgress.tsx` | 通用任务进度条:轮询 + 声明式步骤 + 分步日志 + 从失败步骤重跑 |
 | `Toaster.tsx` | 订阅 `lib/toast` store 渲染 toast,固定右下角 |
-| `StagingReview.tsx` | **泛型审核台**:筛选/排序/单条/批量/键盘流/发布,不认识 payload 是什么 |
+| `StagingReview.tsx` | **泛型审核台**:筛选/排序/单条/批量/键盘流/发布;**动作层可由各域替换**(S1 的采纳即发布) |
+| `Citations.tsx` | 答案下面的引用条(命中面 + 相似度 + 页码,可展开看原文摘录) |
 | `staging/` | 各类知识的渲染器(item_type → 卡片 + 编辑器),见 `staging/claude.md` |
 | `ui/textarea.tsx` | 多行输入(审核台的答案框) |
 

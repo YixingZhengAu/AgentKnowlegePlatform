@@ -4,10 +4,12 @@
 
 ```
 event: meta         data: {"message_id": "...", "conversation_id": "..."}
-event: stage_start  data: {"stage": "generate"}
+event: stage_start  data: {"stage": "retrieve_exact_qa"}   # S1 起先走检索
+event: verified     data: {"source": "exact_qa", "score": 0.71, "citations": [...]}  # 仅命中时
+event: stage_start  data: {"stage": "generate"}   # 命中精准 QA 时**不会出现**(不调生成模型)
 event: token        data: {"text": "..."}
 event: stage_end    data: {"stage": "generate", "latency_ms": 812, "usage": {...}}
-event: done         data: {"message_id": "...", "citations": [], "trace": [...]}
+event: done         data: {"message_id":"...", "citations":[...], "verified":true, "trace":[...]}
 event: error        data: {"stage": "generate", "message": "..."}   # 只在失败时出现
 ```
 
@@ -41,6 +43,7 @@ _ABORTED = {
     "cost_usd": "0",
     "latency_ms": 0,
     "citations": [],
+    "verified": False,
     "trace": [],
 }
 

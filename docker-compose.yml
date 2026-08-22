@@ -1,4 +1,7 @@
-# 只有一个服务:带 pgvector 的 Postgres 16(系统库 + 演示业务库都在这里)
+# 两个服务:
+#   postgres   —— 带 pgvector 的 Postgres 16(系统库 + 演示业务库都在这里)
+#   mineru-api —— PDF 解析常驻服务(S1 用;那 4.9GB 依赖树永不进 server 镜像)
+# 默认 `make db` 只起 postgres;解析服务用 `make mineru` 单独起。
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -22,5 +25,30 @@ services:
       timeout: 3s
       retries: 20
 
+  # PDF 解析服务:官方镜像基于 CUDA+sglang(amd64),Apple Silicon 不可用,所以自建 CPU 镜像
+  mineru-api:
+    build:
+      context: ./docker/mineru
+      dockerfile: Dockerfile
+    image: mineru:cpu
+    container_name: agent_system_mineru
+    restart: unless-stopped
+    command: ["mineru-api", "--host", "0.0.0.0", "--port", "8001"]
+    ports:
+      # 后端按 .env 的 MINERU_BASE_URL 调它(默认 http://127.0.0.1:18001)
+      - "18001:8001"
+    volumes:
+      # 模型权重 1GB,放 named volume,别每次重下
+      - mineru_models:/models
+    shm_size: "2gb"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8001/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
 volumes:
   pgdata:
+  mineru_models:
+    # 固定卷名:换 compose 项目名也不会丢权重
+    name: mineru_models

@@ -8,7 +8,6 @@ S1–S3 各域的 Job 子类就绪后,在下面各加一行 import。
 """
 
 from app.core import jobs_demo  # noqa: F401  框架联调假任务 demo_sleep
-
-# S1:from app.services.exact_qa import ingest  # noqa: F401
+from app.services.exact_qa import ingest  # noqa: F401  qa_parse / qa_extract
 # S2:from app.services.document import ingest  # noqa: F401
 # S3:from app.services.text2sql import ingest  # noqa: F401

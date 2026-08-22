@@ -16,7 +16,7 @@ import { StagingReview } from '@/components/StagingReview'
 import { renderersFor } from '@/components/staging/registry'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useRightPanel } from '@/layouts/AppLayout'
+import { useRightPanel } from '@/layouts/rightPanel'
 
 export function ReviewPage() {
   const { jobId = '' } = useParams()
@@ -51,6 +51,9 @@ export function ReviewPage() {
           itemRenderer={renderers.card}
           editorRenderer={renderers.editor}
           originPanel={renderers.origin}
+          actions={renderers.actions}
+          // 采纳即发布的域(S1)每裁决一条 job 就可能变终态,所以每条都刷一次 job
+          onDecided={job.reload}
           onPublished={job.reload}
         />
       )}

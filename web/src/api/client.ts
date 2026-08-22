@@ -73,6 +73,23 @@ export function apiPatch<T>(path: string, body: unknown): Promise<T> {
   return apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
 }
 
+/** 文件上传(multipart)。
+ *
+ * **刻意不走 apiFetch**:那里无条件设了 `Content-Type: application/json`,
+ * 而 multipart 的 Content-Type 必须由浏览器生成(它要往里塞 boundary)——
+ * 手写这个头是上传最经典的一个坑,后端会收到一个解不开的 body。
+ */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  let res: Response
+  try {
+    res = await fetch(API_BASE + path, { method: 'POST', body: form })
+  } catch (cause) {
+    throw new ApiError('network_error', 'Cannot reach the API server.', 0, String(cause))
+  }
+  if (!res.ok) throw await toApiError(res)
+  return (await res.json()) as T
+}
+
 export function apiDelete(path: string): Promise<void> {
   return apiFetch<void>(path, { method: 'DELETE' })
 }

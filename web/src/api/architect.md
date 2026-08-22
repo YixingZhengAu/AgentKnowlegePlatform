@@ -52,6 +52,12 @@ streamChat({agentId, question, conversationId, handlers, signal}) -> Promise<Cha
 
 - 事件协议出处是 `server/app/api/architect.md`,改协议前后端一起改
 - `dispatch()` 的 switch **不写 default 抛错**:S1–S4 会加新事件类型,老前端必须容忍
+- S1 加了一个 `verified` 事件(命中精准问答:答案是库里原话,且**没有 generate 阶段**)。
+  前端认标注只看 `verified` 事件 / `done.verified`,不去猜"是不是只有一个 token"
+- `citations` **是生成类型**(后端 `MessageCitationOut` + `CitationExtra`,Step 8 从裸 dict
+  改成真 schema);`schema.ts` 的 `MessageCitation` 只是取个短名,不再是手写的约定型
+- 历史消息也带 `citations` 与 `verified`(`GET /messages`),所以刷新页面标注不会丢 ——
+  前端不自己推 verified,后端一处判定
 - 用 `.ts` 后缀 import `./client.ts`:Node 原生跑 TS 时不做扩展名补全(Vite 两种都认)
 
 ## schema.ts
