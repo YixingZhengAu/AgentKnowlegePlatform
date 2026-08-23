@@ -5,7 +5,7 @@
 | 文件 | 说明 |
 | --- | --- |
 | `main.tsx` | 预览版入口:HashRouter + `fetch` 换成读 fixtures + **假 SSE 流** + **审核台内存库(可写)** + 预览角标 |
-| `fixtures.ts` | 固定响应(只读接口抓的真返回;会话/消息/trace/审核任务/staging/精准 QA 文档是手写演示数据;kbs/jobs 列表随页面删除) |
+| `fixtures.ts` | 固定响应(只读接口抓的真返回;会话/消息/trace/审核任务/staging/精准 QA 文档与问答详情是手写演示数据;kbs/jobs 列表随页面删除) |
 | `index.html` | 预览版 HTML 入口 |
 | `inline.mjs` | 把构建产物拼成单文件 `dist-demo/preview.html` |
 

@@ -21,38 +21,56 @@ import { cn } from '@/lib/utils'
 import { pageAnchor, splitPages } from './pagedMd'
 
 const MD_COMPONENTS = {
-  h1: (p: object) => <h2 className="font-display mt-4 text-[18px] font-bold" {...p} />,
-  h2: (p: object) => <h3 className="font-display mt-4 text-[16px] font-semibold" {...p} />,
-  h3: (p: object) => <h4 className="font-display mt-3 text-[14px] font-semibold" {...p} />,
-  p: (p: object) => <p className="mt-2 text-[13px] leading-relaxed" {...p} />,
-  ul: (p: object) => <ul className="mt-2 list-disc pl-5 text-[13px]" {...p} />,
-  ol: (p: object) => <ol className="mt-2 list-decimal pl-5 text-[13px]" {...p} />,
-  blockquote: (p: object) => (
-    <blockquote className="border-l-primary text-muted-foreground mt-2 border-l-[3px] pl-3" {...p} />
+  h1: (p: object) => (
+    <h2 className="font-display mt-6 text-[17px] font-bold tracking-[-0.01em]" {...p} />
   ),
-  code: (p: object) => <code className="bg-subtle rounded px-1 font-mono text-[12px]" {...p} />,
+  h2: (p: object) => <h3 className="font-display mt-5 text-[15px] font-bold" {...p} />,
+  h3: (p: object) => <h4 className="font-display mt-4 text-[13.5px] font-semibold" {...p} />,
+  p: (p: object) => <p className="mt-2.5 text-[13.5px] leading-[1.75]" {...p} />,
+  ul: (p: object) => (
+    <ul className="mt-2.5 list-disc pl-5 text-[13.5px] leading-[1.75] marker:text-ghost" {...p} />
+  ),
+  ol: (p: object) => (
+    <ol className="mt-2.5 list-decimal pl-5 text-[13.5px] leading-[1.75] marker:text-ghost" {...p} />
+  ),
+  blockquote: (p: object) => (
+    <blockquote className="border-l-accent text-faint mt-3 border-l-[3px] pl-3.5" {...p} />
+  ),
+  code: (p: object) => (
+    <code
+      className="bg-subtle rounded-[var(--radius-kbd)] px-[5px] py-px font-mono text-[12px]"
+      {...p}
+    />
+  ),
   // 表格可能很宽:让它在自己的容器里横向滚动,不要把整页撑出横向滚动条
   table: (p: object) => (
-    <div className="mt-3 overflow-x-auto">
-      <table className="border-collapse text-[12px] [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1" {...p} />
+    <div className="mt-4 overflow-x-auto rounded-[var(--radius)] border border-[var(--border)]">
+      <table
+        className="w-full border-collapse text-[12px] [&_td]:border-t [&_td]:border-[var(--border-soft)] [&_td]:px-3 [&_td]:py-1.5 [&_th]:bg-subtle [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold"
+        {...p}
+      />
     </div>
   ),
   img: (p: object) => (
     // 图片走文件服务(URL 已由后端改写);显示不出来时要看得见是哪一张,所以留 alt
-    <img className="bg-subtle mt-3 max-w-full rounded border" loading="lazy" {...p} />
+    <img
+      className="bg-subtle mt-4 max-w-full rounded-[var(--radius)] border border-[var(--border)]"
+      loading="lazy"
+      {...p}
+    />
   ),
 }
 
 export function MarkdownView({ text, className }: { text: string; className?: string }) {
   const pages = splitPages(text)
   return (
-    <div className={cn('flex flex-col gap-6', className)}>
+    <div className={cn('flex max-w-[680px] flex-col gap-7', className)}>
       {pages.map((page) => (
         <section key={page.pageIdx} id={pageAnchor(page.pageIdx)} className="scroll-mt-4">
-          <div className="text-muted-foreground mb-1 font-mono text-[11px] tracking-wide uppercase">
+          <div className="text-fainter mb-2 font-mono text-[10.5px] tracking-[0.06em] uppercase">
             page {page.pageIdx + 1}
           </div>
-          <div className="border-t pt-2">
+          <div className="border-t border-[var(--border-soft)] pt-3">
             <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MD_COMPONENTS}>
               {page.body}
             </Markdown>

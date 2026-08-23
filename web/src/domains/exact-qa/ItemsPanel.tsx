@@ -47,10 +47,10 @@ export function ItemsPanel() {
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center gap-2 border-b px-5 py-3">
-        <BookCheck className="text-muted-foreground size-4" />
-        <span className="font-display text-[16px] font-semibold">Published Q&amp;A</span>
-        <span className="text-muted-foreground ml-auto font-mono text-[11px]">
+      <div className="flex h-[54px] items-center gap-2.5 border-b border-[var(--border-soft)] px-[26px]">
+        <BookCheck className="text-faint size-4" />
+        <span className="text-[13px] font-semibold">Published Q&amp;A</span>
+        <span className="text-faint ml-auto font-mono text-[11px]">
           {list.data?.items.length ?? 0} items
         </span>
       </div>
@@ -63,49 +63,59 @@ export function ItemsPanel() {
         emptyDescription="Accepted candidates land here and become searchable immediately."
       >
         {(data) => (
-          <ul>
+          <ul className="flex flex-col gap-1.5 p-2">
             {data.items.map((item) => {
               const open = openId === item.id
               return (
-                <li key={item.id} className="border-b last:border-0">
+                <li key={item.id}>
                   <div
                     className={cn(
-                      'hover:bg-subtle flex cursor-pointer items-center gap-3 px-5 py-3',
-                      open && 'bg-primary-soft',
+                      'flex cursor-pointer items-center gap-3 rounded-[var(--radius-row)] border px-3.5 py-2.5 transition-all duration-150',
+                      open
+                        ? 'bg-selected border-[var(--selected-border)] shadow-[var(--shadow-row)]'
+                        : 'hover:bg-subtle border-transparent',
                     )}
                     onClick={() => setOpenId(open ? null : item.id)}
                   >
                     <ChevronDown
                       className={cn(
-                        'text-muted-foreground size-4 shrink-0 transition-transform',
+                        'text-fainter size-4 shrink-0 transition-transform duration-150',
                         !open && '-rotate-90',
                       )}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13px] font-medium">
+                      <div
+                        className={cn(
+                          'mb-px truncate text-[13.5px] leading-[1.4]',
+                          open ? 'text-primary font-semibold' : 'font-medium',
+                        )}
+                      >
                         {item.standard_question}
                       </div>
-                      <div className="text-muted-foreground font-mono text-[11px]">
+                      <div className="text-ghost font-mono text-[10.5px]">
                         {fmtDateTime(item.created_at)}
                       </div>
                     </div>
-                    <Badge tone={item.index_faces > 0 ? 'navy' : 'neutral'} className="font-mono">
+                    <Badge
+                      tone={item.index_faces > 0 ? 'navy' : 'neutral'}
+                      className="shrink-0 px-[9px] font-mono text-[11px] font-medium"
+                    >
                       {item.index_faces} faces
                     </Badge>
                     <StatusBadge status={item.status} />
                   </div>
 
                   {open && (
-                    <div className="bg-subtle border-t px-5 py-4">
+                    <div className="bg-subtle mt-1.5 rounded-[var(--radius-panel)] px-[18px] py-[18px]">
                       {detail.data?.id === item.id ? (
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-[18px]">
                           <Row label="Answer">
-                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap">
+                            <p className="max-w-[680px] text-[13.5px] leading-[1.7] whitespace-pre-wrap">
                               {detail.data.answer}
                             </p>
                           </Row>
                           <Row label={`Similar questions (${detail.data.similar_count})`}>
-                            <ul className="text-muted-foreground flex flex-col gap-0.5 text-[12px]">
+                            <ul className="text-secondary-foreground flex flex-col gap-1 text-[12.5px]">
                               {detail.data.similar_questions.map((q) => (
                                 <li key={q}>· {q}</li>
                               ))}
@@ -113,7 +123,7 @@ export function ItemsPanel() {
                           </Row>
                           {detail.data.origin_ref && (
                             <Row label={`Source · page ${detail.data.origin_ref.page_idx + 1}`}>
-                              <blockquote className="border-l-primary border-l-[3px] pl-3 text-[12px] leading-relaxed">
+                              <blockquote className="border-l-accent text-faint max-w-[680px] border-l-[3px] pl-3.5 text-[12.5px] leading-[1.7]">
                                 {detail.data.origin_ref.quote}
                               </blockquote>
                             </Row>
@@ -134,7 +144,7 @@ export function ItemsPanel() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground font-mono text-[11px]">
+                        <span className="text-fainter font-mono text-[11px]">
                           loading…
                         </span>
                       )}
@@ -152,10 +162,8 @@ export function ItemsPanel() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-muted-foreground font-mono text-[11px] tracking-wide uppercase">
-        {label}
-      </span>
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[12.5px] font-semibold">{label}</span>
       {children}
     </div>
   )

@@ -438,3 +438,22 @@ FIXTURES['/api/exact-qa/items'] = {
   })),
   total: TOPICS.length,
 }
+
+// 每条已发布问答的详情 —— 列表行展开后要查这个接口(改版期间那块展开面板
+// 在静态预览里一直停在 loading,验不了排版,所以按列表同一批数据补上)
+for (const [i, [topic, answer]] of TOPICS.entries()) {
+  const id = `a2000000-${String(i + 1).padStart(4, '0')}-4a10-9f01-cccc00000001`
+  FIXTURES[`/api/exact-qa/items/${id}`] = {
+    ...(FIXTURES['/api/exact-qa/items'] as { items: Record<string, unknown>[] }).items[i],
+    answer: `${answer}. Coverage starts at the invoice date and stays with the hardware, so a resold system keeps the remaining term.`,
+    similar_questions: [
+      `How long is the ${topic} for HC-${215 + i}?`,
+      `Tell me the ${topic} of the HC-${215 + i} model.`,
+    ],
+    origin_ref: {
+      document_id: DEMO_DOC_ID,
+      page_idx: 1,
+      quote: `The structural warranty is 15 years from the date of installation.`,
+    },
+  }
+}
