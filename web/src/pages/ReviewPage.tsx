@@ -31,11 +31,12 @@ export function ReviewPage() {
   if (!job.data || probe.loading) return <Skeleton className="h-64 w-full" />
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <span className="font-mono text-[12px]">{job.data.job_type}</span>
+    <div className="flex flex-col gap-5">
+      {/* 任务上下文行:与顶栏标题同一条视觉轴上,读作"这一屏在审谁" */}
+      <div className="-mt-1 flex items-center gap-3.5">
+        <span className="text-faint font-mono text-[12px]">{job.data.job_type}</span>
         <StatusBadge status={job.data.status} />
-        <span className="text-muted-foreground text-[12px]">{renderers.label} review</span>
+        <span className="text-faint text-[13px]">{renderers.label} review</span>
       </div>
 
       {probe.data?.items.length === 0 ? (

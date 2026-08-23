@@ -22,17 +22,24 @@ const BRAND = [
   '--brand-navy-hover',
   '--brand-navy-soft',
   '--brand-yellow',
-  '--brand-orange',
-  '--brand-grey-page',
-  '--brand-grey-hover',
-  '--brand-line',
+  '--brand-yellow-soft',
+  '--brand-dark',
   '--brand-ink',
   '--brand-ink-soft',
   '--brand-ink-muted',
+  '--brand-ink-faint',
+  '--brand-ink-fainter',
+  '--brand-nav',
+  '--brand-fill',
+  '--brand-fill-strong',
+  '--brand-line-strong',
+  '--brand-line',
+  '--brand-line-soft',
+  '--brand-sel',
   '--brand-green',
+  '--brand-amber',
   '--brand-red',
   '--brand-blue',
-  '--brand-violet',
 ]
 
 const SEMANTIC = [
@@ -43,11 +50,19 @@ const SEMANTIC = [
   '--primary-hover',
   '--primary-soft',
   '--accent',
-  '--accent-foreground',
+  '--accent-soft',
+  '--secondary-foreground',
   '--muted',
   '--muted-foreground',
+  '--faint',
+  '--subtle',
+  '--border-strong',
   '--border',
+  '--border-soft',
+  '--selected',
+  '--ring',
   '--success',
+  '--warning',
   '--destructive',
   '--info',
 ]
@@ -71,12 +86,12 @@ function Swatches({ names }: { names: string[] }) {
       {names.map((n) => (
         <div key={n} className="flex items-center gap-3">
           <div
-            className="size-9 shrink-0 rounded-[var(--radius)] border"
+            className="size-9 shrink-0 rounded-[var(--radius)] border border-[var(--border-strong)]"
             style={{ background: `var(${n})` }}
           />
           <div className="min-w-0">
-            <div className="truncate font-mono text-[12px]">{n}</div>
-            <div className="text-muted-foreground font-mono text-[11px]">{resolved[n] ?? '…'}</div>
+            <div className="truncate font-mono text-[11.5px] font-medium">{n}</div>
+            <div className="text-faint font-mono text-[11px]">{resolved[n] ?? '…'}</div>
           </div>
         </div>
       ))}
@@ -99,7 +114,7 @@ function Section({
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">{children}</CardContent>
+      <CardContent className="flex flex-col gap-5">{children}</CardContent>
     </Card>
   )
 }
@@ -133,15 +148,19 @@ export function StyleGuidePage() {
         description="Display font for headings and navigation, body font for prose, monospace for traces and SQL."
       >
         <div className="flex flex-col gap-2">
-          <div className="font-display text-[20px] font-semibold">Page title · 20 / 600</div>
-          <div className="font-display text-[16px] font-semibold">Card title · 16 / 600</div>
+          <div className="font-display text-[19px] font-bold tracking-[-0.01em]">
+            Page title · 19 / 700
+          </div>
+          <div className="font-display text-[15px] font-bold">Card title · 15 / 700</div>
           <div className="text-[14px]">Body copy · 14 / 400 — the working size for everything.</div>
-          <div className="text-muted-foreground text-[12px]">Support text · 12 / 400</div>
-          <div className="font-mono text-[12px]">retrieve_exact_qa · 812 ms · 1,204 tokens</div>
+          <div className="text-faint text-[11.5px]">Support text · 11.5 / 400</div>
+          <div className="text-faint font-mono text-[12px]">
+            retrieve_exact_qa · 812 ms · 1,204 tokens
+          </div>
         </div>
       </Section>
 
-      <Section title="Buttons" description="One accent button per screen at most.">
+      <Section title="Buttons" description="All pills. One navy solid button per screen at most.">
         <div className="flex flex-wrap items-center gap-3">
           <Button>Primary</Button>
           <Button variant="accent">Publish</Button>
@@ -153,12 +172,13 @@ export function StyleGuidePage() {
         </div>
       </Section>
 
-      <Section title="Badges" description="Pill shape is allowed here and nowhere else.">
+      <Section title="Badges" description="Every tone is a foreground paired with its own soft ground.">
         <div className="flex flex-wrap items-center gap-3">
           <Badge>neutral</Badge>
           <Badge tone="navy">navy</Badge>
           <Badge tone="accent">exact hit</Badge>
           <Badge tone="success">approved</Badge>
+          <Badge tone="warning">to review</Badge>
           <Badge tone="danger">rejected</Badge>
           <Badge tone="info">edited</Badge>
         </div>
@@ -166,16 +186,19 @@ export function StyleGuidePage() {
 
       <Section
         title="Radius and elevation"
-        description="Two shadow steps only; cards never round past 12px."
+        description="Controls are pills, containers round at 18px, five shadow steps."
       >
         <div className="flex flex-wrap items-center gap-4">
-          <div className="bg-card flex size-24 items-center justify-center rounded-[var(--radius)] border font-mono text-[11px]">
-            6px
+          <div className="bg-subtle text-faint flex size-24 items-center justify-center rounded-[var(--radius)] font-mono text-[11px]">
+            input
           </div>
-          <div className="bg-card flex size-24 items-center justify-center rounded-[var(--radius-card)] border font-mono text-[11px] shadow-[var(--shadow-card)]">
+          <div className="bg-card text-faint flex size-24 items-center justify-center rounded-[var(--radius-row)] border border-[var(--border)] font-mono text-[11px]">
+            row
+          </div>
+          <div className="bg-card text-faint flex size-24 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] font-mono text-[11px] shadow-[var(--shadow-card)]">
             card
           </div>
-          <div className="bg-card flex size-24 items-center justify-center rounded-[var(--radius-card)] border font-mono text-[11px] shadow-[var(--shadow-pop)]">
+          <div className="bg-card text-faint flex size-24 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] font-mono text-[11px] shadow-[var(--shadow-pop)]">
             popover
           </div>
         </div>
@@ -184,17 +207,17 @@ export function StyleGuidePage() {
       <Section title="Form controls">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12px] font-medium">Knowledge base name</label>
+            <label className="text-[12.5px] font-semibold">Knowledge base name</label>
             <Input placeholder="Residential inverter FAQ" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-muted-foreground text-[12px] font-medium">Disabled</label>
+            <label className="text-faint text-[12.5px] font-semibold">Disabled</label>
             <Input placeholder="Read only" disabled />
           </div>
         </div>
       </Section>
 
-      <Section title="Table" description="Grey header, hover row, no zebra striping.">
+      <Section title="Table" description="Label-style header, hover row, no zebra striping.">
         <Table>
           <THead>
             <TR>
@@ -209,14 +232,14 @@ export function StyleGuidePage() {
               <TD>
                 <Badge tone="success">ok</Badge>
               </TD>
-              <TD className="font-mono text-[12px]">812 ms</TD>
+              <TD className="text-faint font-mono text-[12px]">812 ms</TD>
             </TR>
             <TR>
               <TD className="font-mono text-[12px]">generate</TD>
               <TD>
                 <Badge tone="danger">error</Badge>
               </TD>
-              <TD className="font-mono text-[12px]">4.81 s</TD>
+              <TD className="text-faint font-mono text-[12px]">4.81 s</TD>
             </TR>
           </tbody>
         </Table>

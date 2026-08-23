@@ -4,11 +4,14 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `button.tsx` | 5 个 variant:primary / accent(每页至多一个)/ secondary / danger / ghost |
-| `card.tsx` | `Card` + `CardHeader/Title/Description/Content` |
-| `badge.tsx` | pill 徽标,6 个语义 tone(全站唯一允许全圆的元素) |
-| `table.tsx` | `Table/THead/TH/TR/TD`:灰表头 + 行 hover,不用斑马纹 |
-| `input.tsx` | 36px 高、聚焦 navy 边框 + 2px 外圈 |
+| `button.tsx` | 5 个 variant:primary / accent / secondary / danger / ghost;全部 pill。**accent 是历史名,渲染成 navy CTA** —— 新语言里没有黄色按钮 |
+| `card.tsx` | `Card` + `CardHeader/Title/Description/Content`,18px 圆角 + 一档极轻阴影 |
+| `badge.tsx` | pill 徽标,7 个 tone,每个是「前景 + 浅底」一对 |
+| `table.tsx` | `Table/THead/TH/TR/TD`:标签式表头(无灰底)+ 行 hover,不用斑马纹 |
+| `input.tsx` | 填充式输入:静息 `subtle` 底 + 透明边,聚焦变白底 + ring 边 + 4px 外圈 |
+| `textarea.tsx` | 多行输入,与 `input.tsx` 同一套填充/聚焦态 |
+| `kbd.tsx` | 快捷键片(纯展示,不带键盘监听) |
+| `segmented.tsx` | 分段控件:浅轨道 + 深色激活 pill;**只有外观,不带行为** |
 | `skeleton.tsx` | 加载骨架 |
 
 新增原子件优先 `npx shadcn add <name>`(配置在 `web/components.json`),

@@ -39,6 +39,8 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Kbd } from '@/components/ui/kbd'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Skeleton } from '@/components/ui/skeleton'
 import { pushToast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -272,12 +274,12 @@ export function StagingReview({
   if (list.loading && !list.data) return <Skeleton className="h-64 w-full" />
 
   return (
-    <div className="flex h-[calc(100vh-9.5rem)] flex-col gap-4">
+    <div className="flex h-[calc(100vh-10.5rem)] flex-col">
       {/* 筛选条:标签上的计数来自 summary 接口,不在前端数(前端只有当前页) */}
       {/* 筛选条:左边标签(挤了就换行),右边排序 + 发布固定不动 —— 发布是页面级动作,
           位置必须稳定,不能因为标签换行而跳到别处 */}
-      <div className="bg-card flex items-start justify-between gap-3 rounded-[var(--radius-card)] border px-4 py-3 shadow-[var(--shadow-card)]">
-        <div className="flex flex-wrap items-center gap-1">
+      <div className="mb-5 flex shrink-0 items-center justify-between gap-4">
+        <Segmented className="flex-wrap">
           <Tab
             label="All"
             count={counts?.total}
@@ -293,12 +295,12 @@ export function StagingReview({
               onClick={() => setStatusFilter(s)}
             />
           ))}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+        </Segmented>
+        <div className="flex shrink-0 items-center gap-4">
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
-            className="bg-card focus:border-primary h-9 rounded-[var(--radius)] border px-2 text-[13px] outline-none"
+            className="hover:bg-subtle bg-card h-9 cursor-pointer rounded-[var(--radius-pill)] border border-[var(--border-strong)] px-[14px] text-[12.5px] font-medium transition-all duration-150 outline-none"
           >
             {SORTS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -314,20 +316,24 @@ export function StagingReview({
               {jobStatus === 'published' ? 'Published' : `Publish ${publishable} approved`}
             </Button>
           ) : (
-            <span className="text-muted-foreground font-mono text-[11px] whitespace-nowrap">
+            <span className="text-faint flex items-center gap-[7px] text-[12px] whitespace-nowrap">
+              <span className="bg-success-dot size-[7px] rounded-full" />
               {publishable} accepted · live
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4">
-        {/* 左:紧凑列表(48px 行高,UI-STYLE §3) */}
-        <div className="bg-card flex w-[380px] shrink-0 flex-col overflow-hidden rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]">
-          <div className="text-muted-foreground flex items-center gap-2 border-b px-4 py-2 font-mono text-[11px] whitespace-nowrap">
-            <span>{items.length} items</span>
-            <span className="ml-auto">
-              j / k · a approve · x reject{actions.bulk ? ' · space select' : ''}
+      <div className="flex min-h-0 flex-1 gap-5">
+        {/* 左:条目列表 —— 行是独立的圆角块,不是表格行(UI-STYLE §4) */}
+        {/* 376px 是原型量出来的列宽;窄屏(1280 且右侧面板展开)下让它先让一步,
+            否则详情卡只剩 280px,底部三个动作会被挤成三行 */}
+        <div className="flex w-[322px] shrink-0 flex-col min-[1400px]:w-[376px]">
+          <div className="text-fainter flex shrink-0 items-center gap-1.5 overflow-hidden px-1 pb-2.5 text-[11px] tracking-[0.02em] whitespace-nowrap">
+            <span className="text-faint shrink-0 font-medium">{items.length} items</span>
+            <span className="ml-auto flex min-w-0 items-center gap-1.5 truncate font-mono text-[10.5px]">
+              <Kbd>j / k</Kbd>
+              <Kbd>a</Kbd> approve <Kbd>x</Kbd> reject{actions.bulk ? ' · space select' : ''}
             </span>
           </div>
           {items.length === 0 ? (
@@ -337,7 +343,7 @@ export function StagingReview({
               description="No items match this filter."
             />
           ) : (
-            <ul className="min-h-0 flex-1 overflow-y-auto">
+            <ul className="-mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1 pt-0.5 pb-2">
               {items.map((item) => (
                 <li key={item.id}>
                   <div
@@ -347,10 +353,10 @@ export function StagingReview({
                       setRejectNote(null)
                     }}
                     className={cn(
-                      'flex h-12 cursor-pointer items-center gap-3 border-b px-3 transition-colors',
+                      'flex cursor-pointer items-start gap-3 rounded-[var(--radius-row)] border px-3.5 py-2.5 transition-all duration-150',
                       selected?.id === item.id
-                        ? 'bg-primary-soft border-l-primary border-l-[3px] pl-[9px]'
-                        : 'hover:bg-subtle',
+                        ? 'is-sel bg-selected border-[var(--selected-border)] shadow-[var(--shadow-row)]'
+                        : 'hover:bg-subtle border-transparent',
                     )}
                   >
                     {actions.bulk && (
@@ -359,14 +365,14 @@ export function StagingReview({
                         checked={checked.has(item.id)}
                         onChange={() => toggleCheck(item.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="accent-primary size-3.5 shrink-0"
+                        className="accent-primary mt-0.5 size-[15px] shrink-0 rounded-[5px]"
                         aria-label="Select item"
                       />
                     )}
                     <div className="min-w-0 flex-1">
                       <Card item={item} />
                     </div>
-                    <ConfidenceBadge value={item.confidence} />
+                    <ConfidenceBadge value={item.confidence} className="mt-px" />
                     <ReviewDot status={item.review_status} />
                   </div>
                 </li>
@@ -375,8 +381,8 @@ export function StagingReview({
           )}
           {/* 批量操作栏吸底:勾了才出现,没勾时不占位置 */}
           {checked.size > 0 && (
-            <div className="bg-primary-soft flex flex-wrap items-center gap-1.5 border-t px-3 py-2">
-              <span className="text-primary text-[12px] font-medium">{checked.size} selected</span>
+            <div className="bg-selected mt-2 flex shrink-0 flex-wrap items-center gap-2 rounded-[var(--radius-row)] border border-[var(--selected-border)] px-3 py-2.5">
+              <span className="text-primary text-[12px] font-semibold">{checked.size} selected</span>
               <Button
                 size="sm"
                 variant="secondary"
@@ -396,7 +402,7 @@ export function StagingReview({
                 </Button>
               )}
               <button
-                className="text-muted-foreground hover:text-foreground ml-auto px-1 text-[12px]"
+                className="text-faint hover:text-foreground ml-auto px-1 text-[12px] transition-colors duration-150"
                 onClick={() => setChecked(new Set())}
                 aria-label="Clear selection"
               >
@@ -416,15 +422,15 @@ export function StagingReview({
             />
           ) : (
             <>
-              <div className="flex items-center gap-2 border-b px-5 py-3">
+              <div className="flex h-[54px] shrink-0 items-center gap-2.5 border-b border-[var(--border-soft)] px-[26px]">
                 <span className="font-mono text-[12px]">{selected.item_type}</span>
                 <StatusBadge status={selected.review_status} />
-                <ConfidenceBadge value={selected.confidence} />
+                <ConfidenceBadge value={selected.confidence} className="ml-auto h-6 text-[12px]" />
                 {selected.published && <Badge tone="navy">published</Badge>}
                 {dirty && <Badge tone="info">unsaved</Badge>}
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto p-5">
+              <div className="min-h-0 flex-1 overflow-y-auto px-7 pt-[26px] pb-[30px] [&>*]:max-w-[680px]">
                 <Editor
                   payload={payload}
                   disabled={readOnly || busy}
@@ -433,16 +439,14 @@ export function StagingReview({
                   }
                 />
                 {Origin && (
-                  <div className="mt-6 border-t pt-4">
-                    <div className="text-muted-foreground mb-2 font-mono text-[11px] tracking-wide uppercase">
-                      Source
-                    </div>
+                  <div className="mt-6 max-w-[680px] border-t border-[var(--border-soft)] pt-5">
+                    <div className="mb-[7px] text-[12.5px] font-semibold">Source</div>
                     <Origin item={selected} />
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 border-t px-5 py-3">
+              <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--border-soft)] px-5 py-4">
                 <Button disabled={readOnly || busy} onClick={() => approve(selected)}>
                   {busy ? <Loader2 className="animate-spin" /> : <Check />}
                   {actions.approveLabel}
@@ -504,34 +508,22 @@ function Tab({
   active: boolean
   onClick: () => void
 }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex items-center gap-1.5 rounded-[var(--radius)] px-3 py-1.5 text-[13px] transition-colors',
-        active ? 'bg-primary text-primary-foreground' : 'text-secondary-foreground hover:bg-subtle',
-      )}
-    >
-      <span className="capitalize">{label}</span>
-      {count != null && (
-        <span className={cn('font-mono text-[11px]', !active && 'text-muted-foreground')}>
-          {count}
-        </span>
-      )}
-    </button>
-  )
+  return <SegmentedItem onClick={onClick} active={active} label={label} count={count} />
 }
 
-function ConfidenceBadge({ value }: { value?: number | null }) {
+function ConfidenceBadge({ value, className }: { value?: number | null; className?: string }) {
   if (value == null) return null
   return (
-    <Badge tone={confidenceTone(value)} className="shrink-0 font-mono">
+    <Badge
+      tone={confidenceTone(value)}
+      className={cn('shrink-0 px-[9px] font-mono text-[11px] font-medium', className)}
+    >
       {value.toFixed(2)}
     </Badge>
   )
 }
 
-/** 列表里状态只用一个点(48px 行放不下徽标),颜色与 StatusBadge 同一套语义。 */
+/** 列表里状态只用一个点(行里放不下徽标),颜色与 StatusBadge 同一套语义。 */
 function ReviewDot({ status }: { status: string }) {
   const tone =
     status === 'approved'
@@ -541,5 +533,5 @@ function ReviewDot({ status }: { status: string }) {
         : status === 'modified'
           ? 'bg-info'
           : 'bg-border'
-  return <span className={cn('size-2 shrink-0 rounded-full', tone)} title={status} />
+  return <span className={cn('mt-2 size-[7px] shrink-0 rounded-full', tone)} title={status} />
 }

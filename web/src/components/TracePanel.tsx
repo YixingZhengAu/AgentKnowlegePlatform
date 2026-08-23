@@ -93,7 +93,7 @@ export function TracePanel({
     return currentStage ? (
       <LiveStage stage={currentStage} />
     ) : (
-      <div className="flex flex-col gap-2 p-5">
+      <div className="flex flex-col gap-2 p-[26px]">
         <Skeleton className="h-16 w-full" />
       </div>
     )
@@ -111,13 +111,17 @@ export function TracePanel({
   const totalMs = rows.reduce((sum, r) => sum + (r.latency_ms ?? 0), 0)
 
   return (
-    <div className="flex flex-col">
-      {rows.map((row) => (
+    <div className="flex flex-col px-[26px] pt-1 pb-[26px]">
+      {rows.map((row, i) => (
         // key 里带 messageId:切到另一条消息时展开状态不该被复用(阶段名和 seq 是会重复的)
-        <StageRow key={`${messageId ?? 'live'}-${row.seq}-${row.stage}`} row={row} />
+        <StageRow
+          key={`${messageId ?? 'live'}-${row.seq}-${row.stage}`}
+          row={row}
+          last={i === rows.length - 1 && !(streaming && currentStage)}
+        />
       ))}
       {streaming && currentStage && <LiveStage stage={currentStage} />}
-      <div className="text-muted-foreground flex justify-between border-t px-5 py-3 text-[12px]">
+      <div className="text-faint mt-2 flex justify-between rounded-[var(--radius-panel)] border border-[var(--border)] px-4 py-3 text-[12.5px]">
         <span>
           {rows.length} stage{rows.length > 1 ? 's' : ''}
         </span>
@@ -127,55 +131,71 @@ export function TracePanel({
   )
 }
 
-/** 正在跑的阶段:蓝点脉冲 + 阶段名(与已完成的行同一套排版) */
+/** 正在跑的阶段:蓝点脉冲 + 阶段名(与已完成的阶段同一条时间轴) */
 function LiveStage({ stage }: { stage: string }) {
   return (
-    <div className="text-muted-foreground flex items-center gap-2 border-b px-5 py-3 font-mono text-[12px] last:border-0">
-      <span className="bg-info size-2 animate-pulse rounded-full" />
-      {stage}…
+    <div className="flex gap-3.5">
+      <span className="bg-info-soft flex size-[22px] shrink-0 items-center justify-center rounded-full">
+        <span className="bg-info size-1.5 animate-pulse rounded-full" />
+      </span>
+      <span className="text-faint pt-[3px] text-[13px] font-semibold">{stage}…</span>
     </div>
   )
 }
 
+/** 时间轴状态点:与 JobProgress 同一套(UI-STYLE §4),这里状态只有成功/失败两种。 */
 const DOT: Record<string, string> = {
-  ok: 'bg-success',
+  ok: 'bg-success-dot',
   error: 'bg-destructive',
 }
 
-function StageRow({ row }: { row: TraceRow }) {
+function StageRow({ row, last }: { row: TraceRow; last: boolean }) {
   const [open, setOpen] = useState(false)
   const expandable = row.input != null || row.output != null || row.error != null
 
   return (
-    <div className="border-b last:border-0">
+    <div className="flex gap-3.5">
+      <div className="flex shrink-0 flex-col items-center">
+        <span
+          className={cn(
+            'flex size-[22px] shrink-0 items-center justify-center rounded-full',
+            row.status === 'error' ? 'bg-destructive-soft' : 'bg-success-soft',
+          )}
+        >
+          <span className={cn('size-1.5 rounded-full', DOT[row.status] ?? 'bg-fainter')} />
+        </span>
+        {!last && <span className="my-1 w-[1.5px] flex-1 bg-[var(--success-line)]" />}
+      </div>
+      <div className={cn('min-w-0 flex-1', !last && 'pb-[18px]')}>
       <button
         type="button"
         disabled={!expandable}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex w-full items-center gap-2 px-5 py-3 text-left',
-          expandable && 'hover:bg-subtle',
+          'flex w-full items-center gap-1.5 rounded-[var(--radius-nav)] py-px text-left',
+          expandable && 'hover:text-primary',
         )}
       >
-        <span className={cn('size-2 shrink-0 rounded-full', DOT[row.status] ?? 'bg-muted')} />
-        <span className="font-mono text-[12px] font-medium">{row.stage}</span>
+        <span className="text-[13px] font-semibold">{row.stage}</span>
         {expandable &&
           (open ? (
-            <ChevronDown className="text-muted-foreground size-3" />
+            <ChevronDown className="text-ghost size-3" />
           ) : (
-            <ChevronRight className="text-muted-foreground size-3" />
+            <ChevronRight className="text-ghost size-3" />
           ))}
-        <span className="text-muted-foreground ml-auto shrink-0 text-right font-mono text-[11px]">
+        <span className="text-fainter ml-auto shrink-0 pl-2 text-right font-mono text-[10.5px]">
           {fmtMs(row.latency_ms)} · {row.tokens}
         </span>
       </button>
       {open && (
-        <div className="flex flex-col gap-3 px-5 pb-4">
+        <div className="flex flex-col gap-3 pt-2.5">
           <Meta label="model" value={row.model ?? '—'} />
           <Meta label="cost" value={fmtUsd(row.cost)} />
           {row.error && (
             <div>
-              <div className="text-destructive mb-1 font-mono text-[11px] uppercase">error</div>
+              <div className="text-destructive mb-1 font-mono text-[10.5px] tracking-[0.06em] uppercase">
+                error
+              </div>
               <pre className="bg-destructive/5 text-destructive overflow-x-auto rounded-[var(--radius)] p-3 font-mono text-[11px] whitespace-pre-wrap">
                 {row.error}
               </pre>
@@ -185,6 +205,7 @@ function StageRow({ row }: { row: TraceRow }) {
           {row.output != null && <Json label="output" value={row.output} />}
         </div>
       )}
+      </div>
     </div>
   )
 }
@@ -192,7 +213,7 @@ function StageRow({ row }: { row: TraceRow }) {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between font-mono text-[11px]">
-      <span className="text-muted-foreground uppercase">{label}</span>
+      <span className="text-fainter tracking-[0.06em] uppercase">{label}</span>
       <span>{value}</span>
     </div>
   )
@@ -201,7 +222,9 @@ function Meta({ label, value }: { label: string; value: string }) {
 function Json({ label, value }: { label: string; value: unknown }) {
   return (
     <div>
-      <div className="text-muted-foreground mb-1 font-mono text-[11px] uppercase">{label}</div>
+      <div className="text-fainter mb-1 font-mono text-[10.5px] tracking-[0.06em] uppercase">
+        {label}
+      </div>
       <pre className="bg-muted max-h-64 overflow-auto rounded-[var(--radius)] p-3 font-mono text-[11px] whitespace-pre-wrap">
         {JSON.stringify(value, null, 2)}
       </pre>

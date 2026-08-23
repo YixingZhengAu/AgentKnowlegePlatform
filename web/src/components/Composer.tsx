@@ -29,7 +29,7 @@ export function Composer({
   }
 
   return (
-    <div className="bg-card flex items-end gap-3 border-t px-6 py-4">
+    <div className="flex items-end gap-3 border-t border-[var(--border-soft)] px-7 py-[18px]">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -42,7 +42,7 @@ export function Composer({
         rows={1}
         disabled={disabled}
         placeholder="Ask about warranty, installation or sales numbers…"
-        className="bg-card focus:border-primary max-h-40 min-h-9 flex-1 resize-y rounded-[var(--radius)] border px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-[var(--primary-soft)] disabled:cursor-not-allowed"
+        className="bg-subtle focus:bg-card focus:border-ring max-h-40 min-h-[42px] flex-1 resize-y rounded-[var(--radius)] border border-transparent px-4 py-[11px] text-[14px] leading-[1.6] transition-all duration-150 outline-none focus:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed"
       />
       {streaming ? (
         <Button variant="secondary" onClick={onStop}>

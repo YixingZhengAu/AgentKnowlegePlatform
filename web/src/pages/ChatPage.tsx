@@ -61,10 +61,10 @@ export function ChatPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 gap-4">
+    <div className="flex h-full min-h-0 gap-5">
       {/* 会话列表 */}
       <Card className="flex w-[240px] shrink-0 flex-col overflow-hidden">
-        <div className="border-b p-3">
+        <div className="border-b border-[var(--border-soft)] p-3">
           <Button
             variant="secondary"
             size="sm"
@@ -78,18 +78,17 @@ export function ChatPage() {
             New chat
           </Button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
           {conversations.data?.items.map((c) => (
             <div
               key={c.id}
               className={cn(
-                'group hover:bg-subtle relative flex items-center gap-2 border-b px-3 py-2.5 last:border-0',
-                chat.conversationId === c.id && 'bg-primary-soft',
+                'group flex items-center gap-2 rounded-[var(--radius-row)] border px-3 py-2.5 transition-all duration-150',
+                chat.conversationId === c.id
+                  ? 'bg-selected border-[var(--selected-border)]'
+                  : 'hover:bg-subtle border-transparent',
               )}
             >
-              {chat.conversationId === c.id && (
-                <span className="bg-primary absolute top-0 bottom-0 left-0 w-[3px]" />
-              )}
               <button
                 type="button"
                 onClick={() => {
@@ -98,8 +97,15 @@ export function ChatPage() {
                 }}
                 className="min-w-0 flex-1 text-left"
               >
-                <div className="truncate text-[13px] font-medium">{c.title ?? 'Untitled'}</div>
-                <div className="text-muted-foreground font-mono text-[11px]">
+                <div
+                  className={cn(
+                    'truncate text-[13px] font-medium',
+                    chat.conversationId === c.id && 'text-primary font-semibold',
+                  )}
+                >
+                  {c.title ?? 'Untitled'}
+                </div>
+                <div className="text-fainter mt-px font-mono text-[10.5px]">
                   {fmtDateTime(c.last_message_at)}
                 </div>
               </button>
@@ -107,14 +113,14 @@ export function ChatPage() {
                 type="button"
                 aria-label="Delete conversation"
                 onClick={() => void remove(c.id)}
-                className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                className="text-ghost hover:text-destructive shrink-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-3.5" strokeWidth={1.75} />
               </button>
             </div>
           ))}
           {conversations.data?.items.length === 0 && (
-            <p className="text-muted-foreground p-4 text-[12px]">
+            <p className="text-faint p-4 text-[12.5px]">
               No conversations yet. Ask something on the right.
             </p>
           )}

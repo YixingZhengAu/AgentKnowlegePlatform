@@ -31,22 +31,24 @@ export function SettingsPage() {
           emptyDescription="The API server did not answer."
         >
           {(health) => (
-            <CardContent className="flex flex-col gap-3">
+            <CardContent className="flex flex-col gap-0.5">
               <Row label="API">
                 <StatusBadge status={health.status === 'ok' ? 'ok' : 'failed'} />
               </Row>
               <Row label="Environment">
-                <span className="font-mono text-[12px]">{health.env}</span>
+                <span className="font-mono text-[12.5px] font-medium">{health.env}</span>
               </Row>
               <Row label="Database">
-                <span className="font-mono text-[12px]">{health.database}</span>
+                <span className="font-mono text-[12.5px] font-medium">{health.database}</span>
               </Row>
               <Row label="Embedding dimension">
-                <span className="font-mono text-[12px]">{health.embedding_dim}</span>
+                <span className="font-mono text-[12.5px] font-medium">
+                  {health.embedding_dim}
+                </span>
               </Row>
               {health.database_error && (
                 <Row label="Database error">
-                  <span className="text-destructive font-mono text-[12px]">
+                  <span className="text-destructive font-mono text-[12.5px]">
                     {health.database_error}
                   </span>
                 </Row>
@@ -64,10 +66,17 @@ export function SettingsPage() {
             sensitive is exposed to the browser.
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-secondary-foreground flex flex-col gap-2 text-[12px]">
+        <CardContent className="text-secondary-foreground flex max-w-[680px] flex-col gap-3 text-[13px] leading-[1.7]">
           <p>
-            The application asks for a <span className="font-mono">main</span> or{' '}
-            <span className="font-mono">light</span> model tier and never names a model, so
+            The application asks for a{' '}
+            <span className="bg-subtle rounded-[var(--radius-kbd)] px-1 font-mono text-[12px]">
+              main
+            </span>{' '}
+            or{' '}
+            <span className="bg-subtle rounded-[var(--radius-kbd)] px-1 font-mono text-[12px]">
+              light
+            </span>{' '}
+            model tier and never names a model, so
             switching models is a configuration change rather than a code change.
           </p>
           <p>
@@ -82,8 +91,8 @@ export function SettingsPage() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
-      <span className="text-muted-foreground text-[12px]">{label}</span>
+    <div className="flex items-center justify-between border-b border-[var(--border-soft)] py-2.5 first:pt-0 last:border-0 last:pb-0">
+      <span className="text-faint text-[12.5px]">{label}</span>
       {children}
     </div>
   )

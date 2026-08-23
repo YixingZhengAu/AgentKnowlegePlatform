@@ -86,18 +86,22 @@ export function DocumentsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-5">
+      <div className="-mt-1 flex items-center gap-2.5">
         <span className="bg-kb-exact-qa size-2.5 rounded-full" />
-        <span className="text-muted-foreground text-[12px]">Exact Q&amp;A knowledge</span>
+        <span className="text-faint text-[13px]">Exact Q&amp;A knowledge</span>
       </div>
 
       {/* 上传:一屏一个强调 CTA(UI-STYLE §3) */}
-      <Card className="flex flex-wrap items-center gap-4 px-5 py-4">
-        <FileUp className="text-muted-foreground size-5" />
+      <Card className="flex flex-wrap items-center gap-[18px] px-[26px] py-[22px]">
+        <span className="bg-subtle flex size-10 shrink-0 items-center justify-center rounded-[var(--radius)]">
+          <FileUp className="text-faint size-[18px]" />
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="font-display text-[14px] font-semibold">Upload a PDF</div>
-          <p className="text-muted-foreground text-[12px]">
+          <div className="font-display mb-1 text-[14px] font-bold tracking-[-0.01em]">
+            Upload a PDF
+          </div>
+          <p className="text-faint max-w-[520px] text-[12.5px] leading-[1.5]">
             The document is parsed, then you proofread the parsed text before any Q&amp;A is
             extracted. PDF only, up to 50 MB.
           </p>
@@ -120,10 +124,10 @@ export function DocumentsPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="flex items-center gap-2 border-b px-5 py-3">
-          <Files className="text-muted-foreground size-4" />
-          <span className="font-display text-[16px] font-semibold">Documents</span>
-          <span className="text-muted-foreground ml-auto font-mono text-[11px]">
+        <div className="flex h-[54px] items-center gap-2.5 border-b border-[var(--border-soft)] px-[26px]">
+          <Files className="text-faint size-4" />
+          <span className="text-[13px] font-semibold">Documents</span>
+          <span className="text-faint ml-auto font-mono text-[11px]">
             {docs.data?.items.length ?? 0} documents
           </span>
         </div>
@@ -150,15 +154,15 @@ export function DocumentsPage() {
                 {data.items.map((doc) => (
                   <TR key={doc.id}>
                     <TD className="max-w-[280px]">
-                      <div className="truncate text-[13px] font-medium">{doc.name}</div>
+                      <div className="truncate text-[13.5px] font-medium">{doc.name}</div>
                       {doc.parse_error && (
-                        <div className="text-destructive font-mono text-[11px]">
+                        <div className="text-destructive-ink mt-0.5 font-mono text-[10.5px]">
                           {doc.parse_error}
                         </div>
                       )}
                     </TD>
                     <TD>
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex items-center gap-[7px]">
                         {isStageActive(doc.stage) && (
                           <Loader2 className="text-info size-3.5 animate-spin" />
                         )}
@@ -167,7 +171,7 @@ export function DocumentsPage() {
                         </Badge>
                       </span>
                     </TD>
-                    <TD className="text-muted-foreground font-mono text-[11px]">
+                    <TD className="text-faint font-mono text-[11px]">
                       {doc.parse_stats
                         ? `${doc.parse_stats.page_count}p · ${doc.parse_stats.block_count} blocks`
                         : '—'}
@@ -175,7 +179,7 @@ export function DocumentsPage() {
                     <TD className="font-mono text-[11px]">
                       <Funnel doc={doc} />
                     </TD>
-                    <TD className="text-muted-foreground font-mono text-[11px]">
+                    <TD className="text-faint font-mono text-[11px]">
                       {fmtDateTime(doc.created_at)}
                     </TD>
                     <TD className="text-right">
@@ -194,7 +198,7 @@ export function DocumentsPage() {
                           <button
                             type="button"
                             aria-label={`Delete ${doc.name}`}
-                            className="text-muted-foreground hover:text-destructive px-1"
+                            className="text-fainter hover:bg-destructive-hover hover:text-destructive flex size-7 items-center justify-center rounded-[var(--radius-pill)] transition-all duration-150"
                             onClick={() => setConfirmId(doc.id)}
                           >
                             <Trash2 className="size-3.5" />
@@ -218,12 +222,12 @@ export function DocumentsPage() {
 /** 漏斗:候选 → 采纳 / 不采纳。这就是"知识转化率",演示时最该被看到的数字。 */
 function Funnel({ doc }: { doc: ExactQaDocument }) {
   const f = doc.funnel
-  if (!f.candidates) return <span className="text-muted-foreground">—</span>
+  if (!f.candidates) return <span className="text-ghost">—</span>
   return (
     <span className="whitespace-nowrap">
       {f.candidates} → <span className="text-success">{f.accepted} accepted</span>
       {f.rejected > 0 && <span className="text-destructive"> · {f.rejected} rejected</span>}
-      {f.pending > 0 && <span className="text-accent-foreground"> · {f.pending} pending</span>}
+      {f.pending > 0 && <span className="text-warning"> · {f.pending} pending</span>}
     </span>
   )
 }
@@ -262,5 +266,5 @@ function RowAction({ doc }: { doc: ExactQaDocument }) {
       </Link>
     )
   }
-  return <span className="text-muted-foreground font-mono text-[11px]">working…</span>
+  return <span className="text-fainter font-mono text-[11px]">working…</span>
 }

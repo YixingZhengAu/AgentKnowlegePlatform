@@ -50,17 +50,19 @@ export function AgentListPage() {
                   className="cursor-pointer"
                   onClick={() => navigate(`/agents/${agent.id}`)}
                 >
-                  <TD className="font-medium">{agent.name}</TD>
-                  <TD className="text-secondary-foreground max-w-[420px] text-[12px]">
+                  <TD className="text-[13.5px] font-medium">{agent.name}</TD>
+                  <TD className="text-faint max-w-[420px] text-[12.5px] leading-[1.5]">
                     {agent.description ?? '—'}
                   </TD>
                   <TD>
-                    <Badge tone="navy">{agent.router_mode}</Badge>
+                    <Badge tone="navy" className="font-mono text-[11px] font-medium">
+                      {agent.router_mode}
+                    </Badge>
                   </TD>
                   <TD>
                     <StatusBadge status={agent.status} />
                   </TD>
-                  <TD className="text-muted-foreground text-[12px]">{fmtDate(agent.created_at)}</TD>
+                  <TD className="text-faint font-mono text-[11px]">{fmtDate(agent.created_at)}</TD>
                 </TR>
               ))}
             </tbody>

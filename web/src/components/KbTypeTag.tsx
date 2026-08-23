@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 export function KbTypeTag({ type, className }: { type: string; className?: string }) {
   return (
     <span className={cn('inline-flex items-center gap-2 whitespace-nowrap', className)}>
-      <span className={cn('size-2 rounded-full', KB_TYPE_DOT[type] ?? 'bg-muted-foreground')} />
+      <span className={cn('size-[7px] rounded-full', KB_TYPE_DOT[type] ?? 'bg-muted-foreground')} />
       <span>{KB_TYPE_LABEL[type] ?? type}</span>
     </span>
   )

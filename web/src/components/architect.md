@@ -37,7 +37,8 @@ trace `ok/error`、KB `active/archived`)。它们的颜色规则在 UI-STYLE §2
 ## JobProgress:只依赖 Job 框架的四个字段
 
 `steps` / `progress` / `step_logs` / `error` —— 与 `job_type` 无关,所以 S1/S2/S3 的摄取
-进度都用它。每一步"现在什么状态"由 `stepState()` 从声明的步骤 + 已有日志推导
+进度都用它。外观是"渐变进度卡 + 竖线时间轴 + 底部统计卡"(UI-STYLE §4)。
+每一步"现在什么状态"由 `stepState()` 从声明的步骤 + 已有日志推导
 (done / failed / running / pending),后端不用为此多给字段。
 
 轮询到终态自动停;重跑后状态回到 queued,轮询自己就恢复了 —— 不需要额外的开关状态。
@@ -45,9 +46,9 @@ trace `ok/error`、KB `active/archived`)。它们的颜色规则在 UI-STYLE §2
 ## StagingReview:泛型审核台
 
 ```
-[筛选标签 + 计数 | 排序 | Publish(唯一黄色 CTA)]
-[列表 380px:48px 行 + 勾选 + 置信度徽标 + 状态点]  [编辑区:渲染器 + 溯源 + 动作条]
-[勾选后吸底的批量操作栏]
+[分段控件 Tab + 计数 | 排序 pill | Publish(唯一 navy CTA)]
+[列表 376px:圆角行 + 勾选 + 置信度 mono 徽标 + 状态点]  [详情卡 18px:渲染器 + 溯源 + 动作条]
+[勾选后出现的批量操作栏(选中色块)]
 ```
 
 它**不认识**待审内容是什么:payload 交给传进来的渲染器画(见 `staging/`),

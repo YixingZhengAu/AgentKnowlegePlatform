@@ -26,6 +26,7 @@ import { useApi } from '@/api/hooks'
 import { EmptyState } from '@/components/EmptyState'
 import { JobProgress } from '@/components/JobProgress'
 import { Badge } from '@/components/ui/badge'
+import { Segmented } from '@/components/ui/segmented'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRightPanel } from '@/layouts/rightPanel'
@@ -162,54 +163,69 @@ export function ProofreadPage() {
   return (
     <div className="flex h-[calc(100vh-6.5rem)] flex-col gap-3">
       {/* 页头:文档身份 + 解析统计 + 两个动作 */}
-      <div className="bg-card flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border px-4 py-3 shadow-[var(--shadow-card)]">
+      <div className="bg-card flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] px-[22px] py-[14px] shadow-[var(--shadow-card)]">
         <Link
           to="/ingest/exact-qa"
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[12px]"
+          className="text-faint hover:text-primary flex items-center gap-1.5 text-[12.5px] font-medium transition-all duration-150"
         >
           <ArrowLeft className="size-3.5" /> Documents
         </Link>
-        <span className="font-display text-[14px] font-semibold">{doc.data.name}</span>
+        <span className="font-display text-[14px] font-bold tracking-[-0.01em]">
+          {doc.data.name}
+        </span>
         <Badge tone={stageTone(stage)}>{STAGE_LABEL[stage] ?? stage}</Badge>
         {review.data && (
-          <span className="text-muted-foreground font-mono text-[11px]">
+          <span className="text-fainter font-mono text-[11px]">
             {review.data.source}
             {review.data.reviewed && ' · proofread'}
           </span>
         )}
         {doc.data.parse_stats && (
-          <span className="text-muted-foreground font-mono text-[11px]">
+          <span className="text-fainter font-mono text-[11px]">
             {doc.data.parse_stats.page_count}p · {doc.data.parse_stats.block_count} blocks ·{' '}
             {doc.data.parse_stats.table_count} tables · {doc.data.parse_stats.image_count} images
           </span>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2.5">
           {dirty && <Badge tone="info">unsaved</Badge>}
-          <Button variant="secondary" disabled={!dirty || busy} onClick={() => void save()}>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!dirty || busy}
+            onClick={() => void save()}
+          >
             <Save /> Save
           </Button>
           {/* 一屏一个强调 CTA(UI-STYLE §3):这一步的出口就是"确认,开始抽取" */}
-          <Button variant="accent" disabled={busy} onClick={() => void confirmExtract()}>
+          <Button
+            variant="accent"
+            size="sm"
+            disabled={busy}
+            onClick={() => void confirmExtract()}
+          >
             <Sparkles /> Confirm &amp; extract Q&amp;A
           </Button>
         </div>
       </div>
 
       {lostMarkers > 0 && (
-        <p className="text-destructive bg-card rounded-[var(--radius)] border px-4 py-2 text-[12px]">
+        <p className="text-destructive-ink bg-destructive-soft rounded-[var(--radius)] px-4 py-2.5 text-[12.5px] leading-[1.5]">
           {lostMarkers} page marker(s) were removed. Extraction reads{' '}
-          <code className="font-mono">&lt;!-- page: N --&gt;</code> to attribute page numbers —
+          <code className="bg-card rounded-[var(--radius-kbd)] px-1 font-mono text-[11.5px]">
+            &lt;!-- page: N --&gt;
+          </code>{' '}
+          to attribute page numbers —
           candidates after the missing marker will point at the wrong page.
         </p>
       )}
 
-      <div className="flex min-h-0 flex-1 gap-3">
+      <div className="flex min-h-0 flex-1 gap-4">
         {/* 左:原件 PDF。用浏览器原生阅读器(#page=N 跳页),不引 pdf.js */}
-        <div className="bg-card flex min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]">
-          <div className="flex items-center gap-2 border-b px-4 py-2">
-            <FileText className="text-muted-foreground size-4" />
-            <span className="font-mono text-[11px]">source PDF</span>
-            <div className="ml-auto flex items-center gap-1">
+        <div className="bg-card flex min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)] shadow-[var(--shadow-card)]">
+          <div className="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--border-soft)] px-[18px]">
+            <FileText className="text-faint size-4" />
+            <span className="text-faint font-mono text-[11px]">source PDF</span>
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
               {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
                 <button
                   key={n}
@@ -219,8 +235,10 @@ export function ProofreadPage() {
                     document.getElementById(pageAnchor(n - 1))?.scrollIntoView({ block: 'start' })
                   }}
                   className={cn(
-                    'rounded-[var(--radius)] px-2 py-0.5 font-mono text-[11px]',
-                    n === page ? 'bg-primary text-primary-foreground' : 'hover:bg-subtle',
+                    'flex h-[24px] min-w-[24px] items-center justify-center rounded-[var(--radius-pill)] px-1.5 font-mono text-[11px] transition-all duration-150',
+                    n === page
+                      ? 'bg-primary text-primary-foreground font-medium'
+                      : 'text-faint hover:bg-hover hover:text-primary',
                   )}
                 >
                   {n}
@@ -236,21 +254,21 @@ export function ProofreadPage() {
         </div>
 
         {/* 右:解析文本(编辑 / 预览) */}
-        <div className="bg-card flex min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]">
-          <div className="flex items-center gap-2 border-b px-4 py-2">
-            <span className="font-mono text-[11px]">parsed markdown</span>
+        <div className="bg-card flex min-w-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)] shadow-[var(--shadow-card)]">
+          <div className="flex h-[46px] shrink-0 items-center gap-3 border-b border-[var(--border-soft)] px-[18px]">
+            <span className="text-faint font-mono text-[11px]">parsed markdown</span>
             {quote && (
               <button
                 onClick={() => {
                   setMode('edit')
                   locateQuote()
                 }}
-                className="text-info text-[12px] hover:underline"
+                className="text-info text-[12.5px] font-medium hover:underline"
               >
                 Find the cited sentence
               </button>
             )}
-            <div className="ml-auto flex items-center gap-1">
+            <Segmented className="ml-auto">
               <Toggle active={mode === 'edit'} onClick={() => setMode('edit')} icon={Pencil}>
                 Edit
               </Toggle>
@@ -261,7 +279,7 @@ export function ProofreadPage() {
               >
                 Preview
               </Toggle>
-            </div>
+            </Segmented>
           </div>
           {mode === 'edit' ? (
             <textarea
@@ -269,10 +287,10 @@ export function ProofreadPage() {
               value={text}
               onChange={(e) => setDraft(e.target.value)}
               spellCheck={false}
-              className="min-h-0 flex-1 resize-none p-4 font-mono text-[12px] leading-relaxed outline-none"
+              className="min-h-0 flex-1 resize-none px-[22px] py-5 font-mono text-[12.5px] leading-[1.75] outline-none"
             />
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-[26px] py-6">
               <MarkdownView text={text} />
             </div>
           )}
@@ -297,11 +315,13 @@ function Toggle({
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 rounded-[var(--radius)] px-2 py-1 text-[12px]',
-        active ? 'bg-primary text-primary-foreground' : 'text-secondary-foreground hover:bg-subtle',
+        'flex h-7 items-center gap-1.5 rounded-[var(--radius-pill)] px-3 text-[12.5px] transition-all duration-150',
+        active
+          ? 'bg-dark text-dark-foreground font-semibold shadow-[var(--shadow-pill)]'
+          : 'text-secondary-foreground font-medium',
       )}
     >
-      <Icon className="size-3.5" />
+      <Icon className="size-[13px]" />
       {children}
     </button>
   )

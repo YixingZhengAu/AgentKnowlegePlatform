@@ -44,7 +44,7 @@ export function JobProgress({ jobId }: { jobId: string }) {
   })
   const job = state.data
 
-  if (!job) return <Skeleton className="m-5 h-32" />
+  if (!job) return <Skeleton className="m-[26px] h-32" />
 
   const steps = job.steps as unknown as JobStepDef[]
   const logs = job.step_logs as unknown as JobStepLog[]
@@ -64,16 +64,19 @@ export function JobProgress({ jobId }: { jobId: string }) {
   }
 
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-2 border-b px-5 py-3">
-        <span className="font-mono text-[12px]">{job.job_type}</span>
-        <StatusBadge status={job.status} />
-        <span className="text-muted-foreground ml-auto font-mono text-[11px]">{job.progress}%</span>
-      </div>
-
-      {/* 进度条:navy 填充,一档过渡,不做条纹动画(UI-STYLE §3) */}
-      <div className="px-5 pt-4">
-        <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+    <div className="flex flex-col px-[26px] pt-1 pb-[26px]">
+      {/* 进度卡:整块唯一一处渐变(UI-STYLE §3),百分比用 mono 大字当主角 */}
+      <div className="mb-6 rounded-[var(--radius-panel)] bg-[image:var(--gradient-progress)] px-5 py-[18px]">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <span className="text-secondary-foreground font-mono text-[12px]">{job.job_type}</span>
+          <span className="text-primary font-mono text-[24px] leading-none font-medium tracking-[-0.03em]">
+            {job.progress}%
+          </span>
+        </div>
+        <div className="mb-3.5">
+          <StatusBadge status={job.status} />
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--primary)]/10">
           <div
             className={cn(
               'h-full rounded-full transition-[width] duration-300',
@@ -84,27 +87,39 @@ export function JobProgress({ jobId }: { jobId: string }) {
         </div>
       </div>
 
-      <ol className="flex flex-col gap-0.5 px-5 py-4">
-        {steps.map((step) => {
+      {/* 阶段列表是竖线时间轴:状态点连成一条线,读起来是"走到哪一步"而不是四行日志 */}
+      <ol className="flex flex-col">
+        {steps.map((step, i) => {
           const st = stepState(step, job, logs)
           const log = [...logs].reverse().find((l) => l.step === step.name && l.status !== 'info')
+          const last = i === steps.length - 1
           return (
-            <li key={step.name} className="flex items-start gap-2 py-1.5">
-              <StepIcon state={st} />
-              <div className="min-w-0 flex-1">
+            <li key={step.name} className="flex gap-3.5">
+              <div className="flex shrink-0 flex-col items-center">
+                <StepIcon state={st} />
+                {!last && (
+                  <span
+                    className={cn(
+                      'my-1 w-[1.5px] flex-1',
+                      st === 'done' ? 'bg-[var(--success-line)]' : 'bg-[var(--border)]',
+                    )}
+                  />
+                )}
+              </div>
+              <div className={cn('min-w-0 flex-1 pt-px', !last && 'pb-[22px]')}>
                 <div className="flex items-baseline gap-2">
                   <span
                     className={cn(
-                      'font-mono text-[12px]',
-                      st === 'pending' && 'text-muted-foreground',
+                      'text-[13px] font-semibold',
+                      st === 'pending' && 'text-fainter',
                       st === 'failed' && 'text-destructive',
                     )}
                   >
                     {step.name}
                   </span>
-                  <span className="text-muted-foreground truncate text-[12px]">{step.title}</span>
+                  <span className="text-faint truncate text-[12px]">{step.title}</span>
                   {log?.latency_ms != null && (
-                    <span className="text-muted-foreground ml-auto shrink-0 font-mono text-[11px]">
+                    <span className="text-fainter ml-auto shrink-0 font-mono text-[11px]">
                       {fmtMs(log.latency_ms)}
                     </span>
                   )}
@@ -112,8 +127,8 @@ export function JobProgress({ jobId }: { jobId: string }) {
                 {log?.message && (
                   <p
                     className={cn(
-                      'mt-0.5 font-mono text-[11px]',
-                      st === 'failed' ? 'text-destructive' : 'text-muted-foreground',
+                      'mt-[3px] text-[11.5px] leading-[1.5]',
+                      st === 'failed' ? 'text-destructive' : 'text-ghost',
                     )}
                   >
                     {log.message}
@@ -126,10 +141,10 @@ export function JobProgress({ jobId }: { jobId: string }) {
       </ol>
 
       {job.status === 'failed' && (
-        <div className="border-t px-5 py-4">
+        <div className="mt-2 rounded-[var(--radius-panel)] border border-[var(--destructive-border)] px-5 py-4">
           {/* 失败原因已经在对应步骤那行显示过了,这里只说"停在哪一步" */}
-          <div className="text-destructive mb-2 flex items-center gap-2 text-[12px]">
-            <AlertTriangle className="size-4 shrink-0" />
+          <div className="text-destructive mb-3 flex items-center gap-2 text-[12.5px]">
+            <AlertTriangle className="size-4 shrink-0" strokeWidth={1.75} />
             {failedStep ? `Failed at step '${failedStep}'.` : 'This job failed.'}
           </div>
           <Button variant="secondary" size="sm" onClick={retry} disabled={retrying}>
@@ -140,14 +155,18 @@ export function JobProgress({ jobId }: { jobId: string }) {
       )}
 
       {(job.status === 'review' || job.status === 'published') && (
-        <div className="flex flex-col items-start gap-2 border-t px-5 py-4">
-          <span className="text-muted-foreground text-[12px]">
+        <div className="mt-2 rounded-[var(--radius-panel)] border border-[var(--border)] px-5 py-5 text-center">
+          {/* 数字单独拎大:一眼是"还剩多少条要审",句子照旧一字不改 */}
+          <div className="mb-1.5 font-mono text-[30px] leading-none font-medium tracking-[-0.03em]">
             {job.status === 'published'
-              ? `${(job.stats?.published as number) ?? 0} items published.`
-              : `${(job.stats?.staged as number) ?? 0} items are waiting for review.`}
+              ? ((job.stats?.published as number) ?? 0)
+              : ((job.stats?.staged as number) ?? 0)}
+          </div>
+          <span className="text-faint mb-4 block text-[12.5px]">
+            {job.status === 'published' ? 'items published.' : 'items are waiting for review.'}
           </span>
-          <Link to={`/jobs/${jobId}/review`}>
-            <Button variant="secondary" size="sm">
+          <Link to={`/jobs/${jobId}/review`} className="block">
+            <Button variant="primary" size="sm" className="h-[38px] w-full text-[13px]">
               <ClipboardCheck />
               {job.status === 'published' ? 'Open review record' : 'Review items'}
             </Button>
@@ -158,11 +177,30 @@ export function JobProgress({ jobId }: { jobId: string }) {
   )
 }
 
+/** 时间轴上的状态点:统一 22px 圆底,颜色即状态,不用文字重复说一遍。 */
 function StepIcon({ state }: { state: StepState }) {
-  if (state === 'done') return <Check className="text-success mt-0.5 size-4 shrink-0" />
+  const base = 'flex size-[22px] shrink-0 items-center justify-center rounded-full'
+  if (state === 'done')
+    return (
+      <span className={cn(base, 'bg-success-soft')}>
+        <Check className="text-success-dot size-3" strokeWidth={3} />
+      </span>
+    )
   if (state === 'failed')
-    return <AlertTriangle className="text-destructive mt-0.5 size-4 shrink-0" />
+    return (
+      <span className={cn(base, 'bg-destructive-soft')}>
+        <AlertTriangle className="text-destructive size-3" strokeWidth={2.25} />
+      </span>
+    )
   if (state === 'running')
-    return <Loader2 className="text-info mt-0.5 size-4 shrink-0 animate-spin" />
-  return <span className="border-border mt-1.5 size-2 shrink-0 rounded-full border" />
+    return (
+      <span className={cn(base, 'bg-info-soft')}>
+        <Loader2 className="text-info size-3 animate-spin" strokeWidth={2.5} />
+      </span>
+    )
+  return (
+    <span className={cn(base, 'bg-muted')}>
+      <span className="bg-[var(--border-strong)] size-1.5 rounded-full" />
+    </span>
+  )
 }

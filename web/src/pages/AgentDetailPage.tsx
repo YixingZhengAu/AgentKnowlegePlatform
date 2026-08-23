@@ -20,9 +20,9 @@ export function AgentDetailPage() {
     <div className="flex flex-col gap-6">
       <Link
         to="/agents"
-        className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-[12px]"
+        className="text-faint hover:text-primary -mb-1 flex w-fit items-center gap-1.5 text-[12.5px] font-medium transition-all duration-150"
       >
-        <ArrowLeft className="size-4" /> All agents
+        <ArrowLeft className="size-3.5" /> All agents
       </Link>
 
       <DataState
@@ -38,23 +38,25 @@ export function AgentDetailPage() {
                 <div className="flex items-center gap-3">
                   <CardTitle>{agent.name}</CardTitle>
                   <StatusBadge status={agent.status} />
-                  <Badge tone="navy">{agent.router_mode}</Badge>
+                  <Badge tone="navy" className="font-mono text-[11px] font-medium">
+                    {agent.router_mode}
+                  </Badge>
                 </div>
                 <CardDescription>{agent.description ?? 'No description.'}</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
+              <CardContent className="flex flex-col gap-6">
                 <Field label="System prompt">
-                  <pre className="bg-muted overflow-x-auto rounded-[var(--radius)] border p-3 font-mono text-[12px] whitespace-pre-wrap">
+                  <pre className="bg-subtle max-w-[680px] overflow-x-auto rounded-[var(--radius)] px-4 py-3.5 font-mono text-[12px] leading-[1.7] whitespace-pre-wrap">
                     {agent.system_prompt}
                   </pre>
                 </Field>
                 <Field label="Fallback reply">
-                  <p className="text-secondary-foreground text-[12px]">
+                  <p className="text-secondary-foreground max-w-[680px] text-[13.5px] leading-[1.7]">
                     {agent.fallback_reply ?? '—'}
                   </p>
                 </Field>
                 <Field label="Model config">
-                  <pre className="bg-muted overflow-x-auto rounded-[var(--radius)] border p-3 font-mono text-[12px]">
+                  <pre className="bg-subtle max-w-[680px] overflow-x-auto rounded-[var(--radius)] px-4 py-3.5 font-mono text-[12px] leading-[1.7]">
                     {JSON.stringify(agent.model_cfg, null, 2)}
                   </pre>
                 </Field>
@@ -83,13 +85,13 @@ export function AgentDetailPage() {
                 <tbody>
                   {agent.bindings.map((b) => (
                     <TR key={b.id}>
-                      <TD className="font-mono text-[12px]">{b.priority}</TD>
-                      <TD className="font-medium">{b.kb_name}</TD>
+                      <TD className="text-faint font-mono text-[12px]">{b.priority}</TD>
+                      <TD className="text-[13.5px] font-medium">{b.kb_name}</TD>
                       <TD>
                         <KbTypeTag type={b.kb_type} />
                       </TD>
-                      <TD className="font-mono text-[12px]">{b.top_k ?? '—'}</TD>
-                      <TD className="font-mono text-[12px]">{b.threshold ?? '—'}</TD>
+                      <TD className="text-faint font-mono text-[12px]">{b.top_k ?? '—'}</TD>
+                      <TD className="text-faint font-mono text-[12px]">{b.threshold ?? '—'}</TD>
                       <TD>
                         <StatusBadge status={b.enabled ? 'active' : 'archived'} />
                       </TD>
@@ -107,8 +109,8 @@ export function AgentDetailPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="text-muted-foreground text-[12px] font-medium">{label}</div>
+    <div className="flex flex-col gap-2">
+      <div className="text-[12.5px] font-semibold">{label}</div>
       {children}
     </div>
   )

@@ -154,6 +154,36 @@ export const FIXTURES: Record<string, unknown> = {
         },
         latency_ms: 2417,
         created_at: '2026-08-20T04:41:12.000000Z',
+        // 命中精准问答:答案是人工采纳过的原话,引用要说清"匹配到哪一句、多像、原文在第几页"
+        verified: true,
+        citations: [
+          {
+            seq: 1,
+            citation_type: 'exact_qa',
+            ref_id: 'f1000000-0001-4a10-9f01-eeee00000001',
+            snippet:
+              'The PV-ezRack SolarRoof carries a 15 year structural warranty when it is installed to the published torque and span tables.',
+            extra: {
+              score: 0.941,
+              matched_question: 'What is the warranty period for the PV-ezRack SolarRoof?',
+              is_standard_question: true,
+              page_idx: 2,
+            },
+          },
+          {
+            seq: 2,
+            citation_type: 'exact_qa',
+            ref_id: 'f1000000-0002-4a10-9f01-eeee00000002',
+            snippet:
+              'Anodised aluminium components are covered for corrosion for the same period; stainless fasteners are covered for 10 years.',
+            extra: {
+              score: 0.883,
+              matched_question: 'How long are the fasteners covered for?',
+              is_standard_question: false,
+              page_idx: 2,
+            },
+          },
+        ],
       },
     ],
     total: 2,
@@ -298,4 +328,132 @@ FIXTURES[`/api/jobs/${DEMO_JOB_ID}`] = {
   started_at: '2026-08-20T05:10:00.000000Z',
   finished_at: '2026-08-20T05:10:08.000000Z',
   created_at: '2026-08-20T05:10:00.000000Z',
+}
+
+// ---- 精准 QA 域:文档列表 / 校对页 / 已发布问答库 ----
+// 预览是只读的:上传、保存校对、确认抽取都没有后端可写(main.tsx 的兜底会返回 404 错误体),
+// 这里只提供把这两页画出来所需的最小数据,让静态预览与 UI 走查能覆盖到它们。
+export const DEMO_DOC_ID = 'a1000000-0001-4a10-9f01-cccc00000001'
+
+const DEMO_DOC = {
+  id: DEMO_DOC_ID,
+  kb_id: JOB_BASE.kb_id,
+  name: 'PV-ezRack SolarRoof installation manual.pdf',
+  file_type: 'application/pdf',
+  size_bytes: 2_418_664,
+  parse_status: 'ok',
+  parse_error: null,
+  stage: 'review_text',
+  parse_job_id: DEMO_JOB_ID,
+  extract_job_id: null,
+  parse_stats: {
+    page_count: 3,
+    block_count: 86,
+    noise_dropped: 7,
+    table_count: 1,
+    image_count: 2,
+    equation_count: 0,
+    elapsed_ms: 8420,
+  },
+  funnel: { candidates: 20, pending: 20, accepted: 0, rejected: 0 },
+  created_at: '2026-08-20T05:09:40.000000Z',
+  updated_at: '2026-08-20T05:10:08.000000Z',
+}
+
+FIXTURES['/api/exact-qa/documents'] = {
+  items: [
+    DEMO_DOC,
+    {
+      ...DEMO_DOC,
+      id: 'a1000000-0002-4a10-9f01-cccc00000001',
+      name: 'Ground mount PV-ezRack datasheet.pdf',
+      size_bytes: 861_204,
+      stage: 'done',
+      parse_stats: {
+        page_count: 2,
+        block_count: 41,
+        noise_dropped: 3,
+        table_count: 2,
+        image_count: 1,
+        equation_count: 0,
+        elapsed_ms: 5110,
+      },
+      funnel: { candidates: 12, pending: 0, accepted: 11, rejected: 1 },
+    },
+  ],
+  total: 2,
+}
+
+FIXTURES[`/api/exact-qa/documents/${DEMO_DOC_ID}`] = DEMO_DOC
+
+FIXTURES[`/api/exact-qa/documents/${DEMO_DOC_ID}/review-text`] = {
+  document_id: DEMO_DOC_ID,
+  source: 'paged.md',
+  reviewed: false,
+  images: [],
+  pages: [
+    { page_idx: 1, width_pt: 595, height_pt: 842 },
+    { page_idx: 2, width_pt: 595, height_pt: 842 },
+    { page_idx: 3, width_pt: 595, height_pt: 842 },
+  ],
+  text: [
+    '<!-- page: 1 -->',
+    '# PV-ezRack SolarRoof — installation manual',
+    '',
+    'This manual covers the rail, clamp and hook range for tile, metal and flat roofs.',
+    'Install to the published torque and span tables; deviations void the structural warranty.',
+    '',
+    '<!-- page: 2 -->',
+    '## Warranty',
+    '',
+    'The structural warranty is 15 years from the date of installation. Anodised aluminium',
+    'components carry the same corrosion cover; stainless fasteners are covered for 10 years.',
+    '',
+    '| Component | Warranty | Notes |',
+    '| --- | --- | --- |',
+    '| Rail | 15 years | Structural |',
+    '| Clamp | 15 years | Structural |',
+    '| Fastener | 10 years | Corrosion only |',
+    '',
+    '<!-- page: 3 -->',
+    '## Torque table',
+    '',
+    'Tighten all M8 clamp bolts to 12 Nm. Tighten M10 hook bolts to 20 Nm.',
+    'Re-check torque after the first 12 months in coastal installations.',
+  ].join('\n'),
+}
+
+FIXTURES['/api/exact-qa/items'] = {
+  items: TOPICS.map(([topic], i) => ({
+    id: `a2000000-${String(i + 1).padStart(4, '0')}-4a10-9f01-cccc00000001`,
+    kb_id: JOB_BASE.kb_id,
+    standard_question: `What is the ${topic} for model HC-${215 + i}?`,
+    keywords: [topic.split(' ')[0], `HC-${215 + i}`],
+    similar_count: 2,
+    status: 'enabled',
+    index_faces: 3,
+    source_staging_id: null,
+    created_at: '2026-08-20T05:12:00.000000Z',
+    updated_at: '2026-08-20T05:12:00.000000Z',
+  })),
+  total: TOPICS.length,
+}
+
+// 每条已发布问答的详情 —— 列表行展开后要查这个接口(改版期间那块展开面板
+// 在静态预览里一直停在 loading,验不了排版,所以按列表同一批数据补上)
+for (const [i, [topic, answer]] of TOPICS.entries()) {
+  const id = `a2000000-${String(i + 1).padStart(4, '0')}-4a10-9f01-cccc00000001`
+  FIXTURES[`/api/exact-qa/items/${id}`] = {
+    ...(FIXTURES['/api/exact-qa/items'] as { items: Record<string, unknown>[] }).items[i],
+    answer: `${answer}. Coverage starts at the invoice date and stays with the hardware, so a resold system keeps the remaining term.`,
+    similar_questions: [
+      `How long is the ${topic} for HC-${215 + i}?`,
+      `Tell me the ${topic} of the HC-${215 + i} model.`,
+    ],
+    origin_ref: {
+      document_id: DEMO_DOC_ID,
+      page_idx: 1,
+      quote: `The structural warranty is 15 years from the date of installation.`,
+    },
+  }
 }

@@ -22,8 +22,12 @@ export function QaItemCard({ item }: ItemCardProps) {
   const qa = readQaPayload(item.payload)
   return (
     <div className="min-w-0">
-      <div className="truncate text-[13px] font-medium">{qa.standard_question}</div>
-      <div className="text-muted-foreground truncate text-[12px]">{qa.answer}</div>
+      {/* 选中行的问题文字加重变 navy:选中态由审核台的行容器给出(`.is-sel`),
+          渲染器不认识"选中"这个概念,只跟着容器变样式 */}
+      <div className="mb-px truncate text-[13.5px] leading-[1.4] font-medium [.is-sel_&]:font-semibold [.is-sel_&]:text-[var(--primary)]">
+        {qa.standard_question}
+      </div>
+      <div className="text-ghost truncate text-[11.5px] leading-[1.4]">{qa.answer}</div>
     </div>
   )
 }
@@ -31,10 +35,11 @@ export function QaItemCard({ item }: ItemCardProps) {
 export function QaItemEditor({ payload, onChange, disabled }: ItemEditorProps) {
   const qa = readQaPayload(payload)
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <Field label="Standard question">
         <Textarea
           rows={2}
+          className="text-[14.5px] leading-[1.55] font-medium"
           value={qa.standard_question}
           disabled={disabled}
           onChange={(e) => onChange({ standard_question: e.target.value })}
@@ -44,6 +49,7 @@ export function QaItemEditor({ payload, onChange, disabled }: ItemEditorProps) {
       <Field label="Answer" hint="Returned verbatim when this question is matched — no rewriting.">
         <Textarea
           rows={6}
+          className="text-[14px] leading-[1.7]"
           value={qa.answer}
           disabled={disabled}
           onChange={(e) => onChange({ answer: e.target.value })}
@@ -58,7 +64,7 @@ export function QaItemEditor({ payload, onChange, disabled }: ItemEditorProps) {
       >
         <Textarea
           rows={6}
-          className="text-[13px]"
+          className="text-[13.5px] leading-[1.8]"
           value={qa.similar_questions.join('\n')}
           disabled={disabled}
           onChange={(e) =>
@@ -75,7 +81,7 @@ export function QaItemEditor({ payload, onChange, disabled }: ItemEditorProps) {
       <Field label="Keywords" hint="Comma separated.">
         <Textarea
           rows={2}
-          className="font-mono text-[12px]"
+          className="font-mono text-[12px] leading-[1.7]"
           value={qa.keywords.join(', ')}
           disabled={disabled}
           onChange={(e) =>
@@ -96,7 +102,7 @@ export function QaItemEditor({ payload, onChange, disabled }: ItemEditorProps) {
 export function QaOriginPanel({ item }: OriginPanelProps) {
   const origin = readOriginRef(item.origin_ref)
   if (!origin) {
-    return <p className="text-muted-foreground text-[12px]">No source reference on this item.</p>
+    return <p className="text-ghost text-[12.5px]">No source reference on this item.</p>
   }
   const page = origin.page_idx + 1
   const href =
@@ -107,7 +113,7 @@ export function QaOriginPanel({ item }: OriginPanelProps) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="navy">page {page}</Badge>
         {origin.bbox && (
-          <span className="text-muted-foreground font-mono text-[11px]">
+          <span className="text-faint font-mono text-[11px]">
             bbox {origin.bbox.join(' · ')}
           </span>
         )}
@@ -120,7 +126,7 @@ export function QaOriginPanel({ item }: OriginPanelProps) {
         </Link>
       </div>
       {/* 引用是逐字摘录(抽取时用它做过定位校验),所以这里原样显示,不做任何格式化 */}
-      <blockquote className="bg-subtle border-l-primary rounded-r-[var(--radius)] border-l-[3px] px-3 py-2 text-[13px] leading-relaxed">
+      <blockquote className="bg-subtle border-l-primary rounded-r-[var(--radius)] border-l-[3px] px-4 py-3 text-[13px] leading-[1.7]">
         {origin.quote}
       </blockquote>
     </div>
@@ -137,10 +143,10 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-secondary-foreground text-[12px] font-medium">{label}</span>
+    <label className="flex flex-col gap-2">
+      <span className="text-[12.5px] font-semibold">{label}</span>
       {children}
-      {hint && <span className="text-muted-foreground text-[11px]">{hint}</span>}
+      {hint && <span className="text-ghost text-[11.5px] leading-[1.5]">{hint}</span>}
     </label>
   )
 }

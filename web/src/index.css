@@ -3,7 +3,7 @@
    纪律:hex 只允许出现在本文件的「第 1 层 品牌原色」里,组件里禁止裸色值。
 
    三层结构:
-     1. 品牌原色    --brand-*      从官网抓出来的事实,不带语义
+     1. 品牌原色    --brand-*      不带语义的事实值
      2. 语义变量    --primary 等   shadcn/ui 的那套命名,指向第 1 层
      3. Tailwind    @theme inline  把第 2 层暴露成 bg- / text- / border- 工具类
    Tailwind v4 用 CSS 的 @theme 替代了 v3 的 tailwind.config.js theme.extend,
@@ -20,29 +20,78 @@
 @import '@fontsource/inter/latin-500.css';
 @import '@fontsource/inter/latin-600.css';
 @import '@fontsource/jetbrains-mono/latin-400.css';
+@import '@fontsource/jetbrains-mono/latin-500.css';
 
 @layer base {
   :root {
     /* ---- 第 1 层:品牌原色(唯一允许写 hex 的地方)---- */
+
+    /* 品牌 */
     --brand-navy: #00205b;
     --brand-navy-hover: #18206d;
-    --brand-navy-soft: #e8edf7;
+    --brand-navy-soft: #edf2fb; /* 导航激活 / navy 徽标底 */
     --brand-yellow: #ffcb02;
+    --brand-yellow-soft: #fff6d9;
+    --brand-yellow-ink: #6b5200;
     --brand-orange: #f28601;
-    --brand-grey-page: #f7f7f7;
-    --brand-grey-hover: #fafafa;
+    --brand-dark: #111827; /* 分段控件激活态,唯一一处近黑 */
+
+    /* 中性阶:冷灰,六档从正文到最淡 */
+    --brand-ink: #111318;
+    --brand-ink-soft: #5a6172;
+    --brand-ink-muted: #8a90a0;
+    --brand-ink-faint: #9fa5b2;
+    --brand-ink-fainter: #b4b9c4;
+    --brand-ink-ghost: #c5c9d2;
+    --brand-dot: #d5d9e1; /* 面包屑之间的分隔小圆点 */
+
+    /* 面:整体白底,靠浅填充块分层(不再有页面级灰底) */
     --brand-white: #ffffff;
-    --brand-line: #e4e4e7;
-    --brand-ink: #1c1c1c;
-    --brand-ink-soft: #474747;
-    --brand-ink-muted: #979797;
-    --brand-green: #3d8b37;
-    --brand-red: #c4320a;
+    --brand-nav: #fbfcfe;
+    --brand-fill: #f6f8fb; /* 输入框 / 次级填充 */
+    --brand-fill-strong: #f4f6f9; /* 分段控件轨道 / 静态徽标底 */
+    --brand-hover: #f1f3f8;
+    --brand-kbd: #fafbfc;
+
+    /* 线:三档,越靠内越淡 */
+    --brand-line-strong: #e8eaf0; /* 描边控件 */
+    --brand-line: #eef0f4; /* 结构分隔:侧栏、顶栏、卡片外框 */
+    --brand-line-soft: #f2f4f7; /* 卡片内部分隔 */
+    --brand-line-kbd: #ebedf2;
+    --brand-scroll: #e3e6ec;
+
+    /* 选中 / 聚焦 */
+    --brand-sel: #f3f7fe;
+    --brand-sel-line: #dce5f5;
+    --brand-sel-check: #aabde2;
+    --brand-focus-line: #b9c6de;
+    --brand-check-line: #dde1e8;
+
+    /* 状态:每个状态一对「前景 + 浅底」*/
+    --brand-green: #1f7a33;
+    --brand-green-soft: #eaf6ec;
+    --brand-green-dot: #34a853;
+    --brand-green-line: #e4ede5;
+    --brand-amber: #8a5a00;
+    --brand-amber-soft: #fff4d6;
+    --brand-red: #b3330e;
+    --brand-red-soft: #fdeee8;
+    --brand-red-strong: #c4320a; /* 危险按钮的字色,比徽标前景再重一点 */
+    --brand-red-line: #f0ddd6;
+    --brand-red-line-hover: #e4b4a5;
+    --brand-red-hover: #fdf4f1;
     --brand-blue: #1c64f2;
-    --brand-violet: #7c3aed;
+
+    /* 三类知识的识别色(原型的浅色导航上,蓝紫要比原来的饱和色淡一档才不刺眼) */
+    --brand-blue-dot: #5b8def;
+    --brand-violet-dot: #a78bfa;
+
+    /* 进度卡的渐变(全站唯一一处渐变) */
+    --brand-grad-from: #edf3fe;
+    --brand-grad-to: #f6faff;
 
     /* ---- 第 2 层:语义变量(shadcn/ui 命名,组件只认这一层)---- */
-    --background: var(--brand-grey-page);
+    --background: var(--brand-white);
     --foreground: var(--brand-ink);
     --card: var(--brand-white);
     --card-foreground: var(--brand-ink);
@@ -54,30 +103,63 @@
     --primary-hover: var(--brand-navy-hover);
     --primary-soft: var(--brand-navy-soft);
 
-    /* 强调色上永远是 navy 文字,不配白字(UI-STYLE §4) */
+    /* 黄色退回纯识别色:主 CTA 现在是 navy,黄色只做 Exact Q&A 的身份与高亮徽标 */
     --accent: var(--brand-yellow);
     --accent-foreground: var(--brand-navy);
+    --accent-soft: var(--brand-yellow-soft);
+    --accent-ink: var(--brand-yellow-ink);
     --accent-orange: var(--brand-orange);
 
     --secondary: var(--brand-white);
     --secondary-foreground: var(--brand-ink-soft);
-    --muted: var(--brand-grey-page);
+    --muted: var(--brand-fill-strong);
     --muted-foreground: var(--brand-ink-muted);
-    --subtle: var(--brand-grey-hover);
+    --subtle: var(--brand-fill);
+    --faint: var(--brand-ink-faint);
+    --fainter: var(--brand-ink-fainter);
+    --ghost: var(--brand-ink-ghost);
+    --hover: var(--brand-hover);
+    --dark: var(--brand-dark);
+    --dark-foreground: var(--brand-white);
+
+    --nav: var(--brand-nav);
+    --nav-active: var(--brand-navy-soft);
 
     --border: var(--brand-line);
-    --input: var(--brand-line);
-    --ring: var(--brand-navy);
+    --border-strong: var(--brand-line-strong);
+    --border-soft: var(--brand-line-soft);
+    --input: var(--brand-fill);
+    --input-border: var(--brand-line-strong);
+    --ring: var(--brand-focus-line);
+    --checkbox-border: var(--brand-check-line);
+
+    --selected: var(--brand-sel);
+    --selected-border: var(--brand-sel-line);
+    --selected-mark: var(--brand-sel-check);
 
     --success: var(--brand-green);
-    --destructive: var(--brand-red);
+    --success-soft: var(--brand-green-soft);
+    --success-dot: var(--brand-green-dot);
+    --success-line: var(--brand-green-line);
+    --warning: var(--brand-amber);
+    --warning-soft: var(--brand-amber-soft);
+    --destructive: var(--brand-red-strong);
+    --destructive-soft: var(--brand-red-soft);
+    --destructive-ink: var(--brand-red);
+    --destructive-border: var(--brand-red-line);
+    --destructive-border-hover: var(--brand-red-line-hover);
+    --destructive-hover: var(--brand-red-hover);
     --destructive-foreground: var(--brand-white);
     --info: var(--brand-blue);
+    --info-soft: var(--brand-navy-soft);
+
+    /* 全站唯一一处渐变:任务进度卡(UI-STYLE §3) */
+    --gradient-progress: linear-gradient(135deg, var(--brand-grad-from), var(--brand-grad-to));
 
     /* 三类知识的固定识别色,全站一致(路由徽标 / KB 卡片 / 引用标记同一套) */
     --kb-exact-qa: var(--brand-yellow);
-    --kb-document: var(--brand-blue);
-    --kb-text2sql: var(--brand-violet);
+    --kb-document: var(--brand-blue-dot);
+    --kb-text2sql: var(--brand-violet-dot);
   }
 }
 
@@ -97,6 +179,8 @@
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
   --color-accent-orange: var(--accent-orange);
 
   --color-secondary: var(--secondary);
@@ -104,32 +188,75 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-subtle: var(--subtle);
+  --color-faint: var(--faint);
+  --color-fainter: var(--fainter);
+  --color-ghost: var(--ghost);
+  --color-hover: var(--hover);
+  --color-dark: var(--dark);
+  --color-dark-foreground: var(--dark-foreground);
+
+  --color-nav: var(--nav);
+  --color-nav-active: var(--nav-active);
 
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-soft: var(--border-soft);
   --color-input: var(--input);
+  --color-input-border: var(--input-border);
   --color-ring: var(--ring);
+  --color-checkbox-border: var(--checkbox-border);
+
+  --color-selected: var(--selected);
+  --color-selected-border: var(--selected-border);
+  --color-selected-mark: var(--selected-mark);
 
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-dot: var(--success-dot);
+  --color-success-line: var(--success-line);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
   --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-ink: var(--destructive-ink);
+  --color-destructive-border: var(--destructive-border);
+  --color-destructive-border-hover: var(--destructive-border-hover);
+  --color-destructive-hover: var(--destructive-hover);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
 
   --color-kb-exact-qa: var(--kb-exact-qa);
   --color-kb-document: var(--kb-document);
   --color-kb-text2sql: var(--kb-text2sql);
 
-  /* 字体:标题/导航用几何感的 Montserrat,正文 Inter,代码与 trace 用等宽 */
+  /* 字体:标题/导航用几何感的 Montserrat,正文 Inter,数字与代码用等宽 */
   --font-display: 'Montserrat', system-ui, sans-serif;
   --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* 圆角:按钮/输入/徽标 6px,卡片/弹窗 12px。不出现更大的圆角 */
-  --radius: 6px;
-  --radius-card: 12px;
+  /* 圆角:控件走 pill,容器走大圆角。--radius 留给输入类控件 */
+  --radius: 12px;
+  --radius-pill: 999px;
+  --radius-card: 18px;
+  --radius-panel: 16px;
+  --radius-row: 13px;
+  --radius-nav: 10px;
+  --radius-subnav: 9px;
+  --radius-kbd: 5px;
 
-  /* 阴影只有两档(UI-STYLE §2) */
-  --shadow-card: 0 1px 3px rgb(0 32 91 / 0.06);
-  --shadow-pop: 0 8px 24px rgb(0 32 91 / 0.12);
+  /* 阴影:五档,全部中性;只有主 CTA 与选中行带颜色 */
+  --shadow-xs: 0 1px 3px rgb(17 19 24 / 0.07);
+  --shadow-card: 0 2px 16px rgb(17 19 24 / 0.04);
+  --shadow-row: 0 2px 10px rgb(28 100 242 / 0.08);
+  --shadow-pill: 0 2px 8px rgb(17 24 39 / 0.18);
+  --shadow-cta: 0 4px 14px rgb(0 32 91 / 0.22);
+  --shadow-cta-hover: 0 6px 18px rgb(0 32 91 / 0.28);
+  --shadow-pop: 0 8px 24px rgb(17 19 24 / 0.1);
+  --shadow-focus: 0 0 0 4px rgb(28 100 242 / 0.08);
+
+  /* 全站唯一一档过渡 */
+  --ease-ui: 150ms ease;
 }
 
 @layer base {
@@ -155,25 +282,50 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: 700;
     margin: 0;
   }
 
   /* 工作台不是营销页:不出现 24px 以上字号(UI-STYLE §2) */
   h1 {
-    font-size: 20px;
+    font-size: 19px;
+    letter-spacing: -0.01em;
   }
 
   h2 {
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 600;
   }
 
   ::placeholder {
-    color: var(--muted-foreground);
+    color: var(--fainter);
   }
 
+  /* 键盘焦点用 navy 描边:填充式输入框自己再画 4px 蓝色外圈(--shadow-focus) */
   :focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 1px;
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* 细滚动条:三栏工作台里到处是滚动容器,默认滚动条太抢戏 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-scroll) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--brand-scroll);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
 }

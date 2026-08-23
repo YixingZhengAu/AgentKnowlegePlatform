@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react'
 
 import { cn } from '@/lib/utils'
 
-/** 表头浅灰底 + 12px 大写 muted,行 hover 更浅的灰,不用斑马纹(UI-STYLE §3)。 */
+/** 表头不用灰底,改小写标签式的 11px 大写字;行 hover 用 `subtle`,不用斑马纹(UI-STYLE §3)。 */
 export function Table({ className, ...props }: ComponentProps<'table'>) {
   return (
     <div className="w-full overflow-x-auto">
@@ -12,14 +12,14 @@ export function Table({ className, ...props }: ComponentProps<'table'>) {
 }
 
 export function THead({ className, ...props }: ComponentProps<'thead'>) {
-  return <thead className={cn('bg-muted', className)} {...props} />
+  return <thead className={cn('bg-card', className)} {...props} />
 }
 
 export function TH({ className, ...props }: ComponentProps<'th'>) {
   return (
     <th
       className={cn(
-        'text-muted-foreground border-b px-4 py-2 text-[12px] font-semibold tracking-wide uppercase',
+        'text-muted-foreground border-b border-[var(--border)] px-4 py-2.5 text-[11px] font-semibold tracking-[0.06em] uppercase',
         className,
       )}
       {...props}
@@ -30,7 +30,10 @@ export function TH({ className, ...props }: ComponentProps<'th'>) {
 export function TR({ className, ...props }: ComponentProps<'tr'>) {
   return (
     <tr
-      className={cn('hover:bg-subtle border-b transition-colors last:border-0', className)}
+      className={cn(
+        'hover:bg-subtle border-b border-[var(--border-soft)] transition-colors last:border-0',
+        className,
+      )}
       {...props}
     />
   )
