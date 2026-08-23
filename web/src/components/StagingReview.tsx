@@ -326,10 +326,12 @@ export function StagingReview({
 
       <div className="flex min-h-0 flex-1 gap-5">
         {/* 左:条目列表 —— 行是独立的圆角块,不是表格行(UI-STYLE §4) */}
-        <div className="flex w-[376px] shrink-0 flex-col">
-          <div className="text-fainter flex shrink-0 items-center gap-1.5 px-1 pb-2.5 text-[11px] tracking-[0.02em] whitespace-nowrap">
-            <span className="text-faint font-medium">{items.length} items</span>
-            <span className="ml-auto flex items-center gap-1.5 font-mono text-[10.5px]">
+        {/* 376px 是原型量出来的列宽;窄屏(1280 且右侧面板展开)下让它先让一步,
+            否则详情卡只剩 280px,底部三个动作会被挤成三行 */}
+        <div className="flex w-[322px] shrink-0 flex-col min-[1400px]:w-[376px]">
+          <div className="text-fainter flex shrink-0 items-center gap-1.5 overflow-hidden px-1 pb-2.5 text-[11px] tracking-[0.02em] whitespace-nowrap">
+            <span className="text-faint shrink-0 font-medium">{items.length} items</span>
+            <span className="ml-auto flex min-w-0 items-center gap-1.5 truncate font-mono text-[10.5px]">
               <Kbd>j / k</Kbd>
               <Kbd>a</Kbd> approve <Kbd>x</Kbd> reject{actions.bulk ? ' · space select' : ''}
             </span>

@@ -360,7 +360,7 @@ event: done          data: {"message_id": "...", "citations": []}
 
 **做什么**
 
-1. Vite + React + TS + Tailwind + shadcn/ui 脚手架;ESLint + Prettier。**视觉规范以 `UI-STYLE.md`(同目录)为唯一出处**:Clenergy 官网风(navy #00205B 主色 + 黄 #FFCB02 强调),token 先行,组件禁裸色值。
+1. Vite + React + TS + Tailwind + shadcn/ui 脚手架;ESLint + Prettier。**视觉规范以 `UI-STYLE.md`(同目录)为唯一出处**:Clenergy 官网风(navy #00205B 主色 + 黄 #FFCB02 识别色),token 先行,组件禁裸色值。(S0 当时是 navy 深侧栏 + 灰底白卡;后来整站改版成浅色导航 + 白底填充块,规格以 UI-STYLE.md 现行版本为准。)
 2. **三栏布局骨架**(对话工作台的形状现在定):左侧导航(对话 / 知识库 / Agent / 设置四个入口)、中间内容区、右侧可折叠面板(执行轨迹的位置)。
 3. API 层:
    - `make types`:openapi.json → `types.gen.ts`(openapi-typescript),这条链路 S0 就跑通并写进 Makefile;
@@ -421,8 +421,9 @@ event: done          data: {"message_id": "...", "citations": []}
   直连 8000 与**穿 Vite 代理**各跑一次都通过 —— 事件顺序
   `meta → stage_start → token → stage_end → done` 正确、34 chunks 逐个到达
   (first_token 3.9s < 总耗时,证明代理没把流缓冲住)、`done.status=completed` 且带 trace
-- **样式纪律自查**:`src/**/*.tsx` 里 hex 与 `rgb()` 出现次数为 0(唯一例外是侧栏叠加
-  用 Tailwind 自带的 `bg-white/8`,即 UI-STYLE §3 指定的 `rgba(255,255,255,0.08)`)
+- **样式纪律自查**:`src/**/*.tsx` 里 hex 与 `rgb()` 出现次数为 0
+  (当时唯一的例外是深色侧栏的 `bg-white/8` 叠加;视觉改版后侧栏改浅底,这处叠加已不存在,
+  现在 tsx 里一处裸色值都没有)
 - **回归**:`make test` 16 passed;`make lint` 全绿(ruff + eslint 0 warning + tsc);
   `npm run build` 成功且字体是本地打包(无 CDN);Step 3 的只读接口仍全 200;
   `alembic check` 无新增变更;`git status server/` 干净(临时改名已还原)
