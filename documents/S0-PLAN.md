@@ -34,7 +34,7 @@
 | U4 | Python / Node | 实测 **Python 3.13.5 + Node 24 + uv 0.8.19**,按此开发 |
 | U5 | Rerank | **S0/S2 先用 PassthroughReranker 透传**,S2 跑通 RAG 后按实测效果决定是否引入真实 Rerank |
 | U6 | 演示业务库位置 | **同一 Postgres 实例、单独 database `clenergy_biz`**,问数用只读账号连接 |
-| U7 | 界面语言 | **英文单语**(平台面向澳洲用户):前端文案、Agent 交互、演示知识内容全英文;无 i18n。开发文档/注释仍中文(D5) |
+| U7 | 界面语言 | **英文单语**(平台面向澳洲用户):前端文案、Agent 交互、演示知识内容全英文;无 i18n。对外可见的 README 与 git commit message 同样全英文;开发文档/注释仍中文(D5) |
 
 ---
 

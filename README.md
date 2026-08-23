@@ -1,121 +1,128 @@
-# Clenergy 企业知识 Agent 系统
+# Clenergy Enterprise Knowledge Agent
 
-企业知识分层治理 + Agent 路由问答的演示系统。三类知识按容错率分层:**精准问答对**(零改写)、**文档知识**(RAG + 强制引用)、**智能问数**(语义层 + Text2SQL)。
+A demo system for tiered enterprise knowledge governance with agent-routed Q&A. Three knowledge types are tiered by error tolerance: **exact Q&A pairs** (zero rewriting), **document knowledge** (RAG + mandatory citations), and **analytics Q&A** (semantic layer + Text2SQL).
 
-- 需求与架构:[documents/PRD.md](documents/PRD.md)
-- 阶段计划:[S0](documents/S0-PLAN.md)(地基)· [S1](documents/S1-PLAN.md)(精准问答,已完成)
-- 表结构唯一出处:[documents/DB-DESIGN.md](documents/DB-DESIGN.md)
-- 前端风格唯一出处:[documents/UI-STYLE.md](documents/UI-STYLE.md)
+- Requirements & architecture: [documents/PRD.md](documents/PRD.md)
+- Stage plans: [S0](documents/S0-PLAN.md) (foundation) · [S1](documents/S1-PLAN.md) (exact Q&A, done)
+- Single source of truth for the schema: [documents/DB-DESIGN.md](documents/DB-DESIGN.md)
+- Single source of truth for frontend style: [documents/UI-STYLE.md](documents/UI-STYLE.md)
 
-> 界面与问答交互为英文单语(平台面向澳洲用户);开发文档与代码注释为中文。
+> The UI and all Q&A interactions are English-only (the platform targets Australian users). Internal design documents and code comments are written in Chinese.
 
-## 环境要求
+## Requirements
 
-| 依赖 | 版本 |
+| Dependency | Version |
 | --- | --- |
 | Python | 3.13 |
-| uv | 0.8+(Python 依赖只用 uv,禁止 pip install) |
-| Node | 22+(实测 24) |
-| Docker | 28+(跑 Postgres 16 + pgvector) |
+| uv | 0.8+ (uv is the only Python dependency manager; `pip install` is not allowed) |
+| Node | 22+ (tested on 24) |
+| Docker | 28+ (runs Postgres 16 + pgvector) |
 
-## 从零起系统:一条命令
+## From zero to running: one command
 
-新克隆下来只跑这个 —— `bootstrap.sh` 会检查工具链、生成 `.env`(自动生成 `SECRET_KEY`、
-交互式问你的 `OPENAI_API_KEY`)、装前后端依赖、起 Postgres、建表、灌演示数据,
-最后跑一遍离线测试 + lint + LLM 冒烟:
+On a fresh clone, this is the only thing you need to run. `bootstrap.sh` checks the toolchain,
+generates `.env` (auto-generating `SECRET_KEY` and prompting for your `OPENAI_API_KEY`),
+installs backend and frontend dependencies, starts Postgres, creates the tables, seeds demo data,
+and finally runs the offline tests, lint, and an LLM smoke test:
 
 ```bash
-./bootstrap.sh            # 或 make bootstrap
-make dev                  # 前端 :5173  后端 :8000(/docs 看 Swagger)
+./bootstrap.sh            # or: make bootstrap
+make dev                  # frontend :5173, backend :8000 (Swagger at /docs)
 ```
 
-它是幂等的,随时可以重跑(不会覆盖已有 `.env`)。常用开关:
+It is idempotent and safe to re-run (an existing `.env` is never overwritten). Common flags:
 
-| 开关 | 作用 |
+| Flag | Effect |
 | --- | --- |
-| `--with-mineru` | 连 PDF 解析容器一起装(build 镜像 + 下 1GB 权重,约 10 分钟;上传 PDF 走 S1 流水线要它) |
-| `--skip-smoke` | 跳过真实调 LLM/Embedding 的冒烟(省钱,但也就不验 key 是否可用) |
-| `--reset` | 先删库重建(丢演示数据;只删 pg 的卷,不碰 MinerU 权重) |
-| `-y` | 非交互(CI / 无人值守) |
-| `--help` | 看全部说明 |
+| `--with-mineru` | Also set up the PDF parsing container (builds the image and downloads ~1GB of weights, ~10 min; required for PDF upload through the S1 pipeline) |
+| `--skip-smoke` | Skip the smoke test that really calls the LLM/embedding APIs (saves money, but no longer verifies your key) |
+| `--reset` | Drop and recreate the database first (loses demo data; only removes the Postgres volume, MinerU weights are untouched) |
+| `-y` | Non-interactive (CI / unattended) |
+| `--help` | Full usage |
 
-**它装不了的两样**(需要系统级安装,脚本只检查并告诉你装法):Docker 28+、Node 22+。
-Python 3.13 不用手装,`uv` 会自己拉。
+**Two things it cannot install** (system-level; the script only checks and tells you how): Docker 28+ and Node 22+.
+You do not need to install Python 3.13 yourself — `uv` fetches it.
 
-手动分步等价于:`make install` → `make db` → `make migrate` → `make seed` → `make smoke`。
+The manual step-by-step equivalent: `make install` → `make db` → `make migrate` → `make seed` → `make smoke`.
 
-起来之后打开 http://localhost:5173:
+Once it is up, open http://localhost:5173:
 
-- **Chat** —— 发一句话就能看到流式回复,右侧执行轨迹面板列出每个阶段的耗时 / token / 成本;
-  点历史消息可以展开看当时实际发出去的 prompt。流式期间 Send 会变成 Stop(真中断,
-  这条消息会按 `interrupted` 落库)。
-  命中已采纳的精准问答时,气泡上会有 **Verified Answer** 标注 + 引用(命中的问法、相似度、页码),
-  而且 trace 里**只有 `retrieve_exact_qa` 没有 `generate`** —— 答案是库里的原话,零改写。
-  标注与引用刷新页面后仍在(历史消息接口自带),**没被采纳过的知识不会带标注** ——
-  同一份文档里没采纳的那条事实,问它只会得到"我不知道"
-- **Exact Q&A ingestion**(`/ingest/exact-qa`)—— S1 的完整流水线:上传 PDF → 等解析
-  (列表状态自己走)→ **校对页**(左边原件 PDF、右边解析出的 markdown,可编辑可预览)→
-  「Confirm & extract Q&A」→ 审核台逐条 **Accept & publish**(采纳即发布,立刻可被检索)
-  / Reject(必须填理由)/ 勾选多条**批量采纳** → 页面下方 **Published Q&A** 能看到每条的
-  索引面数与下线开关;文档列表那一行的垃圾桶可以删掉传错的文档(两步确认;
-  有已发布问答的会被拒 —— 先把那几条下线)
-- **Knowledge Bases / Agents** —— seed 的 3 个 KB 与默认 agent(含 system prompt 与 KB 绑定)
-- **Ingestion** —— 提交一个假任务(`demo_sleep`)看进度条走完四步;
-  `Inject a failure at` 可以让某一步失败,然后用"从失败步骤重跑"恢复
-- **Review**(演示任务跑完后点行尾的 Review;S1 的候选审核走同一个审核台)—— 20 条待审条目:按置信度排序、按状态筛选、
-  改内容、批量通过驳回、键盘流(`j/k` 走条目 / `a` 通过 / `x` 驳回 / 空格勾选),
-  最后点右上角 **Publish** 发布(写 `publish_records` 审计,发布后审核台变只读)
-- `/styleguide` 是 UI 验收对照页(隐藏路由)
+- **Chat** — send a message and watch the reply stream in; the trace panel on the right lists
+  latency / tokens / cost per stage. Click any past message to expand the prompt that was actually sent.
+  While streaming, Send turns into Stop (a real interrupt — the message is persisted as `interrupted`).
+  When an adopted exact Q&A is hit, the bubble carries a **Verified Answer** badge plus citations
+  (matched phrasing, similarity, page number), and the trace contains **only `retrieve_exact_qa`,
+  no `generate`** — the answer is verbatim from the knowledge base, zero rewriting.
+  Badges and citations survive a page refresh (the history endpoint returns them), and
+  **knowledge that was never adopted carries no badge** — ask about a fact from the same document
+  that was not adopted and you just get "I don't know".
+- **Exact Q&A ingestion** (`/ingest/exact-qa`) — the full S1 pipeline: upload a PDF → wait for parsing
+  (the list updates itself) → **proofreading page** (original PDF on the left, parsed markdown on the
+  right, editable with preview) → "Confirm & extract Q&A" → review each candidate with
+  **Accept & publish** (adopting publishes it, immediately retrievable) / Reject (a reason is required) /
+  multi-select for **bulk accept** → **Published Q&A** at the bottom of the page shows the number of
+  indexed phrasings per item and an unpublish toggle. The trash icon on a document row deletes a
+  wrongly uploaded document (two-step confirmation; refused while it still has published Q&A —
+  unpublish those first).
+- **Knowledge Bases / Agents** — the 3 seeded KBs and the default agent (with its system prompt and KB bindings)
+- **Ingestion** — submit a fake job (`demo_sleep`) and watch the progress bar walk through four steps;
+  `Inject a failure at` makes a chosen step fail so you can recover with "retry from failed step"
+- **Review** (click Review at the end of a finished demo job row; S1 candidate review uses the same
+  console) — 20 pending items: sorted by confidence, filterable by status, editable content,
+  bulk approve/reject, keyboard flow (`j/k` to move, `a` approve, `x` reject, space to select),
+  then **Publish** in the top right (writes a `publish_records` audit entry; the console becomes read-only after publishing)
+- `/styleguide` is the hidden UI acceptance reference page
 
-也可以直接用 curl 试问答:
+You can also try the Q&A straight from curl:
 
 ```bash
 AGENT=$(curl -s localhost:8000/api/agents | python3 -c 'import sys,json;print(json.load(sys.stdin)["items"][0]["id"])')
 curl -N -X POST localhost:8000/api/agents/$AGENT/chat \
   -H 'Content-Type: application/json' -d '{"question":"What can you help me with?"}'
-# 拿 done 事件里的 message_id 查执行轨迹(阶段/耗时/token/成本)
+# Take message_id from the done event to inspect the trace (stages / latency / tokens / cost)
 curl localhost:8000/api/traces/<message_id>
 ```
 
-不想起后端也能看界面:`make demo` 打出 `web/dist-demo/preview.html` 单文件预览
-(fixture 数据、零外部请求;里面的对话是真在流,审核台真能改状态)。
+To view the UI without a backend: `make demo` builds the single-file preview
+`web/dist-demo/preview.html` (fixture data, zero external requests; the chat really streams and the
+review console really changes state).
 
-## 常用命令
-
-```
-make help       列出全部命令
-make bootstrap  一键装环境(等于 ./bootstrap.sh,新机器接手就跑这个)
-make db         起数据库(等到健康)
-make mineru     起 MinerU PDF 解析容器(18001,S1 上传解析要用)
-make psql       进系统库 psql
-make migrate    跑 Alembic 迁移
-make seed       灌最小演示数据
-make db-reset   删库重建 + 迁移 + seed(会丢数据;改表阶段的常规操作)
-make api        只起后端
-make web        只起前端
-make dev        前后端一起起
-make smoke      冒烟:真实调 LLM 与 Embedding(验证 key/网络/代理)
-make smoke-s1   冒烟:S1 精准问答全链路(需先 make api + make mineru;会真花钱)
-make smoke-sse  冒烟:前端 SSE 客户端打真后端(需先起后端)
-make test       跑离线测试(不联网、不连 DB)
-make lint       后端 ruff + 前端 eslint + TS 编译
-make demo       打静态预览单文件(fixture 数据,不用起后端)
-make types      openapi.json -> web/src/api/types.gen.ts(前端禁止手写 API 类型)
-```
-
-## 目录结构
+## Common commands
 
 ```
-bootstrap.sh     一键装环境:工具链检查 + .env + 依赖 + 库 + 迁移 + seed + 自检
-docker/          容器配置:Postgres 初始化脚本 + MinerU 解析镜像
-server/          FastAPI 后端(uv 管理),详见 server/claude.md
-web/             React + Vite 前端,详见 web/claude.md
-documents/       PRD / 阶段计划 / 数据库设计 / UI 规范
+make help       list every command
+make bootstrap  one-shot environment setup (same as ./bootstrap.sh — run this on a new machine)
+make db         start the database (waits until healthy)
+make mineru     start the MinerU PDF parsing container (18001, needed for S1 uploads)
+make psql       open psql on the system database
+make migrate    run Alembic migrations
+make seed       load the minimal demo data
+make db-reset   drop, recreate, migrate and seed (loses data; routine while the schema is changing)
+make api        backend only
+make web        frontend only
+make dev        backend + frontend
+make smoke      smoke test: real LLM and embedding calls (verifies key / network / proxy)
+make smoke-s1   smoke test: the full S1 exact Q&A pipeline (needs make api + make mineru; costs real money)
+make smoke-sse  smoke test: the frontend SSE client against the real backend (start the backend first)
+make test       offline tests (no network, no DB)
+make lint       backend ruff + frontend eslint + TS compile
+make demo       build the single-file static preview (fixture data, no backend needed)
+make types      openapi.json -> web/src/api/types.gen.ts (the frontend must never hand-write API types)
 ```
 
-## 两个数据库
+## Layout
 
-| 库 | 用途 | 连接账号 |
+```
+bootstrap.sh     environment setup: toolchain check + .env + deps + db + migrate + seed + self-check
+docker/          container config: Postgres init scripts + the MinerU parsing image
+server/          FastAPI backend (managed by uv), see server/claude.md
+web/             React + Vite frontend, see web/claude.md
+documents/       PRD / stage plans / database design / UI guidelines
+```
+
+## The two databases
+
+| Database | Purpose | Account |
 | --- | --- | --- |
-| `agent_system` | 本系统全部业务表(知识、摄取、会话、trace、评测) | `postgres` |
-| `clenergy_biz` | 演示业务库,智能问数的查询目标 | `biz_reader`(只读,无 CREATE、无法连系统库) |
+| `agent_system` | every business table of this system (knowledge, ingestion, sessions, traces, evaluation) | `postgres` |
+| `clenergy_biz` | the demo business database, target of analytics Q&A | `biz_reader` (read-only, no CREATE, cannot connect to the system database) |

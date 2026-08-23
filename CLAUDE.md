@@ -1,7 +1,24 @@
 # CLAUDE.md
 
 面试演示项目:Clenergy 企业知识 Agent 系统(精准问答对 / 文档 RAG / 智能问数 + Agent 路由问答)。
-需求见 `documents/PRD.md`,阶段计划见 `documents/S0-PLAN.md`、`documents/S1-PLAN.md`(S1 已完成),表结构唯一出处 `documents/DB-DESIGN.md`,前端风格唯一出处 `documents/UI-STYLE.md`,**开发某类 knowledge ingestion 前必读 `documents/DOMAIN-DEV-GUIDE.md`**(代码落点与并行开发纪律,防止冲突)。开发文档与代码注释用中文;**前端界面文案、Agent 问答交互、演示知识内容一律英文**(平台使用对象是澳洲用户,无 i18n,英文单语)。
+需求见 `documents/PRD.md`,阶段计划见 `documents/S0-PLAN.md`、`documents/S1-PLAN.md`(S1 已完成),表结构唯一出处 `documents/DB-DESIGN.md`,前端风格唯一出处 `documents/UI-STYLE.md`,**开发某类 knowledge ingestion 前必读 `documents/DOMAIN-DEV-GUIDE.md`**(代码落点与并行开发纪律,防止冲突)。语言纪律见下节。
+
+## 语言纪律:对外英文,对内中文
+
+判断标准只有一条 —— **仓库外的人(GitHub 访客、面试官、平台用户)能看到的地方,一律英文**;只有团队内部读的开发资料才用中文。
+
+**必须英文:**
+
+- `README.md`(以及任何未来新增的 README、LICENSE、CONTRIBUTING 等仓库门面文件)
+- **git commit message**(标题与正文全英文,常规 imperative 风格,如 `Add bootstrap.sh: one command to a runnable machine`);PR 标题与描述、issue、tag/release notes 同理
+- 前端界面文案、Agent 问答交互、演示知识内容(QA 对 / 文档 / 业务数据)—— 平台面向澳洲用户,无 i18n,英文单语
+- 面向用户的 API 报错文案、日志中会被外部看到的字符串
+
+**保持中文:**
+
+- `documents/` 下的设计文档(PRD、阶段计划、DB-DESIGN、UI-STYLE、DOMAIN-DEV-GUIDE)
+- 各目录的 `claude.md` / `architect.md`,以及本文件
+- 代码注释与 docstring
 
 ## 技术栈
 
