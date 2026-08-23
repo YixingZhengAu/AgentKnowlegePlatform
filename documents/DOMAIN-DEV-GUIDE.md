@@ -15,7 +15,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 精准 QA(S1) | `web/src/domains/exact-qa/` | `server/app/services/exact_qa/` | `/ingest/exact-qa` | `bg-kb-exact-qa`(黄) | `qa_pair` |
 | 文档 RAG(S2) | `web/src/domains/document/` | `server/app/services/document/` | `/ingest/document` | `bg-kb-document`(蓝) | `chunk` |
-| 智能问数(S3) | `web/src/domains/text2sql/` | `server/app/services/text2sql/` | `/ingest/text2sql` | `bg-kb-text2sql`(紫) | `table_meta` / `metric` / `term` |
+| 智能问数(S3) | `web/src/domains/text2sql/` | `server/app/services/text2sql/` | `/ingest/text2sql` | `bg-kb-text2sql`(紫) | `sql_intent` |
 
 **核心规则一句话**:你的所有代码只落在上面两个属于你的文件夹里;
 需要在共享文件落笔的地方全部收敛成"加一行",见 §4 冲突地图。

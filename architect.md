@@ -16,7 +16,7 @@
 | `server/` | FastAPI 后端全部代码,uv 管理 | `server/claude.md` |
 | `web/` | React + Vite 前端(三栏工作台) | `web/claude.md` |
 | `data/` | 测试用示例 PDF(文档 RAG 的原料),纯素材无代码 | 直接看目录里的 PDF |
-| `docker/` | Postgres init 脚本(建业务库与只读账号)+ MinerU 解析镜像 | `docker/claude.md` |
+| `docker/` | Postgres init(扩展)+ 演示业务 MySQL(建表灌数)+ MinerU 解析镜像 | `docker/claude.md` |
 | 根目录 | `bootstrap.sh` / `Makefile` / `docker-compose.yml` / `.env.example` / `README.md` | 见下方第 3 节 |
 
 ## 2. 文档的唯一出处(改之前先确认改的是哪份)
@@ -43,12 +43,26 @@
 | 加一张表 / 改字段 | `documents/DB-DESIGN.md` → `server/app/models/` → migration(流程见 DB-DESIGN §10) |
 | 加一个接口 | `server/app/api/`(新文件要在 `api/__init__.py` include)+ `server/app/schemas/` |
 | 加一类异步任务(摄取) | 本域文件夹写 `JobRunner` 子类 + `@register_job`,注册行加在 `server/app/services/__init__.py`(唯一注册点) |
+| 查现有异步任务有哪些 | `demo_sleep` / `qa_parse` / `qa_extract` / `t2s_sync_schema` / `t2s_describe` / `t2s_intents` |
 | 改错误码 / 错误格式 | `server/app/core/errors.py`(前端只认 `{"error":{code,message,detail}}`) |
 | 加一个 CLI 脚本 | `server/scripts/`,跑法 `cd server && uv run python -m scripts.<name>` |
 | 改精准问答的解析/抽取/相似问/检索/采纳 | `server/app/services/exact_qa/`(该目录 claude.md 有文件索引) |
 | 改精准问答的接口 / 图片出口 | `server/app/api/exact_qa.py` / `server/app/api/files.py` |
+| 改智能问数的任何一环(语义层/模板/改写/执行闸/检索) | `server/app/services/text2sql/`(该目录 `architect.md` §2 有"我要改 X"细表) |
+| 改问数的接口 | `server/app/api/text2sql.py` + `server/app/schemas/text2sql.py`;**清单在 `server/app/api/architect.md`**,改完 `make types` |
+| 改 chat 里问数那一段的分岔 | `server/app/core/chat.py` 的 `retrieve_text2sql` 段;装配在 `services/text2sql/runtime.py`,拒答话术在 `pipeline.py` 顶部 |
+| 改问数的命中阈值或空路由 | `services/text2sql/retrieve.py`;**改前先读该目录 architect.md §4** |
+| 灌/重建问数的演示知识与向量 | `make seed-s3`(资产在 `server/scripts/fixtures/s3/`) |
+| 改问数的数据源接入页(接库/测连/同步) | `web/src/domains/text2sql/DatasourcesPage.tsx`(D1) |
+| 改问数的 Schema 治理页(描述/枚举/启用/AI 回填) | `web/src/domains/text2sql/SchemaPage.tsx`(D2);该目录 `architect.md` 有"我要改 X"细表 |
+| 改问数的意图台账 / 批量生成 / 空路由负例面 | `web/src/domains/text2sql/IntentsPage.tsx`(D3) |
+| 改问数候选的审核卡片或采纳语义 | `web/src/domains/text2sql/{renderers.tsx,actions.ts}`(D3;采纳只建 draft) |
+| 改问数一条模板的验收台(SQL / Run / 参数区 / 问法 / 发布) | `web/src/domains/text2sql/{IntentDetailPage.tsx,SqlEditor.tsx}`(D4) |
+| 改 chat 里问数命中怎么显示(结果表格 / 最终 SQL / 踩线提示) | `web/src/domains/text2sql/SqlCitation.tsx`(D5) |
 | 改命中阈值或那两道关 | `.env` 的 `EXACT_QA_*` 三项;**改前先读 `documents/S1-PLAN.md` §5 M4** |
-| 改容器/数据库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
+| 改容器/系统库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
+| 改演示业务库的表或数据 | `docker/mysql/init/02-schema.sql` / `gen_seed.py`(改生成器后 `make bizdb-seed-gen`),**改完必须 `make bizdb-reset`** |
+| 改问数的执行闸(超时/行上限) | `.env` 的 `TEXT2SQL_*` 两项;闸的实现在 `server/app/services/text2sql/executor.py` |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
 | 新机器从零装环境 / 改装机步骤 | 根目录 `bootstrap.sh`(工具链检查 → .env → 依赖 → 库 → 迁移 → seed → 自检);**新增外部依赖或初始化步骤必须同步进它** |
 | 改颜色 / 字体 / 圆角 | `documents/UI-STYLE.md` → `web/src/index.css` 的品牌层(**全仓唯一 hex 出处**) |
@@ -101,10 +115,21 @@
 
 ## 5. 两个数据库(别搞混)
 
-| 库 | 用途 | 账号 | 谁连 |
-| --- | --- | --- | --- |
-| `agent_system` | 本系统全部业务表 | `postgres` | `server/app/db.py` 的 engine |
-| `clenergy_biz` | 演示业务库,问数的查询目标 | `biz_reader`(只读) | S3 按需连,**不共用上面的 engine** |
+| 库 | 实例 | 用途 | 账号 | 谁连 |
+| --- | --- | --- | --- | --- |
+| `agent_system` | `agent_system_pg`(PG16+pgvector,5432) | 本系统全部业务表 | `postgres` | `server/app/db.py` 的 engine |
+| `clenergy_biz` | `agent_system_bizdb`(**MySQL 8.4,3307**) | 演示业务库,问数的查询目标 | `biz_reader`(只读) | `services/text2sql/bizdb.py`,**不共用上面的 engine** |
+
+业务库在 S3 开工时从"同一台 PG 里的另一个 database"改成**独立的 MySQL 容器**
+(理由见 `docker/architect.md`:客户库以 MySQL 为多、逼真的 introspection 路径、
+物理隔离比 GRANT 更硬)。起法 `make bizdb`,自检 `make bizdb-verify`,进库 `make mysql`。
+
+**各自有哪些表**:`agent_system` 是 DB-DESIGN 里的那些表(§1–§7 分七个域,S3 新增 `datasources` /
+`table_meta` / `column_meta` / `relations` / `sql_intents` / `intent_questions` / `non_data_faces` /
+`intent_vectors`,废弃 `metrics` / `terms` / `rules` / `sql_examples`);`clenergy_biz` 是七张
+业务表 `products / customers / sales_reps / orders / order_items / inventory / stock_movements`
+(**没有 `regions`** —— 州是 customers/sales_reps 上的字段;建表与灌数的唯一出处是 `docker/mysql/`)。
+**系统表的结构改动一律先改 DB-DESIGN**;业务库的结构不属于本系统的表结构,它模拟的是客户的库。
 
 ## 6. 当前进度
 
@@ -117,7 +142,10 @@ Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型
 
 - 页面 http://localhost:5173 —— `/chat` 能真聊天并看执行轨迹,`/agents` 是只读列表,
   `/ingest/exact-qa` 是精准问答的完整流水线(上传 → 校对 → 采纳 → 已发布库,S1 Step 7),
-  `/ingest/{document,text2sql}` 仍是两个域的空白壳(待各域开发),
+  `/ingest/text2sql` 是问数的治理台(数据源接入 → Schema 治理 → 意图台账与候选审核 →
+  意图详情页 `/ingest/text2sql/intents/:id` 的模板验收,D1–D4;问数命中在 `/chat` 里
+  显示成结果表格 + 可展开的最终 SQL,D5),
+  `/ingest/document` 仍是空白壳(待该域开发),
   `/jobs/{id}/review` 是审核台(直链进入;筛选/改/批量/键盘流/发布),`/styleguide` 是 UI 验收对照页
   (`/kbs`、`/jobs` 页面已删,重定向回 `/chat`;接口与表保留)
 - curl 也能直接流式聊天并查 trace:
@@ -142,3 +170,46 @@ curl localhost:8000/api/traces/<message_id>
 Step 8 用一份 4 页 Clenergy 业务手册从浏览器走完全程:上传 → 校对(修掉 7 处 MinerU 瑕疵)
 → 抽取 23 条候选 → 采纳 8 条 → 对话命中并原样返回标准答案,刷新后标注仍在。
 计划与实施记录见 `documents/S1-PLAN.md`;S0 的见 `documents/S0-PLAN.md`。
+
+**S3(智能问数)已闭环**(计划与逐段证据见 `documents/S3-PLAN.md`,需求见 `documents/S3-PRD.md`):
+Phase A/B 已完成并过闸 —— 演示业务库(MySQL)+ 实验床里逐段实测调优的六个 AI 环节
+(表列描述 / 意图 / SQL 模板 / 参数区 / 受约束改写 / 意图检索),B8 端到端评测集
+**20/20**、越界与拒答硬闸门 7/7。Phase C1–C3 已完成:表结构重审(§4 重写 + 四张新表、
+废弃四张旧表)、演示库并入正式 compose 与 bootstrap、B1–B7 代码迁入
+`server/app/services/text2sql/`(三个 Job + publisher + 三个冒烟脚本)。
+**迁移无损已实测**:同一套 20 题评测集在正式代码路径上 `--check` 与 `--all` 都是 20/20,
+终态分布与踩线题与 B 阶段逐项一致。C4/C5 已完成:`api/text2sql.py`(21 条路径 / 29 个操作,
+清单在 `server/app/api/architect.md`)+ `core/chat.py` 的 `retrieve_text2sql` stage
+(装配在 `services/text2sql/runtime.py`)。**问数三种结局在 chat 里分岔**:执行成功 →
+确定性结论 + `sql` 引用(带最终 SQL 与结果表格)并标 Verified;模板外拒答 → 返回理由,
+**同样不调生成模型**;非问数 → 检索层零 LLM 判掉后照常走生成。
+HTTP 层冒烟 `make smoke-s3-api`(27 步、含 9 条错误路径、不留痕),chat 冒烟
+`make smoke-s3-chat`(三问 + trace 五要素 + 零成本断言 + SSE 协议)。
+Phase D 已做四页:D1 数据源管理(先测再存 / 只读确认是闸 / 同步进度)、D2 Schema 治理
+(左表清单 + 右字段表格,按表保存、单点与批量两个 AI 入口)、D3 意图台账
+(批量生成 → 泛型审核台采纳成 draft → 手工新建 → 空路由负例面)、D4 意图详情
+(生成模板 → Run → 三区参数 → 相似问法 → 发布),四页都在浏览器走过一遍
+(临时资产做完即删;索引面仍是 75 条,评测集复跑仍 20/20)。D3 顺手修了两处"0 条"显示错
+(`t2s_intents` 没写 `stats.staged`、共享 `<JobProgress>` 对不产出条目的 Job 也画审核入口);
+D4 自测抓出一个后端契约错:`TemplateResult.design` 声明成 `str`,而生成器返回的是结构化
+设计说明对象,**任何一次模板生成都 500** —— 新增 `TemplateDesign` 后前端把 join 路径 /
+度量口径 / 写死的过滤及其理由摆成了评审面板。
+D5 chat 展示(命中 → 结论 + 结果表格 + 可展开可复制的最终 SQL + 踩线提示;trace 五要素)
+也在浏览器走过:三个代表问题各问一遍,自测抓出一个用户可见缺陷 —— 模板外拒答显示的是
+planner `notes` 的第一条(通常是"日期解析成了几号"这种记账),于是"问利润率"换来一句讲日期的
+回答;给理由加了专属字段 `infeasible_reason`(`rewrite.py` 计划 schema),改完 prompt 回评测集
+真调 20 题仍 20/20。
+**Phase E 已通过**:PRD §7 的七条 DoD 从浏览器按顺序走完 —— 新建只读连接(先测再存)→ 同步 7 表 →
+AI 生成 `orders` 的描述并人工改两处 → 四表生成 8 条意图候选、采纳 4 条(**采纳后索引面不变**)→
+把其中一条从生成模板、Run 出真数据、手改参数提示词、加相似问法一路做到发布(索引面 75 → 84)→
+对话问「How much did we sell in NSW last month?」拿到 `2026-07 / NSW / 7488055.28`(直连 MySQL
+核对逐位一致),trace 里看得见改写计划把"last month"解析成 2026-07-01..07-31、最终 SQL 里
+`c.state IN ('NSW')` 正是刚手写的提示词被照办 → 再问 profit margin 则给理由拒答、不落生成。
+走查抓出一个**共享层**缺陷并修掉:审核台里编辑一条候选并 Save 后,右侧详情会静默换成另一条
+(存完就掉出 `pending` 队列,而选中项是"找不到就落第一条"推导的),紧接着点的采纳/驳回会打在
+别人身上 —— S1 的审核台同样中招且是采纳即发布,所以修在 `components/StagingReview.tsx`:
+**保存不是裁决**,存过未裁决的那一条被钉在列表里。走查后复原(临时数据源与三条 draft 删掉;
+`i06` 因为被历史消息的引用指着,按设计只能下线),索引面回到 75、已发布意图 7。
+收尾:`make smoke-s3` 20/20、`make smoke-s3-chat` / `make smoke-s3-api` 全绿、`pytest` 84 passed、
+`make lint` 全绿;S3 的三份文档(计划 / 需求 / Text2SQL 调研)从 `tmp/` 迁进 `documents/`,
+PRD §2.0 / §3.4 / §6 与 §9.6 的 S3 一行按实际回改。

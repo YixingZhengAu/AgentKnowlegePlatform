@@ -1,0 +1,111 @@
+{
+  "intent": {
+    "intent_id": "i01",
+    "type": "query",
+    "bucket": "multi_table_query",
+    "one_liner": "Query: Recent orders for a specific customer",
+    "brief": "Returns detailed orders for a chosen customer, including order number, date, status, and order total. Users typically vary the customer (by name or ID), a date range, and statuses to include or exclude (e.g., exclude cancelled). Results can be sorted by most recent or highest value.",
+    "tables": [
+      "orders",
+      "customers"
+    ]
+  },
+  "sql": "SELECT c.name AS customer_name, o.order_no AS order_number, o.order_date AS order_date, o.status AS order_status, o.total_amount AS order_total_aud FROM orders o JOIN customers c ON o.customer_id = c.id WHERE c.name LIKE '%Bluegum Beverages Pty Ltd%' AND o.order_date >= '2025-08-23' AND o.status IN ('completed', 'paid', 'pending', 'shipped') ORDER BY o.order_date DESC, o.total_amount DESC LIMIT 50",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_name",
+        "kind": "filter",
+        "source": "customers.name",
+        "operator": "LIKE",
+        "value_type": "string",
+        "value_shape": "scalar",
+        "default_value": "%Bluegum Beverages Pty Ltd%",
+        "predicate_sql": "c.name LIKE '%Bluegum Beverages Pty Ltd%'",
+        "business_name": "Customer name",
+        "hint": "Map any customer name mentioned by the user to this filter. This is a partial, case-insensitive contains match. Replace the default value with the exact name fragment the user gives, keeping the surrounding % wildcards (e.g., user says “Acme” -> set to %Acme%). Only name-based filtering is supported in this template; if the user supplies a customer ID without a name, leave the default or disable only if they clearly want all customers. DEFAULT: keep %Bluegum Beverages Pty Ltd% when the user does not specify a customer. DISABLE: only if the user explicitly asks for all customers or to remove the customer filter."
+      },
+      {
+        "param_id": "f_order_date",
+        "kind": "filter",
+        "source": "orders.order_date",
+        "operator": ">=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2025-08-23",
+        "predicate_sql": "o.order_date >= '2025-08-23'",
+        "business_name": "Start order date",
+        "hint": "Maps phrases like “since 2026-01-01”, “from Jan 1, 2026”, “last 90 days”, “this year”, “last month” to the start date boundary. Value format must be YYYY-MM-DD. Resolve any relative dates to absolute dates anchored at 2026-08-23. Valid data window is 2024-09-01 to 2026-08-23; clamp or choose a start date within this window. This filter is >= start date only; no end date can be added. DEFAULT: keep 2025-08-23 if the user does not mention date. DISABLE: only if the user asks for all dates/no date filter (which will return all available dates in the data window)."
+      },
+      {
+        "param_id": "f_status",
+        "kind": "filter",
+        "source": "orders.status",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "completed",
+          "paid",
+          "pending",
+          "shipped"
+        ],
+        "predicate_sql": "o.status IN ('completed', 'paid', 'pending', 'shipped')",
+        "business_name": "Order statuses",
+        "hint": "Map user intent about which statuses to include/exclude. Allowed values ONLY: cancelled (voided), completed (fulfilled/closed), paid (payment received), pending (awaiting processing), shipped (dispatched). Accept phrasings like “only completed”, “exclude cancelled”, “include cancelled too”, “pending and shipped”, “any status”. Set the IN list to exactly the requested subset; reject any value outside the allowed list (do not guess). DEFAULT: keep ['completed','paid','pending','shipped'] if user does not mention status. DISABLE: only if the user explicitly wants all/any statuses."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_customer_name",
+        "kind": "output",
+        "expr": "c.name",
+        "alias": "customer_name",
+        "source": "customers.name",
+        "business_name": "Customer name",
+        "hint": "Output column showing the customer’s legal or trading name. Keep by default. Drop only if the user asks for fewer columns and does not need customer name (e.g., “just order numbers and totals”)."
+      },
+      {
+        "param_id": "o_order_number",
+        "kind": "output",
+        "expr": "o.order_no",
+        "alias": "order_number",
+        "source": "orders.order_no",
+        "business_name": "Order number",
+        "hint": "Output column showing the business order number (e.g., SO-2025-00123). Keep by default. Drop only if the user requests a narrower output that excludes order numbers."
+      },
+      {
+        "param_id": "o_order_date",
+        "kind": "output",
+        "expr": "o.order_date",
+        "alias": "order_date",
+        "source": "orders.order_date",
+        "business_name": "Order date",
+        "hint": "Output column showing the order creation date (YYYY-MM-DD). Keep by default. Drop only if the user asks to omit dates."
+      },
+      {
+        "param_id": "o_order_status",
+        "kind": "output",
+        "expr": "o.status",
+        "alias": "order_status",
+        "source": "orders.status",
+        "business_name": "Order status",
+        "hint": "Output column showing the current lifecycle status of the order. Keep by default. Drop only if the user asks to omit statuses."
+      },
+      {
+        "param_id": "o_order_total_aud",
+        "kind": "output",
+        "expr": "o.total_amount",
+        "alias": "order_total_aud",
+        "source": "orders.total_amount",
+        "business_name": "Order total (AUD)",
+        "hint": "Output column showing the order total amount in AUD. Keep by default. Drop only if the user requests fewer columns and does not need totals."
+      }
+    ],
+    "groupbys": []
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-23T17:54:52",
+  "human_edited": false,
+  "finalized_at": "2026-08-23T18:04:59"
+}

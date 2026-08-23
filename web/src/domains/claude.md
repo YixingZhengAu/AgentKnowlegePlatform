@@ -8,7 +8,7 @@
 | `types.ts` | `DomainModule` 描述符类型(路由/导航/标题/识别色/页面/渲染器) |
 | `exact-qa/` | 精准 QA 域,见 `exact-qa/claude.md` |
 | `document/` | 文档 RAG 域,见 `document/claude.md` |
-| `text2sql/` | 智能问数域,见 `text2sql/claude.md` |
+| `text2sql/` | 智能问数域(D1 数据源 / D2 Schema 治理 / D3 意图台账 / D4 意图详情 / D5 chat 展示,全部已自测),见 `text2sql/claude.md` |
 
 **纪律**:域文件夹之间禁止互相 import;只向上依赖 shared 层(`src/{api,components,layouts,lib}`,对域开发者只读)。
 

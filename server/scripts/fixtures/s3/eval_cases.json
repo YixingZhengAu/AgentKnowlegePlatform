@@ -1,0 +1,305 @@
+[
+  {
+    "case_id": "E01",
+    "kind": "value_query",
+    "question": "Show me the latest orders for Boomerang Textiles Pty Ltd",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i01",
+      "outcome": "executed",
+      "sql_contains": [
+        "Boomerang Textiles"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E02",
+    "kind": "value_query",
+    "question": "What's on order SO-2026-01270?",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i02",
+      "outcome": "executed",
+      "sql_contains": [
+        "SO-2026-01270"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E03",
+    "kind": "value_query",
+    "question": "Stock movement history for HC-300 at the Brisbane warehouse",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i15",
+      "outcome": "executed",
+      "sql_contains": [
+        "HC-300",
+        "Brisbane"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E04",
+    "kind": "value_stats",
+    "question": "Monthly revenue trend since January 2026",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i07",
+      "outcome": "executed",
+      "sql_contains": [
+        "2026-01-01"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E05",
+    "kind": "value_stats",
+    "question": "Monthly outbound units for Melbourne and Brisbane over the last 6 months",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i16",
+      "outcome": "executed",
+      "sql_contains": [
+        "Melbourne",
+        "Brisbane"
+      ],
+      "sql_not_contains": [
+        "Sydney"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E06",
+    "kind": "value_stats",
+    "question": "Which products shipped the most units out of Sydney in the last 30 days?",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i18",
+      "outcome": "executed",
+      "sql_contains": [
+        "Sydney"
+      ],
+      "sql_not_contains": [
+        "Brisbane",
+        "Melbourne"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E07",
+    "kind": "value_stats",
+    "question": "Who were our biggest customers by revenue in the past 6 months?",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i09",
+      "outcome": "executed",
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E08",
+    "kind": "drop_columns",
+    "question": "For order SO-2026-01281 just show the product name and the quantity",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i02",
+      "outcome": "executed",
+      "cols_include": [
+        "product_name",
+        "quantity"
+      ],
+      "cols_exclude": [
+        "unit_sell_price_aud",
+        "line_amount_aud"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E09",
+    "kind": "drop_columns",
+    "question": "Movement history for INV-110K at Sydney — only the movement date and the quantity, nothing else",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i15",
+      "outcome": "executed",
+      "cols_include": [
+        "movement_date",
+        "quantity_moved"
+      ],
+      "cols_exclude": [
+        "balance_after",
+        "source_reference",
+        "movement_id"
+      ],
+      "sql_contains": [
+        "INV-110K",
+        "Sydney"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E10",
+    "kind": "drop_columns",
+    "question": "Recent orders for Pacific Dairy Co-op Pty Ltd — just the order number and the order total",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i01",
+      "outcome": "executed",
+      "cols_include": [
+        "order_number",
+        "order_total_aud"
+      ],
+      "cols_exclude": [
+        "order_status"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E11",
+    "kind": "drop_groupby",
+    "question": "Total outbound units per warehouse over the last 6 months, without the monthly breakdown",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i16",
+      "outcome": "executed",
+      "cols_include": [
+        "warehouse_name",
+        "outbound_units"
+      ],
+      "cols_exclude": [
+        "year_month"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E12",
+    "kind": "drop_groupby",
+    "question": "Units shipped in the last 90 days per SKU only — no product id, no product name",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i18",
+      "outcome": "executed",
+      "cols_include": [
+        "product_sku",
+        "total_outbound_units"
+      ],
+      "cols_exclude": [
+        "product_id",
+        "product_name"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E13",
+    "kind": "drop_groupby",
+    "question": "What's our total revenue since January 2026 — one number, no monthly split",
+    "expect": {
+      "route": "text2sql",
+      "intent": "i07",
+      "outcome": "executed",
+      "cols_include": [
+        "total_revenue_aud"
+      ],
+      "cols_exclude": [
+        "month"
+      ],
+      "nonempty": true
+    }
+  },
+  {
+    "case_id": "E14",
+    "kind": "out_of_template",
+    "question": "Monthly revenue broken down by product category",
+    "expect": {
+      "route": "text2sql",
+      "outcome": "refused_out_of_template",
+      "no_sql": true
+    }
+  },
+  {
+    "case_id": "E15",
+    "kind": "out_of_template",
+    "question": "Top 10 customers by profit margin over the last 12 months",
+    "expect": {
+      "route": "text2sql",
+      "intent_in": [
+        "i09",
+        "i07"
+      ],
+      "outcome": "refused_out_of_template",
+      "no_sql": true
+    }
+  },
+  {
+    "case_id": "E16",
+    "kind": "out_of_template",
+    "question": "Recent orders for Summit Manufacturing Pty Ltd plus the customer's phone number and credit limit",
+    "expect": {
+      "route": "text2sql",
+      "intent_in": [
+        "i01"
+      ],
+      "outcome": "refused_out_of_template",
+      "no_sql": true
+    }
+  },
+  {
+    "case_id": "E17",
+    "kind": "out_of_template",
+    "question": "Monthly outbound units by warehouse, but only for battery cabinet products",
+    "expect": {
+      "route": "text2sql",
+      "intent_in": [
+        "i16",
+        "i18"
+      ],
+      "outcome": "refused_out_of_template",
+      "no_sql": true
+    }
+  },
+  {
+    "case_id": "E18",
+    "kind": "non_data",
+    "question": "What's the warranty period on the HC-300 battery cabinet?",
+    "expect": {
+      "route": "fallback",
+      "outcome": "refused_non_data",
+      "no_sql": true,
+      "no_llm": true
+    }
+  },
+  {
+    "case_id": "E19",
+    "kind": "non_data",
+    "question": "How do I commission the INV-50K inverter on site?",
+    "expect": {
+      "route": "fallback",
+      "outcome": "refused_non_data",
+      "no_sql": true,
+      "no_llm": true
+    }
+  },
+  {
+    "case_id": "E20",
+    "kind": "non_data",
+    "question": "Thanks, that's all for today.",
+    "expect": {
+      "route": "fallback",
+      "outcome": "refused_non_data",
+      "no_sql": true,
+      "no_llm": true
+    }
+  }
+]

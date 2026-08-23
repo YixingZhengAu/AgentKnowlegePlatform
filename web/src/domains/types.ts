@@ -8,6 +8,7 @@
 import type { LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 
+import type { CitationRenderer } from '@/components/Citations'
 import type { ItemRenderers } from '@/components/staging/types'
 
 export type DomainModule = {
@@ -25,4 +26,7 @@ export type DomainModule = {
   IngestPage: ComponentType
   /** item_type → 审核渲染器,汇总进 staging/registry;没有就走 JSON 兜底 */
   renderers?: Record<string, ItemRenderers>
+  /** citation_type → chat 气泡里那条引用的渲染器(S3 的问数要画结果表格 + 最终 SQL);
+   *  没登记就走 `components/Citations.tsx` 的通用引用条 */
+  citations?: Record<string, CitationRenderer>
 }

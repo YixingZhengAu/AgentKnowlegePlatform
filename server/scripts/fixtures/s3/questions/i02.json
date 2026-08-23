@@ -1,0 +1,16 @@
+{
+  "intent_id": "i02",
+  "summary": "Line items for an order number",
+  "questions": [
+    "Can you list all the line items on order SO-2026-01281, showing SKU or name, quantity, unit sell price, and the line total in AUD?",
+    "Show me the product lines for SO-2026-01270, active products only.",
+    "What products are on SO-2026-01255 and how many units of each at what unit price?",
+    "Order SO-2026-01281 item breakdown: SKU/name, qty, unit price, line amount.",
+    "Line items for sales order SO-2026-01270 with quantities and line totals (exclude inactive).",
+    "Please itemise SO-2026-01255 with SKU, quantity, unit sell price and extended amount.",
+    "Give me all products on order SO-2026-01281 with their quantities and prices per unit.",
+    "SO-2026-01270 line items, active only — qty, unit price, line value."
+  ],
+  "generated_at": "2026-08-23T18:50:18",
+  "human_edited": false
+}

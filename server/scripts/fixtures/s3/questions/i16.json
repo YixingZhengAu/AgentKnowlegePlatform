@@ -1,0 +1,16 @@
+{
+  "intent_id": "i16",
+  "summary": "Monthly outbound units trend by warehouse",
+  "questions": [
+    "Can you show monthly outbound units by warehouse for the last 12 months?",
+    "Month-by-month units shipped out per warehouse, covering Brisbane, Melbourne and Sydney.",
+    "Sydney outbound volume by month",
+    "Monthly outbound dispatch trend by warehouse from 2024-09-01 to today.",
+    "Compare outbound units per month by warehouse, Melbourne only.",
+    "Trend of units sent out each month by warehouse across all warehouses.",
+    "For Brisbane and Sydney, show monthly outbound movements by month since Jan 2026.",
+    "Outbound shipments per month by warehouse, FY26 to date."
+  ],
+  "generated_at": "2026-08-23T18:50:18",
+  "human_edited": false
+}

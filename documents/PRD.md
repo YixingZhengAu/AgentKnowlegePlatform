@@ -69,7 +69,7 @@
 | --- | --- | --- |
 | **精准 QA** | "HC-215 的质保期是几年?""渠道商折扣最低能给到几折?" | 答错就是对客户的错误承诺,直接引发商务纠纷 —— 零容错 |
 | **文档 RAG** | "储能柜现场安装对场地有什么要求?""EMS 告警 E304 怎么排查?" | 答案散落在几十页安装手册和运维 SOP 里,允许概括,要有出处 |
-| **智能问数** | "上个月华东区签约金额多少?""HC 系列今年各季度出货量趋势" | 答案根本不在文档里,在业务库里 |
+| **智能问数** | 「上个月 NSW 卖了多少?」「HC 系列各仓库近半年的出库量趋势」 | 答案根本不在文档里,在业务库里 |
 
 **演示的高光时刻**——一个混合问题:
 
@@ -81,7 +81,8 @@ Agent 路由出**两条链路**:前半句走智能问数(查出货量排名),后
 
 - 精准 QA:约 60 条(质保、折扣、认证、交付周期、对外承诺话术)
 - 文档:6–8 份 PDF/Word(产品手册、安装规范、运维 SOP、售后政策)
-- 业务库:`customers / orders / order_items / products / regions / sales_reps` 六张表,约 2 年的模拟数据
+- 业务库:`customers / orders / order_items / products / sales_reps / inventory / stock_movements` 七张表,近 2 年的模拟数据
+  (S3 落地时定稿:**没有 `regions` 表** —— 州是 `customers.state` / `sales_reps.state` 上的字段,为一个五取值的维度单开一张维表只会让每条 SQL 多一次 join;`inventory` 与 `stock_movements` 是需求方要求补的库存快照与流水。建表与数据的唯一出处是 `docker/mysql/`,校验断言见 `server/scripts/verify_bizdb.py`)
 
 ### 2.1 模块划分
 
@@ -285,45 +286,65 @@ Agent 路由出**两条链路**:前半句走智能问数(查出货量排名),后
 
 ### 3.4 类型三:智能问数库(`text2sql`)
 
-**定位**:数据类问题。已经过治理的语义层,而不是"把库表直接丢给模型"。
+**定位**:数据类问题。已经过治理的语义层,而不是「把库表直接丢给模型」。
 
-**核心主张**:Text2SQL 的效果 90% 取决于语义层治理质量,而不是 prompt。因此本系统把"治理产物"作为一等公民的知识来管理。
+**核心主张**:Text2SQL 的效果 90% 取决于语义层治理质量,而不是 prompt。因此本系统把「治理产物」作为一等公民的知识来管理。
 
-**数据结构**
+> 本节按 S3 的实测结论重写(2026-08-23,原 v0.2 稿的一半被推翻)。**两条最重要的改动**:
+> ① 运行时**不再自由生成 SQL**,改成命中一条人工验收过的模板再受约束改写;
+> ② 语义层的一等公民从 `metric`/`term`/`rule`/`sql_example` 换成 **`sql_intent`(意图 = 模板 + 参数区)**,
+> 那四张表随之废弃(理由见 `documents/DB-DESIGN.md` §4.9)。需求细节的唯一出处是
+> `documents/S3-PRD.md`,表结构是 DB-DESIGN §4,逐段实测证据是 `documents/S3-PLAN.md`。
+
+**数据结构**(表结构以 DB-DESIGN §4 为准)
 
 | 对象 | 关键字段 | 说明 |
 | --- | --- | --- |
-| **数据源** `datasource` | `type(postgres/mysql/duckdb) / dsn / readonly_account` | 只允许只读账号 |
-| **表** `table_meta` | `physical_name / business_name / description / grain / is_enabled` | 业务命名是模型能读懂的关键 |
-| **字段** `column_meta` | `physical_name / business_name / type / description / enum_dict / is_metric / is_dim / is_sensitive` | `enum_dict` 存枚举值中文映射(如 `1=已签约`) |
-| **指标** `metric` | `name / expression / unit / caliber_desc / dimensions[] / filters` | 指标口径,避免模型自己编聚合逻辑 |
-| **表关系** `relation` | `left / right / join_keys / join_type / cardinality` | 供多表 join |
-| **业务术语** `term` | `term / maps_to(表/字段/指标) / synonyms[]` | 「营收」→ `metric.revenue` |
-| **示范 SQL** `sql_example` | `question / sql / note` | Few-shot 样本,效果提升最明显的一项 |
-| **口径规则** `rule` | `content` | 如「统计营收默认排除内部关联交易」 |
+| **数据源** `datasource` | `db_type(mysql/postgres) / dsn_enc / readonly_confirmed` | 只允许只读账号;连接串 Fernet 加密落库,**明文永不出接口**;`readonly_confirmed=false` 时一切连库动作直接拒 |
+| **表** `table_meta` | `table_name / display_name / description / row_estimate / enabled` | 业务命名与描述是模型能读懂的关键 |
+| **字段** `column_meta` | `column_name / display_name / description / data_type / sample_values / enum_values / sensitive / enabled` | 枚举列要求逐值给业务含义;`enabled` 同时是执行闸白名单的来源 |
+| **表关系** `relations` | `left / right / join_keys / source(fk\|heuristic)` | 演示库故意留了两条没建 FK 的逻辑关联,靠列名启发兜住 + 人工确认 |
+| **意图** `sql_intents` ★ | `code / intent_type(query\|stats) / one_liner / brief / tables[] / sql / params / status(draft\|published\|disabled)` | **本域核心**:一条意图 = 一条人工验收过的 SQL 模板 + 它的参数区 |
+| **相似问法** `intent_questions` | `intent_id / text` | 一条问法一个索引面 —— 这是意图被匹配上的主要途径 |
+| **空路由负例面** `non_data_faces` | `text` | 「以上都不是」的示例(质保、安装等非问数问题),与意图进同一个向量空间 |
+| **索引面** `intent_vectors` | `intent_id(可空) / face_type / text / embedding` | 一面一行;`intent_id IS NULL` 就是空路由伪意图 |
 
-**Text2SQL 执行链路**
+**治理链路(生成期,有人审)**
 
 ```
-[1] 语义检索      从 term / metric / table / column / sql_example 中检索与问题相关的最小 schema 子集
-[2] 意图澄清      时间范围、口径、维度缺失时,主动追问(可配置为"用默认值 + 明示假设")
-[3] SQL 生成      带 schema 子集 + 相关 few-shot + 口径规则,生成 SQL
-[4] 静态校验      语法解析(sqlglot);只允许 SELECT;禁止 DDL/DML;字段表名是否存在;是否命中敏感字段
-[5] 安全执行      只读账号 + 强制 LIMIT + 超时 + 行数上限
-[6] 失败自修      报错信息回灌模型,最多重试 2 次
-[7] 结果表达      自然语言结论 + 数据表格 + 自动选图(单指标趋势→折线,分类对比→柱状,占比→饼)
-[8] 透明化        展示最终 SQL,支持一键复制,让业务方可校验
+[1] 接库同步      只读账号 → information_schema + 采样/枚举识别 → 表/列/关系落库(默认全启用)
+[2] 语义层治理    AI 批量/单点生成 display_name 与 description → 人工改 → 保存(停用不该进语义层的表列)
+[3] 意图生成      选几张表 → AI 提 N 条候选(query/stats 分型 + 盲判复核)→ 审核台人工采纳成 draft
+[4] 模板生成      AI 写 SQL → 9 条确定性静态校验 → 真库试执行 → 报错回灌自修 ≤2 轮
+[5] 参数区拆解    AST 拆出三区(可改值的 filter / 可减的 output / 可减的 groupby)+ AI 预填提示词
+[6] 验收发布      Run 出真数据 → 人工改 SQL/提示词/相似问法 → 发布(才建索引面)
 ```
 
-> ⚠️ 智能问数的 ingestion(数据源接入、schema 同步与治理录入)**待需求方确认后重写**(见 §3.1.1 备注);本节的语义层与执行链路主张保留。
+**运行时链路(无人值守,不生成 SQL)**
+
+```
+[1] 语义路由      问题向量 vs 索引面(意图问法 + 空路由负例)→ 双门槛判定
+                  命中负例面 → refused_non_data(**零 LLM**,这一步就结束)
+[2] 改写计划      LLM 只输出结构化计划:filter 值 / 要减的列 / 要减的分组;越界就 feasible=false
+[3] 确定性应用    代码校验计划 → sqlglot AST 重建 SQL(**模型的输出不直接进 SQL**)
+[4] 执行闸        单条 SELECT + 表列白名单(= 启用的语义层)+ 强制 LIMIT + 读超时 + 只读账号
+[5] 结果表达      代码从结果集算出结论句(不过生成模型,所以敢标 Verified)+ 数据表格 + 可展开可复制的最终 SQL
+```
+
+四个终态分开记账:`executed` / `refused_out_of_template`(模板管不到,给理由)/ `refused_non_data`(零 LLM)/ `execution_failed`(**永远算 bug**,不是业务边界)。
+
+**三个刻意的设计决定**(实测逼出来的,展开见 `documents/S3-PLAN.md`)
+
+1. **空路由是必需项**:非问数问题靠「索引里有更像的负例」拦下,靠调高分数阈值拦不住。
+2. **采纳 ≠ 发布**:采纳(审核台)= 「这类问题值得做成模板」→ `draft`;发布(意图详情页)= 「这条模板我验收了」→ 才建索引面。
+3. **口径焊死在模板里**:同一个指标不留第二份可漂移的定义,所以不要 `metric`/`term`/`rule` 表。
 
 **运营功能**
 
-- 连接数据源 → 一键同步库表结构 → 人工挑选启用的表和字段(**默认全不启用,必须显式治理后才可用**)。
-- 字段业务名/描述/枚举字典的批量填写,支持 LLM 预填 + 人工确认。
-- 指标与术语维护。
-- 示范 SQL 管理:支持从历史成功问答"一键沉淀"为 few-shot。
-- 问数调试台:输入问题 → 看检索到的 schema 子集 → 看生成的 SQL → 看执行结果,每一步都可见。
+- 连接数据源 → 一键同步库表结构 → 人工治理启用范围。**同步后表与列默认全启用**,治理动作是把不该进语义层的关掉(D2 页面上表清单与字段表格里的两列开关)。v0.2 写的「默认全不启用」在实测中被否:接一个新库之后什么都问不出来,且要先点几十下才能开始;真正的闸在别处 —— 语义层只收 enabled 的表列,而执行闸的白名单就是它。要改回默认全关是需求方一句话的事(`models/text2sql.py` 里 `enabled` 的 `server_default`)。
+- 字段业务名/描述/枚举字典的批量填写:落成「单点建议 + 批量 Job」两个入口 × `fill`/`rewrite` 两个模式。★ `fill` 保住的是**库里的 DDL 注释**,不是人在治理页写的描述 —— 批量跑一次会把人写的描述换掉(D2 自测实测),页面提示按模式给了两句话。要不要给列级加 `human_edited` 保护是需求方的决定。
+- **意图与模板的治理**(取代原稿的「指标与术语维护」与「示范 SQL 一键沉淀」):候选进审核台 → 采纳成 draft → 意图详情页生成模板、Run 出真数据、改 SQL 再 Run、编辑三区参数与相似问法 → 发布。「从历史成功问答一键沉淀」没做 —— 模板要人工验收,自动沉淀与这条路线的前提冲突。
+- 问数的可见性落在两处:治理期是意图详情页的 Run 面板(走的就是运行时那道执行闸,所以 Run 过了就不会在运行时因闸失败),运行期是对话消息里可展开可复制的最终 SQL + trace 面板的五要素(意图分数 / 模板 id / 改写计划 / 最终 SQL / 行数+耗时)。
 
 ### 3.5 三类知识对比(演示时的核心一页)
 
@@ -450,10 +471,10 @@ Agent 路由出**两条链路**:前半句走智能问数(查出货量排名),后
 | 存储 | PostgreSQL + pgvector | 一个库搞定关系数据 + 向量 + 全文,演示部署最简单 |
 | 对象存储 | 本地磁盘(接口预留 S3/MinIO) | |
 | 队列 | 起步用 FastAPI BackgroundTasks;文档量大时换 Celery/RQ + Redis | |
-| LLM | Claude(Opus 5 用于路由与生成,Haiku 4.5 用于改写/摘要/预填等轻量任务) | 分层用模型控成本,也是可讲的设计点 |
+| LLM | 实际落地用 OpenAI:main = `gpt-5`(生成 / SQL 模板 / 受约束改写),light = `gpt-5-mini`(盲判 / 预填等轻量任务);Embedding 用 `text-embedding-3-small`(1536 维) | 分层用模型控成本,也是可讲的设计点。模型只从 `app/providers` 走,换供应商是改配置不是改链路 |
 | Embedding / Rerank | 可配置的第三方 API 或本地 bge 系列 | 抽象成 Provider 接口 |
 | SQL 安全 | sqlglot 解析 + 只读账号 + LIMIT/超时 | |
-| 演示数据库 | DuckDB 或 Postgres 内的示例业务库(订单/客户/产品) | 自带脱敏假数据,随系统一起交付 |
+| 演示数据库 | **MySQL 8.4 独立容器**(端口 3307,只读账号 `biz_reader`) | S3 定稿:演示的是接入客户已有的库,而客户库以 MySQL 为多;独立容器也让业务库与系统自己的 PG 在演示里泾渭分明。假数据随系统交付(`docker/mysql/`) |
 
 **核心抽象(保证可扩展)**
 
@@ -648,7 +669,7 @@ npx openapi-typescript openapi.json -o web/src/api/types.gen.ts
 | S0 | `docker-compose up` + `make dev` 后能打开页面,发一句话,DB 里能查到这次对话的完整 trace |
 | S1 | ✅ 从浏览器上传一份业务手册 PDF,**校对解析文本**后触发抽取,在审核台采纳若干条,提问"HC 系列质保几年、末期容量保持多少"能原样返回标准答案并标注 Verified Answer(实测 0.780 命中、trace 只有 `retrieve_exact_qa` 没有 `generate` = 零改写)。**计划与实施记录:`documents/S1-PLAN.md`** |
 | S2 | 上传产品手册,能在切片可视化页看到切片和向量状态;提问能返回带 `[1][2]` 引用、点击引用跳到原文切片 |
-| S3 | 治理完表和字段后,问"上季度华东区签约金额",返回数字 + 表格 + 图表 + 可展开的 SQL |
+| S3 | ✅ 从浏览器接一条 MySQL 只读连接 → 同步 7 张表 → AI 生成表列描述并人工改 → 生成意图候选并采纳 → 一条意图从生成 SQL 模板到 Run 出真数据再发布 → 问「How much did we sell in NSW last month?」拿到结论 + 表格 + 可展开可复制的最终 SQL,trace 里看得到意图分数 / 改写计划 / 最终 SQL;问模板管不到的 profit margin 则给理由拒答、不编造。图表本期没做(结果表格 + 最终 SQL 已足够讲清口径)。**计划与逐段证据:`documents/S3-PLAN.md`** |
 | S4 | 问 §2.0 那个混合问题,执行轨迹面板显示路由选中了两个 KB 及理由 |
 | S5 | 断网状态下能完整跑一遍 10 分钟演示脚本 |
 | S6 | 改一个配置,跑两次评测,并排看到哪几条变好、哪几条变差 |

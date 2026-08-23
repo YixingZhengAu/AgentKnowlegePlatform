@@ -14,7 +14,8 @@
  *    而不是从头翻到尾 —— 这也是抽取任务给每条打 confidence 的唯一用途。
  * 2. **选中项是推导出来的,不是一个状态**:`selectedId` 在当前列表里找不到就落到第一条。
  *    所以筛选变化、条目审完消失都不需要 effect 去同步选中态(effect 里同步 setState
- *    既会多一轮渲染,新版 react-hooks 规则也直接报错)。
+ *    既会多一轮渲染,新版 react-hooks 规则也直接报错)。**唯一的例外是"存过但还没裁决"
+ *    的那一条** —— 它被钉在列表里,否则右侧详情会静默换人(见 `items` 与 `save()`)。
  * 3. **动作是传进来的(S1-plan Step 7a)**:流程归本组件,"通过/驳回到底做了什么"归各域。
  *    S1 是采纳即发布(写正式表 + 建向量,没有批量发布),它只换 `actions`,本文件不认识它。
  *    不传 `actions` 就是 S0 的默认语义(标 approved,最后批量发布)。
@@ -110,12 +111,19 @@ export function StagingReview({
   // 发布成功的那一刻就把界面切成只读:等 job 状态那一次往返(约一个轮询)期间,
   // 界面不该还允许"通过" —— 那一条通过了也永远发不出去(后端也会 409 拦住)
   const [justPublished, setJustPublished] = useState(false)
+  // 存过改动、但因此掉出当前筛选的那一条(见 `save()`):它得继续留在眼前
+  const [pinned, setPinned] = useState<StagingItem | null>(null)
 
   const filter = statusFilter === 'all' ? '' : `&review_status=${statusFilter}`
   const list = useApi<StagingList>(`/api/staging?job_id=${jobId}&sort=${sort}${filter}`)
   const summary = useApi<StagingSummary>(`/api/staging/summary?job_id=${jobId}`)
 
-  const items = list.data?.items ?? []
+  const fetched = list.data?.items ?? []
+  // ★ 保存不是裁决,所以存完那一条不该从眼前消失 —— 队列筛选是 pending 时它会变成
+  //   modified 而掉出列表,于是"找不到就落第一条"会静默把界面换成另一条候选,
+  //   紧接着点的 Adopt / Reject 就打在了别人身上(E1 走查实测踩到)。把它钉在列表里。
+  const items =
+    pinned && !fetched.some((i) => i.id === pinned.id) ? [pinned, ...fetched] : fetched
   const selected = items.find((i) => i.id === selectedId) ?? items[0] ?? null
   const dirty = draft !== null && selected !== null && draft.id === selected.id
   const payload = (dirty ? draft.payload : (selected?.payload ?? {})) as Payload
@@ -176,15 +184,26 @@ export function StagingReview({
     void runAction(item, () => actions.reject(item, note), true)
   }
 
-  const save = (item: StagingItem) =>
-    void runAction(
-      item,
-      () =>
-        apiPatch<StagingItem>(`/api/staging/${item.id}`, {
+  /** 保存 = 只落改动,不做裁决:不前进,也不让这一条掉出视野(钉住它,理由见 `items`)。 */
+  const save = (item: StagingItem) => {
+    setBusy(true)
+    void (async () => {
+      try {
+        const saved = await apiPatch<StagingItem>(`/api/staging/${item.id}`, {
           payload: dirty ? draft.payload : null,
-        } satisfies StagingPatch),
-      false,
-    )
+        } satisfies StagingPatch)
+        setDraft(null)
+        setPinned(saved)
+        setSelectedId(saved.id)
+        refresh()
+        onDecided?.()
+      } catch {
+        pushToast('error', 'review_failed', 'Could not save this item.')
+      } finally {
+        setBusy(false)
+      }
+    })()
+  }
 
   const bulk = async (review_status: string) => {
     const ids = [...checked]

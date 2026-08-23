@@ -14,8 +14,10 @@ dependencies = [
     "pgvector>=0.5.0",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.15.0",
+    "pymysql>=1.2.0",
     "python-multipart>=0.0.32",
     "sqlalchemy>=2.0.52",
+    "sqlglot>=30.17.0",
     "structlog>=26.1.0",
     "uvicorn[standard]>=0.52.4",
 ]
@@ -29,6 +31,16 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+# 只有 prompt 常量文件豁免行宽。理由不是"这些行不好排",而是:
+# 这些文件里的长行是**被人工评审过的 prompt 正文**(含逐字的 worked example SQL),
+# 换行会改动送给模型的字符串本身 —— 那是在动准确率,不是在动格式。
+# 名单要尽量短:只有真正带 prompt 正文的模块在里面。
+[tool.ruff.lint.per-file-ignores]
+"app/services/text2sql/template.py" = ["E501"]
+"app/services/text2sql/params.py" = ["E501"]
+"app/services/text2sql/rewrite.py" = ["E501"]
+"app/services/text2sql/questions.py" = ["E501"]
 
 [dependency-groups]
 dev = [

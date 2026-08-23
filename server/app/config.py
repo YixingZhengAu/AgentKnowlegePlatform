@@ -72,14 +72,30 @@ class Settings(BaseSettings):
 
     # ===== 数据库 =====
     database_url: str
+    # 演示业务库(智能问数的查询目标)的只读连接串。它**不是**本系统的 engine:
+    # 业务库是独立的 MySQL 实例,由 datasources 表按行管理(密文存 dsn_enc)。
+    # 这里的值只作"演示数据源"的出厂配置 —— seed 时加密写进那张表。
     biz_database_url: str | None = None
+    # 问数执行闸:单次查询的读超时与返回行上限(B6 实测定稿,改前先跑 S3 评测集)
+    text2sql_query_timeout_sec: int = 15
+    text2sql_max_rows: int = 500
 
-    @field_validator("database_url", "biz_database_url")
+    @field_validator("database_url")
     @classmethod
-    def _must_be_async_driver(cls, v: str | None) -> str | None:
+    def _must_be_async_driver(cls, v: str) -> str:
         """全链路 async,driver 写错会在第一次查询才炸,这里提前拦住。"""
-        if v and "+asyncpg" not in v:
+        if "+asyncpg" not in v:
             raise ValueError("DATABASE_URL 必须使用 asyncpg 驱动,如 postgresql+asyncpg://...")
+        return v
+
+    @field_validator("biz_database_url")
+    @classmethod
+    def _biz_must_be_mysql(cls, v: str | None) -> str | None:
+        """演示业务库是 MySQL(理由见 docker/architect.md)。执行走同步 pymysql +
+        线程池:问数查询是"一条 SELECT、强制 LIMIT、15s 超时",为它拉一个异步 MySQL
+        驱动进来,换到的是一条与 Phase B 实测路径不同的执行链 —— 不值当。"""
+        if v and not v.startswith("mysql+pymysql://"):
+            raise ValueError("BIZ_DATABASE_URL 必须是 mysql+pymysql://...(演示业务库是 MySQL 8.4)")
         return v
 
     @property

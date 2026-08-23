@@ -582,6 +582,511 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/text2sql/datasources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Datasources */
+        get: operations["list_datasources_api_text2sql_datasources_get"];
+        put?: never;
+        /**
+         * Create Datasource
+         * @description 新建数据源。连接串在这里被加密,**明文不再出现在任何地方**。
+         */
+        post: operations["create_datasource_api_text2sql_datasources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/datasources/{datasource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Datasource */
+        get: operations["get_datasource_api_text2sql_datasources__datasource_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Datasource
+         * @description 删一个数据源(级联带走它的语义层:表/列/join)。
+         *
+         *     **挂着意图的数据源不许删**(409):意图的模板 SQL 是这个库的表名与方言写的,
+         *     删了数据源那些模板就再也跑不起来,而它们可能已经被历史消息的引用指过。
+         *     要清掉这类数据源,先把它的意图逐条下线并删掉 —— 那是个显式动作,
+         *     不该由"删数据源"顺手替人做。
+         *
+         *     这是给演示现场准备的:填错连接、接错库能自己清掉,不用去翻数据库。
+         */
+        delete: operations["delete_datasource_api_text2sql_datasources__datasource_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Datasource
+         * @description 改数据源。传了 `conn` 就是整套换掉(口令不可能"部分更新")。
+         */
+        patch: operations["update_datasource_api_text2sql_datasources__datasource_id__patch"];
+        trace?: never;
+    };
+    "/api/text2sql/datasources/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test New Connection
+         * @description 测一套**还没保存**的连接要素(D1 的"先测再存")。
+         *
+         *     连不上返回 `ok=false` 而不是 4xx:连不上是这个接口要报告的**业务结果**,
+         *     不是调用方用错了接口。前端据此在表单上显示红字,不用去解析错误码。
+         */
+        post: operations["test_new_connection_api_text2sql_datasources_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/datasources/{datasource_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Datasource
+         * @description 测一个已保存的数据源。**不查 readonly_confirmed** —— 测连正是确认它的手段。
+         */
+        post: operations["test_datasource_api_text2sql_datasources__datasource_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/datasources/{datasource_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync Schema
+         * @description 同步库表结构(`t2s_sync_schema`)。零 LLM,随时可重跑 —— 库变了就该跑一次。
+         *
+         *     **只覆盖物理事实**(类型/注释/采样/枚举/join),治理字段(description/enabled/
+         *     is_sensitive)一个字都不碰。所以"同步会不会把我改的描述冲掉"的答案是:不会。
+         */
+        post: operations["sync_schema_api_text2sql_datasources__datasource_id__sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/datasources/{datasource_id}/describe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Describe Schema
+         * @description 批量写表/列描述(`t2s_describe`)。**每张启用的表一次 gpt-5**,所以走 Job。
+         */
+        post: operations["describe_schema_api_text2sql_datasources__datasource_id__describe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/datasources/{datasource_id}/intents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Intents
+         * @description 批量提意图候选(`t2s_intents`)→ 审核台。终态 `review`,等人采纳。
+         *
+         *     再点一次就是**追加生成**:已有意图的 one-liner 会被喂回 prompt 要求避重
+         *     (在源头防重复,比事后判重便宜 —— 判重只能告诉你钱已经花了)。
+         */
+        post: operations["generate_intents_api_text2sql_datasources__datasource_id__intents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/datasources/{datasource_id}/schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Schema
+         * @description 治理页一次拿全:数据源 + 表(含列、采样值、枚举字典)+ join 提示。
+         *
+         *     **停用的表列也返回** —— 治理页要能把它们勾回来。运行时的语义层才按 enabled 过滤
+         *     (`semantic.load_layer`),那是同一个开关的另一端。
+         */
+        get: operations["get_schema_api_text2sql_datasources__datasource_id__schema_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/tables/{table_meta_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Table
+         * @description 按表保存(D2 的 Save):表级字段 + 若干列,**一个事务**。
+         *
+         *     整表一次提交而不是逐格 PATCH:审描述是"看完一张表再存"的动作,逐格保存会把
+         *     一次人工评审拆成几十个请求,中途失败还会留下半改的表。
+         */
+        put: operations["save_table_api_text2sql_tables__table_meta_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/tables/{table_meta_id}/describe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Describe Table
+         * @description 单点 AI 生成一张表的描述,**同步返回建议、不落库**(人确认后走 `PUT /tables/{id}`)。
+         *
+         *     ★ 为什么单列的"AI 按钮"也要整表生成:评审过的 prompt 是**表级**的 ——
+         *     它靠同表其他列、join 关系和采样值一起判断一列是什么。只喂一列会得到更差的描述,
+         *     而那就不再是 B2 验收过的那个 prompt 了。前端拿到整表建议,回填哪一格由它决定。
+         */
+        post: operations["describe_table_api_text2sql_tables__table_meta_id__describe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Intents */
+        get: operations["list_intents_api_text2sql_intents_get"];
+        put?: never;
+        /**
+         * Create Intent
+         * @description 手工新建一个意图(D3 的"手工新建")。建出来是 **draft** —— 和采纳候选一样,
+         *     "这类问题值得做成模板"和"这条模板我验收了"是两件事。
+         */
+        post: operations["create_intent_api_text2sql_intents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Intent */
+        get: operations["get_intent_api_text2sql_intents__intent_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Intent
+         * @description 删一个**草稿**意图(手工建错、采纳错了都用它)。
+         *
+         *     已发布/已下线的不许删(409):它们可能被 `message_citations.ref_id` 指过,
+         *     删了历史消息的引用就悬空 —— 与 S1 同一条纪律,下线用 `POST …/disable`。
+         *
+         *     如果它是从候选采纳来的,这里会把那条候选的"已发布"标记撤掉,
+         *     让它重新出现在审核台上 —— 那才是"采纳"的真正逆操作,不然会留下一条
+         *     指向不存在意图的候选。
+         */
+        delete: operations["delete_intent_api_text2sql_intents__intent_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Intent
+         * @description 就地编辑(含直接改 SQL 与参数区)。
+         *
+         *     ★ **已发布的意图改了 SQL/参数区,不会自动重新发布** —— 索引面挂的是问法与摘要,
+         *     改 SQL 不影响检索,但改完必须自己 Run 一遍再点发布。改摘要会影响检索,
+         *     所以那一路会重建索引面(见下)。
+         */
+        patch: operations["update_intent_api_text2sql_intents__intent_id__patch"];
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Template
+         * @description ★ 生成 SQL 模板 + 参数区,**同步返回**(一次意图一次,慢且贵:gpt-5 数次调用)。
+         *
+         *     走完的是 B4 + B5 的完整链路,一步都没省:
+         *     生成 → 9 条确定性静态校验 → **真库试执行** → 报错回灌自修 ≤2 轮 → AST 拆三区参数
+         *     → AI 预填 business_name/hint → 校验回灌 ≤2 轮。所以它返回时,这条 SQL 已经在真库上
+         *     跑出过非空结果 —— `trial_*` 就是那一次的结果,不是前端另外发起的。
+         *
+         *     覆盖已有的 SQL:重生成会**整条替换** sql 与 params(人工改过的 hint 也会没)。
+         *     这是"重新生成"的应有语义,前端要在按钮上说清楚。
+         */
+        post: operations["generate_template_api_text2sql_intents__intent_id__template_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}/parse-params": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse Params
+         * @description 按当前 SQL 重解析参数区(D4:改完 SQL 参数区要跟着变)。**纯代码,零 LLM。**
+         *
+         *     按 `param_id` 保住人写过的 business_name/hint —— 改一处 WHERE 值不该让整页注释重写。
+         *     对不上的参数(列换了、谓词删了)就是新的,注释留空等 AI 预填或人手写。
+         */
+        post: operations["parse_params_api_text2sql_intents__intent_id__parse_params_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Template
+         * @description ★ 试跑一条 SQL。走的是**运行时那一道执行闸**,不是另开一条通路。
+         *
+         *     所以"Run 过了"含义明确:它在运行时不会因为闸(非单条 SELECT / 表列不在语义层白名单 /
+         *     LIMIT 超限 / 超时)而失败。被闸拒或 SQL 报错都返回 `ok=false` + 原因 ——
+         *     在编辑器里改 SQL 本来就会写错,那是**这个接口要报告的结果**,不是接口调用错误。
+         */
+        post: operations["run_template_api_text2sql_intents__intent_id__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish Intent
+         * @description 发布:校验 → `status=published` → 重建索引面(意图的 + 本 kb 的空路由面)。
+         *
+         *     一个事务。**向量写失败状态就不该改** —— 否则会留下一个"已发布但检索不到"的意图,
+         *     而这种半残状态在界面上完全看不出来。
+         */
+        post: operations["publish_intent_api_text2sql_intents__intent_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable Intent
+         * @description 下线:`status=disabled` + 删索引面。正式行留着 —— 它可能被历史消息的引用指过。
+         */
+        post: operations["disable_intent_api_text2sql_intents__intent_id__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Questions */
+        get: operations["list_questions_api_text2sql_intents__intent_id__questions_get"];
+        /**
+         * Save Questions
+         * @description 整组替换 + **保存即重建索引面**(意图已发布时)。
+         *
+         *     不做逐条 diff:向量挂在 `intent_vectors` 而不是问法行上,正是为了不必处理
+         *     "改一条、删一条、又加回来"的组合(见 `models/text2sql.py` 的 IntentQuestion 注释)。
+         */
+        put: operations["save_questions_api_text2sql_intents__intent_id__questions_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/intents/{intent_id}/questions/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Questions
+         * @description AI 生成相似问法**建议**(未落库,人在页面上增删改后走 `PUT`)。
+         *
+         *     两件不能省的事:
+         *     * **喂真实取值**(`value_book`):B7 首轮没喂时,模型编出了 Perth/Adelaide 仓库和
+         *       不存在的客户与产品 —— 相似问法是会进演示、会被人审的资产,编造值既误导审阅者,
+         *       也教会路由器一堆库里没有的说法;
+         *     * **跨意图文本冲突过滤**:撞上别的意图的摘要或已存问法的那句被丢掉并给出理由
+         *       (`dropped`),不是静默扔掉 —— 界面要能解释"为什么只留下 6 条"。
+         */
+        post: operations["generate_questions_api_text2sql_intents__intent_id__questions_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/non-data-faces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Non Data Faces */
+        get: operations["list_non_data_faces_api_text2sql_non_data_faces_get"];
+        /**
+         * Save Non Data Faces
+         * @description 整组替换本 kb 的空路由负例面,保存即重建向量。
+         *
+         *     ★ **这不是可选的调优项**:非问数问题是靠"索引里有更像的负例"拦下的,靠阈值拦不住
+         *     (B8 实测:质保题以 0.5183 确信命中库存意图,而应命中类最低分 0.4981 ——
+         *     抬阈值必先误杀真正例)。清空这一组等于关掉空路由,所以清空会返回 `indexed=0`
+         *     并在服务端日志里留一条 warning。
+         */
+        put: operations["save_non_data_faces_api_text2sql_non_data_faces_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/text2sql/index-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Index Stats
+         * @description 索引体检:各类面各有多少。`summary + question + non_data` 就是检索的全部输入。
+         */
+        get: operations["index_stats_api_text2sql_index_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -757,6 +1262,78 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** ColumnMetaOut */
+        ColumnMetaOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Column Name */
+            column_name: string;
+            /** Ordinal */
+            ordinal?: number | null;
+            /** Data Type */
+            data_type?: string | null;
+            /** Is Nullable */
+            is_nullable: boolean;
+            /** Key Flag */
+            key_flag?: string | null;
+            /** Physical Comment */
+            physical_comment?: string | null;
+            /** Display Name */
+            display_name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Is Sensitive */
+            is_sensitive: boolean;
+            /** Distinct Count */
+            distinct_count?: number | null;
+            /** Is Enum Like */
+            is_enum_like: boolean;
+            /** Enum Values */
+            enum_values?: components["schemas"]["EnumValueOut"][] | null;
+            /** Sample Values */
+            sample_values?: string[] | null;
+            /** Enabled */
+            enabled: boolean;
+        };
+        /**
+         * ColumnPatch
+         * @description 按表保存时的一列。只有出现在请求里的字段会被写。
+         */
+        ColumnPatch: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Display Name */
+            display_name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Is Sensitive */
+            is_sensitive?: boolean | null;
+            /** Enabled */
+            enabled?: boolean | null;
+        };
+        /** ColumnSuggestion */
+        ColumnSuggestion: {
+            /** Column Name */
+            column_name: string;
+            /**
+             * Display Name
+             * @default
+             */
+            display_name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Enum Values */
+            enum_values?: components["schemas"]["EnumValueOut"][] | null;
+        };
         /** ConfirmExtractResult */
         ConfirmExtractResult: {
             /**
@@ -793,6 +1370,199 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * DatasourceConnIn
+         * @description 连接要素。**这是全项目唯一接收数据库口令的地方**,它只会被加密后落库。
+         */
+        DatasourceConnIn: {
+            /** Host */
+            host: string;
+            /**
+             * Port
+             * @default 3306
+             */
+            port: number;
+            /** Database */
+            database: string;
+            /** User */
+            user: string;
+            /**
+             * Password
+             * @default
+             */
+            password: string;
+        };
+        /** DatasourceCreate */
+        DatasourceCreate: {
+            /** Name */
+            name: string;
+            conn: components["schemas"]["DatasourceConnIn"];
+            /** Kb Id */
+            kb_id?: string | null;
+            /**
+             * Db Type
+             * @default mysql
+             * @constant
+             */
+            db_type: "mysql";
+            /**
+             * Readonly Confirmed
+             * @default false
+             */
+            readonly_confirmed: boolean;
+        };
+        /** DatasourceOut */
+        DatasourceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Name */
+            name: string;
+            /** Db Type */
+            db_type: string;
+            /** Status */
+            status: string;
+            /** Readonly Confirmed */
+            readonly_confirmed: boolean;
+            /** Host */
+            host: string;
+            /** Port */
+            port: number;
+            /** Database */
+            database: string;
+            /** User */
+            user: string;
+            /** Last Synced At */
+            last_synced_at?: string | null;
+            /**
+             * Tables
+             * @default 0
+             */
+            tables: number;
+            /**
+             * Enabled Tables
+             * @default 0
+             */
+            enabled_tables: number;
+            /**
+             * Described Tables
+             * @default 0
+             */
+            described_tables: number;
+            /**
+             * Published Intents
+             * @default 0
+             */
+            published_intents: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * DatasourceUpdate
+         * @description 全字段可选:只改名、只换口令、只翻开关都是合法请求。
+         */
+        DatasourceUpdate: {
+            /** Name */
+            name?: string | null;
+            conn?: components["schemas"]["DatasourceConnIn"] | null;
+            /** Readonly Confirmed */
+            readonly_confirmed?: boolean | null;
+            /** Status */
+            status?: ("active" | "disabled") | null;
+        };
+        /**
+         * DescribeRequest
+         * @description 批量写描述。`fill` 只填空缺(人写的注释逐字保留),`rewrite` 全量重写。
+         */
+        DescribeRequest: {
+            /**
+             * Mode
+             * @default fill
+             * @enum {string}
+             */
+            mode: "fill" | "rewrite";
+            /** Tables */
+            tables?: string[] | null;
+        };
+        /**
+         * DescribeSuggestion
+         * @description 单点 AI 生成的**建议**,没有落库 —— 人在页面上确认后才走保存接口。
+         */
+        DescribeSuggestion: {
+            /** Table Name */
+            table_name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Columns
+             * @default []
+             */
+            columns: components["schemas"]["ColumnSuggestion"][];
+        };
+        /**
+         * DesignFilter
+         * @description 模板里写死的一个默认过滤条件。`why` 是它凭什么被写死 —— 评审就看这一句。
+         */
+        DesignFilter: {
+            /**
+             * Column
+             * @default
+             */
+            column: string;
+            /**
+             * Operator
+             * @default
+             */
+            operator: string;
+            /**
+             * Value
+             * @default
+             */
+            value: string;
+            /**
+             * Why
+             * @default
+             */
+            why: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * DesignMeasure
+         * @description 一个度量的表达式与口径。
+         */
+        DesignMeasure: {
+            /**
+             * Expr
+             * @default
+             */
+            expr: string;
+            /**
+             * Meaning
+             * @default
+             */
+            meaning: string;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * DocumentFunnel
@@ -880,6 +1650,16 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * EnumValueOut
+         * @description 枚举字典的一项。改写阶段真正需要的是"值 → 含义",裸 string 给不了这个。
+         */
+        EnumValueOut: {
+            /** Value */
+            value: string;
+            /** Meaning */
+            meaning?: string | null;
         };
         /** ExactQaItemDetail */
         ExactQaItemDetail: {
@@ -973,6 +1753,16 @@ export interface components {
              */
             updated_at: string;
         };
+        /** GenerateIntentsRequest */
+        GenerateIntentsRequest: {
+            /**
+             * Count
+             * @default 10
+             */
+            count: number;
+            /** Tables */
+            tables?: string[] | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -990,6 +1780,140 @@ export interface components {
             database_error?: string | null;
             /** Embedding Dim */
             embedding_dim: number;
+        };
+        /**
+         * IndexStats
+         * @description 索引体检:各类面各有多少。`summary + question + non_data` 就是检索的全部输入。
+         */
+        IndexStats: {
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /**
+             * Summary
+             * @default 0
+             */
+            summary: number;
+            /**
+             * Question
+             * @default 0
+             */
+            question: number;
+            /**
+             * Non Data
+             * @default 0
+             */
+            non_data: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Published Intents
+             * @default 0
+             */
+            published_intents: number;
+        };
+        /**
+         * IntentCreate
+         * @description 手工新建一个意图(D3 的"手工新建")。建出来是 draft,SQL 与参数区随后再做。
+         */
+        IntentCreate: {
+            /**
+             * Intent Type
+             * @enum {string}
+             */
+            intent_type: "query" | "stats";
+            /** One Liner */
+            one_liner: string;
+            /** Brief */
+            brief: string;
+            /** Tables */
+            tables: string[];
+            /** Bucket */
+            bucket?: string | null;
+            /** Kb Id */
+            kb_id?: string | null;
+            /** Datasource Id */
+            datasource_id?: string | null;
+        };
+        /**
+         * IntentParams
+         * @description 三区参数 = **运行时权力的完整清单**。字段级定义见 DB-DESIGN §4.8。
+         */
+        IntentParams: {
+            /**
+             * Filters
+             * @default []
+             */
+            filters: components["schemas"]["ParamFilter"][];
+            /**
+             * Outputs
+             * @default []
+             */
+            outputs: components["schemas"]["ParamOutput"][];
+            /**
+             * Groupbys
+             * @default []
+             */
+            groupbys: components["schemas"]["ParamGroupBy"][];
+        };
+        /** IntentPublishResult */
+        IntentPublishResult: {
+            /**
+             * Intent Id
+             * Format: uuid
+             */
+            intent_id: string;
+            /** Code */
+            code: string;
+            /** Status */
+            status: string;
+            /**
+             * Faces
+             * @default 0
+             */
+            faces: number;
+            /**
+             * Non Data Faces
+             * @default 0
+             */
+            non_data_faces: number;
+        };
+        /** IntentQuestionOut */
+        IntentQuestionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question Text */
+            question_text: string;
+            /** Origin */
+            origin: string;
+        };
+        /**
+         * IntentUpdate
+         * @description 就地编辑。**任何一次带内容的 PATCH 都会把 `human_edited` 置 true** ——
+         *     "这条被人改过"是评审材料里必须留的痕。
+         */
+        IntentUpdate: {
+            /** Intent Type */
+            intent_type?: ("query" | "stats") | null;
+            /** One Liner */
+            one_liner?: string | null;
+            /** Brief */
+            brief?: string | null;
+            /** Tables */
+            tables?: string[] | null;
+            /** Bucket */
+            bucket?: string | null;
+            /** Sql */
+            sql?: string | null;
+            params?: components["schemas"]["IntentParams"] | null;
         };
         /** JobOut */
         JobOut: {
@@ -1044,6 +1968,19 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * JobStarted
+         * @description 派发了一个后台 Job。进度轮询走 `GET /api/jobs/{id}`(S0 的通用接口)。
+         */
+        JobStarted: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Job Type */
+            job_type: string;
         };
         /** JobSubmitRequest */
         JobSubmitRequest: {
@@ -1104,6 +2041,13 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ListResponse[DatasourceOut] */
+        ListResponse_DatasourceOut_: {
+            /** Items */
+            items: components["schemas"]["DatasourceOut"][];
+            /** Total */
+            total: number;
+        };
         /** ListResponse[DocumentOut] */
         ListResponse_DocumentOut_: {
             /** Items */
@@ -1115,6 +2059,13 @@ export interface components {
         ListResponse_ExactQaItemOut_: {
             /** Items */
             items: components["schemas"]["ExactQaItemOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[IntentQuestionOut] */
+        ListResponse_IntentQuestionOut_: {
+            /** Items */
+            items: components["schemas"]["IntentQuestionOut"][];
             /** Total */
             total: number;
         };
@@ -1136,6 +2087,20 @@ export interface components {
         ListResponse_MessageOut_: {
             /** Items */
             items: components["schemas"]["MessageOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[NonDataFaceOut] */
+        ListResponse_NonDataFaceOut_: {
+            /** Items */
+            items: components["schemas"]["NonDataFaceOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[SqlIntentOut] */
+        ListResponse_SqlIntentOut_: {
+            /** Items */
+            items: components["schemas"]["SqlIntentOut"][];
             /** Total */
             total: number;
         };
@@ -1216,6 +2181,46 @@ export interface components {
              */
             verified: boolean;
         };
+        /** NonDataFaceOut */
+        NonDataFaceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /** Face Text */
+            face_text: string;
+            /** Origin */
+            origin: string;
+            /** Enabled */
+            enabled: boolean;
+        };
+        /**
+         * NonDataFacesSave
+         * @description 整组替换本 kb 的负例面,保存即重建。
+         *
+         *     ★ 这不是"可选的调优项":非问数问题靠"索引里有更像的负例"拦下,靠阈值拦不住
+         *     (B8 实测,见 `services/text2sql/architect.md` §4)。清空它等于关掉空路由。
+         */
+        NonDataFacesSave: {
+            /** Faces */
+            faces: string[];
+        };
+        /** NonDataFacesSaveResult */
+        NonDataFacesSaveResult: {
+            /** Faces */
+            faces: components["schemas"]["NonDataFaceOut"][];
+            /**
+             * Indexed
+             * @default 0
+             */
+            indexed: number;
+        };
         /**
          * OriginRef
          * @description 原文出处,整体存 `staging_items.origin_ref`(jsonb)。
@@ -1247,6 +2252,105 @@ export interface components {
             width_pt: number;
             /** Height Pt */
             height_pt: number;
+        };
+        /**
+         * ParamFilter
+         * @description WHERE 的一个可改值参数。运行时只能改 `default_value` 或禁用它。
+         */
+        ParamFilter: {
+            /** Param Id */
+            param_id: string;
+            /** Source */
+            source: string;
+            /** Operator */
+            operator: string;
+            /** Value Type */
+            value_type: string;
+            /** Value Shape */
+            value_shape: string;
+            /** Default Value */
+            default_value?: unknown;
+            /**
+             * Predicate Sql
+             * @default
+             */
+            predicate_sql: string;
+            /**
+             * Business Name
+             * @default
+             */
+            business_name: string;
+            /**
+             * Hint
+             * @default
+             */
+            hint: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ParamGroupBy
+         * @description 一个分组维度。减掉它时 `linked_output` 那一列必须同时减(应用器强制)。
+         */
+        ParamGroupBy: {
+            /** Param Id */
+            param_id: string;
+            /** Expr */
+            expr: string;
+            /** Source */
+            source?: string | null;
+            /** Linked Output */
+            linked_output?: string | null;
+            /**
+             * Business Name
+             * @default
+             */
+            business_name: string;
+            /**
+             * Hint
+             * @default
+             */
+            hint: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ParamOutput
+         * @description 一个输出列。运行时只能减,不能加、不能改表达式。
+         */
+        ParamOutput: {
+            /** Param Id */
+            param_id: string;
+            /** Expr */
+            expr: string;
+            /** Alias */
+            alias: string;
+            /** Source */
+            source?: string | null;
+            /**
+             * Business Name
+             * @default
+             */
+            business_name: string;
+            /**
+             * Hint
+             * @default
+             */
+            hint: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ParseParamsResult
+         * @description 按当前 SQL 重解析参数区。`kept_annotations` = 按 param_id 保住的 业务名/hint 条数。
+         */
+        ParseParamsResult: {
+            params: components["schemas"]["IntentParams"];
+            /**
+             * Kept Annotations
+             * @default 0
+             */
+            kept_annotations: number;
         };
         /**
          * ParseStats
@@ -1329,12 +2433,73 @@ export interface components {
             created_at: string;
         };
         /**
+         * QuestionsGenerated
+         * @description AI 生成的相似问法**建议**(未落库)。`dropped` 是被跨意图冲突过滤掉的。
+         */
+        QuestionsGenerated: {
+            /**
+             * Questions
+             * @default []
+             */
+            questions: string[];
+            /**
+             * Dropped
+             * @default []
+             */
+            dropped: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * QuestionsSave
+         * @description 整组替换(不做逐条 diff)。已发布的意图保存后立即重建索引面。
+         */
+        QuestionsSave: {
+            /** Questions */
+            questions: string[];
+        };
+        /** QuestionsSaveResult */
+        QuestionsSaveResult: {
+            /** Questions */
+            questions: components["schemas"]["IntentQuestionOut"][];
+            /**
+             * Faces
+             * @default 0
+             */
+            faces: number;
+        };
+        /**
          * RejectRequest
          * @description 不采纳必须填理由:它是下一轮调 prompt 的原始素材。
          */
         RejectRequest: {
             /** Note */
             note: string;
+        };
+        /**
+         * RelationOut
+         * @description join 提示。`source` 必须能一眼分开真 FK 与命名启发式猜的 —— 可信度不同。
+         */
+        RelationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** From Table */
+            from_table: string;
+            /** From Column */
+            from_column: string;
+            /** To Table */
+            to_table: string;
+            /** To Column */
+            to_column: string;
+            /** Relation Type */
+            relation_type?: string | null;
+            /** Source */
+            source: string;
+            /** Description */
+            description?: string | null;
         };
         /**
          * ReviewTextOut
@@ -1376,6 +2541,216 @@ export interface components {
         ReviewTextUpdate: {
             /** Text */
             text: string;
+        };
+        /**
+         * RunRequest
+         * @description 在意图详情页试跑一条 SQL。不传 sql 就跑意图当前存着的那条。
+         */
+        RunRequest: {
+            /** Sql */
+            sql?: string | null;
+        };
+        /**
+         * RunResult
+         * @description ★ Run 走的是**运行时那一道执行闸**(单条 SELECT / 白名单 / 强制 LIMIT / 超时)。
+         *
+         *     所以"Run 过了"这件事的含义是明确的:它在运行时不会因为闸而失败。
+         *     `sql_executed` 是闸改写后真正发给数据库的那条(LIMIT 可能被它压过)。
+         */
+        RunResult: {
+            /** Ok */
+            ok: boolean;
+            /** Sql Executed */
+            sql_executed?: string | null;
+            /**
+             * Cols
+             * @default []
+             */
+            cols: string[];
+            /**
+             * Rowcount
+             * @default 0
+             */
+            rowcount: number;
+            /**
+             * Rows
+             * @default []
+             */
+            rows: unknown[][];
+            /**
+             * Flags
+             * @default []
+             */
+            flags: string[];
+            /** Error */
+            error?: string | null;
+        };
+        /**
+         * SchemaOut
+         * @description Schema 治理页一次拿全:数据源 + 表(含列)+ join。
+         */
+        SchemaOut: {
+            datasource: components["schemas"]["DatasourceOut"];
+            /** Tables */
+            tables: components["schemas"]["TableDetailOut"][];
+            /** Relations */
+            relations: components["schemas"]["RelationOut"][];
+        };
+        /** SqlIntentDetail */
+        SqlIntentDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /**
+             * Datasource Id
+             * Format: uuid
+             */
+            datasource_id: string;
+            /** Code */
+            code: string;
+            /** Intent Type */
+            intent_type: string;
+            /** Bucket */
+            bucket?: string | null;
+            /** One Liner */
+            one_liner: string;
+            /** Brief */
+            brief: string;
+            /**
+             * Tables
+             * @default []
+             */
+            tables: string[];
+            /** Status */
+            status: string;
+            /** Human Edited */
+            human_edited: boolean;
+            /** Prefill Rounds */
+            prefill_rounds: number;
+            /** Published At */
+            published_at?: string | null;
+            /** Source Staging Id */
+            source_staging_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Question Count
+             * @default 0
+             */
+            question_count: number;
+            /**
+             * Face Count
+             * @default 0
+             */
+            face_count: number;
+            /**
+             * Has Sql
+             * @default false
+             */
+            has_sql: boolean;
+            /** Sql */
+            sql?: string | null;
+            /**
+             * @default {
+             *       "filters": [],
+             *       "outputs": [],
+             *       "groupbys": []
+             *     }
+             */
+            params: components["schemas"]["IntentParams"];
+            /**
+             * Questions
+             * @default []
+             */
+            questions: components["schemas"]["IntentQuestionOut"][];
+            /**
+             * Publish Blockers
+             * @default []
+             */
+            publish_blockers: string[];
+        };
+        /** SqlIntentOut */
+        SqlIntentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kb Id
+             * Format: uuid
+             */
+            kb_id: string;
+            /**
+             * Datasource Id
+             * Format: uuid
+             */
+            datasource_id: string;
+            /** Code */
+            code: string;
+            /** Intent Type */
+            intent_type: string;
+            /** Bucket */
+            bucket?: string | null;
+            /** One Liner */
+            one_liner: string;
+            /** Brief */
+            brief: string;
+            /**
+             * Tables
+             * @default []
+             */
+            tables: string[];
+            /** Status */
+            status: string;
+            /** Human Edited */
+            human_edited: boolean;
+            /** Prefill Rounds */
+            prefill_rounds: number;
+            /** Published At */
+            published_at?: string | null;
+            /** Source Staging Id */
+            source_staging_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Question Count
+             * @default 0
+             */
+            question_count: number;
+            /**
+             * Face Count
+             * @default 0
+             */
+            face_count: number;
+            /**
+             * Has Sql
+             * @default false
+             */
+            has_sql: boolean;
         };
         /**
          * StagingBulkRequest
@@ -1481,6 +2856,139 @@ export interface components {
             modified: number;
             /** Published */
             published: number;
+        };
+        /** TableDetailOut */
+        TableDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Datasource Id
+             * Format: uuid
+             */
+            datasource_id: string;
+            /** Schema Name */
+            schema_name: string;
+            /** Table Name */
+            table_name: string;
+            /** Display Name */
+            display_name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Physical Comment */
+            physical_comment?: string | null;
+            /** Enabled */
+            enabled: boolean;
+            /** Row Count Estimate */
+            row_count_estimate?: number | null;
+            /**
+             * Column Count
+             * @default 0
+             */
+            column_count: number;
+            /**
+             * Described Columns
+             * @default 0
+             */
+            described_columns: number;
+            /**
+             * Columns
+             * @default []
+             */
+            columns: components["schemas"]["ColumnMetaOut"][];
+        };
+        /**
+         * TableSave
+         * @description 按表保存(D2 的 Save 按钮):表级字段 + 若干列,一个事务。
+         */
+        TableSave: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /**
+             * Columns
+             * @default []
+             */
+            columns: components["schemas"]["ColumnPatch"][];
+        };
+        /**
+         * TemplateDesign
+         * @description ★ 生成器的结构化设计说明:join 路径 / 度量口径 / 分组维度 / 默认过滤及其理由。
+         *
+         *     它是**评审材料**,不是给用户看的提示文案 —— 形状由 `template.py` 的
+         *     结构化输出 schema 冻结(那边 measures/group_by_dims 允许 null),所以这里逐项可空。
+         */
+        TemplateDesign: {
+            /** Join Path */
+            join_path?: string | null;
+            /** Measures */
+            measures?: components["schemas"]["DesignMeasure"][] | null;
+            /** Group By Dims */
+            group_by_dims?: string[] | null;
+            /** Default Filters */
+            default_filters?: components["schemas"]["DesignFilter"][] | null;
+            /** Caliber Notes */
+            caliber_notes?: string[] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * TemplateResult
+         * @description AI 生成模板的返回:SQL + 参数区 + **试执行结果**。
+         *
+         *     试执行不是附赠品:模板生成器的通过条件之一就是"在真库上跑得出非空结果",
+         *     所以这里返回的 trial 是它已经跑过的那一次,不是前端另外发起的。
+         */
+        TemplateResult: {
+            intent: components["schemas"]["SqlIntentDetail"];
+            /** @default {} */
+            design: components["schemas"]["TemplateDesign"];
+            /**
+             * Repair Rounds
+             * @default 0
+             */
+            repair_rounds: number;
+            /**
+             * Prefill Rounds
+             * @default 0
+             */
+            prefill_rounds: number;
+            /**
+             * Trial Cols
+             * @default []
+             */
+            trial_cols: string[];
+            /**
+             * Trial Rows
+             * @default []
+             */
+            trial_rows: unknown[][];
+            /**
+             * Trial Rowcount
+             * @default 0
+             */
+            trial_rowcount: number;
+        };
+        /**
+         * TestConnectionResult
+         * @description Test connection 的结果。失败也是 200 —— 连不上是**业务结果**,不是接口错误。
+         */
+        TestConnectionResult: {
+            /** Ok */
+            ok: boolean;
+            /** Target */
+            target: string;
+            /** Server Version */
+            server_version?: string | null;
+            /** Table Count */
+            table_count?: number | null;
+            /** Error */
+            error?: string | null;
         };
         /**
          * TraceOut
@@ -2623,6 +4131,946 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_datasources_api_text2sql_datasources_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_DatasourceOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_datasource_api_text2sql_datasources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_datasource_api_text2sql_datasources__datasource_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_datasource_api_text2sql_datasources__datasource_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_datasource_api_text2sql_datasources__datasource_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasourceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_new_connection_api_text2sql_datasources_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasourceConnIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestConnectionResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_datasource_api_text2sql_datasources__datasource_id__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestConnectionResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_schema_api_text2sql_datasources__datasource_id__sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    describe_schema_api_text2sql_datasources__datasource_id__describe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DescribeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_intents_api_text2sql_datasources__datasource_id__intents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateIntentsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_schema_api_text2sql_datasources__datasource_id__schema_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                datasource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_table_api_text2sql_tables__table_meta_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                table_meta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TableSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    describe_table_api_text2sql_tables__table_meta_id__describe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                table_meta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DescribeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DescribeSuggestion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_intents_api_text2sql_intents_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_SqlIntentOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_intent_api_text2sql_intents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SqlIntentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_intent_api_text2sql_intents__intent_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SqlIntentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_intent_api_text2sql_intents__intent_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_intent_api_text2sql_intents__intent_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SqlIntentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_template_api_text2sql_intents__intent_id__template_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_params_api_text2sql_intents__intent_id__parse_params_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseParamsResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_template_api_text2sql_intents__intent_id__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_intent_api_text2sql_intents__intent_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntentPublishResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_intent_api_text2sql_intents__intent_id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntentPublishResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_questions_api_text2sql_intents__intent_id__questions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_IntentQuestionOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_questions_api_text2sql_intents__intent_id__questions_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionsSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionsSaveResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_questions_api_text2sql_intents__intent_id__questions_generate_post: {
+        parameters: {
+            query?: {
+                n?: number;
+            };
+            header?: never;
+            path: {
+                intent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionsGenerated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_non_data_faces_api_text2sql_non_data_faces_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_NonDataFaceOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_non_data_faces_api_text2sql_non_data_faces_put: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NonDataFacesSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NonDataFacesSaveResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    index_stats_api_text2sql_index_stats_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexStats"];
                 };
             };
             /** @description Validation Error */

@@ -1,25 +1,42 @@
 # docker/architect.md
 
-## 一个实例两个库(U6 决策)
+## 两个数据库,两台实例
 
-| 库 | 用途 | 账号 |
-| --- | --- | --- |
-| `agent_system` | 本系统全部业务表 | `postgres` |
-| `clenergy_biz` | 演示业务库,智能问数的查询目标 | `biz_reader`(只读) |
+| 库 | 实例 | 用途 | 账号 |
+| --- | --- | --- | --- |
+| `agent_system` | `agent_system_pg`(PG 16 + pgvector,5432) | 本系统全部业务表 | `postgres` |
+| `clenergy_biz` | `agent_system_bizdb`(MySQL 8.4,**3307**) | 演示业务库,智能问数的查询目标 | `biz_reader`(只读) |
+
+**U6 决策在 S3 开工时被修正**:原本是"一个 PG 实例两个 database",现在业务库独立成 MySQL 容器。
+三个理由,按重要性排:
+
+1. 演示的主张是"接入客户已有的库",而客户库以 MySQL 为多。同构复用自家 PG 会把最值得展示的
+   那部分(方言差异、`information_schema` introspection)藏起来。
+2. MySQL 逼着 introspection 走 `information_schema` + `SELECT DISTINCT` 采样这条真实路径,
+   而不是 PG 的便捷目录视图 —— 枚举识别、列注释缺失、无外键的逻辑关联都在这条路上暴露出来。
+3. **隔离从 GRANT 变成物理隔离**:问数用的账号根本连不到系统库,不靠权限拧对。
 
 ## biz_reader 的权限边界
 
-init 脚本里做了三件事,S3 问数的"安全可控"就靠它:
+`mysql/init/01-users.sql` 只做一件事:`GRANT SELECT ON clenergy_biz.*`。没有 INSERT/UPDATE/
+DELETE/CREATE,也没有别的库的任何权限。运行时还有第二道闸(单条 SELECT、表列白名单、
+强制 LIMIT、读超时),在 `server/app/services/text2sql/executor.py`;
+数据库权限是最后一道,不是唯一一道。
 
-1. `GRANT SELECT ON ALL TABLES` + `ALTER DEFAULT PRIVILEGES ... GRANT SELECT`(未来建的表也只读)
-2. `REVOKE CREATE ON SCHEMA public`(不能建表)
-3. `REVOKE ALL ON DATABASE agent_system FROM PUBLIC`(**连不上系统库**)
-
-自检:
+自检(`make bizdb-verify` 里的最后一项就是它):
 ```bash
-docker exec -e PGPASSWORD=biz_reader agent_system_pg psql -U biz_reader -d clenergy_biz -c "create table t(id int);"   # 应报权限不足
-docker exec -e PGPASSWORD=biz_reader agent_system_pg psql -U biz_reader -d agent_system -c "select 1;"                  # 应报 CONNECT 权限不足
+docker exec agent_system_bizdb mysql -ubiz_reader -pbiz_reader clenergy_biz \
+  -e "INSERT INTO products (sku,name,series,category,unit_price,launch_date) VALUES ('x','x','x','x',1,'2024-01-01');"
+# 应报 ERROR 1142 (INSERT command denied)
 ```
+
+## 演示数据是生成的,不是手写的
+
+`mysql/gen_seed.py` → `mysql/init/03-seed.sql`(纯 stdlib、`seed=42`、锚点日期写死
+`2026-08-23`,任何机器重跑产出逐字节一致)。数据刻意有形状:24 个月每月有单、澳洲光伏旺季
+加权、州分布 NSW>VIC>QLD>SA>WA、约 6.4% cancelled、`orders.total_amount` 严格等于订单行聚合、
+`inventory.on_hand_qty` 严格等于流水净额且滚动余额任意时点不为负。
+**改了生成器要重跑它,再 `make bizdb-reset`** —— init 脚本只在数据卷首次创建时执行。
 
 ## MinerU 解析容器(S1)
 

@@ -1,0 +1,16 @@
+{
+  "intent_id": "i09",
+  "summary": "Top 10 customers by revenue (last 12 months)",
+  "questions": [
+    "Top 10 customers by revenue last 12 months",
+    "Can you list our top 10 customers by booked revenue for the last year, excluding cancelled orders?",
+    "Show the top 10 customers by total order value year to date.",
+    "Who were our 10 highest-revenue customers over the past 12 months?",
+    "Top 10 customers by sales revenue since Sep 2024.",
+    "Rank customers by total revenue for the last 365 days — top 10 only.",
+    "Give me the top 10 revenue customers for 2026 YTD, ignoring cancelled.",
+    "Top 10 customers by AUD revenue in the past year"
+  ],
+  "generated_at": "2026-08-23T18:50:18",
+  "human_edited": false
+}

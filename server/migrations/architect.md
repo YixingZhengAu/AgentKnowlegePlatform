@@ -7,6 +7,16 @@
   - 向量列维度用模块级 `EMBEDDING_DIM = settings.embedding_dim`,**不硬编码**
   - HNSW 索引通过 `postgresql_using='hnsw'` + `postgresql_ops={'embedding':'vector_cosine_ops'}` 落地
 
+- `s3a1b2c3d4e5` S3 智能问数:语义层重审 + 已验证意图四张新表(手写,没跑 autogenerate)
+  - 新建 `sql_intents` / `intent_questions` / `non_data_faces` / `intent_vectors`;
+    删除 `metrics` / `terms` / `rules` / `sql_examples`(理由见 DB-DESIGN §4.9,净数仍是 30 张)
+  - `intent_vectors.intent_id` **可空**(NULL = 空路由伪意图),配一条
+    `CHECK ((face_kind='non_data') = (intent_id IS NULL))` 防出现"挂在真意图上的负例面"
+  - 碰了共享表 `staging_items` 的 item_type CHECK(加 `sql_intent`,去掉 table_meta/metric/term)
+    —— 必要的契约变更,不是"顺手加自己需要的列"
+  - **upgrade / downgrade 双向都实测跑过**;downgrade 会按 initial 的定义重建那四张废弃表
+    (内容无法恢复,它们本来一直是空的)
+
 ## 改表流程(详见 DB-DESIGN §10)
 
 | 情形 | 改法 |

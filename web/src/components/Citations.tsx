@@ -6,16 +6,34 @@
  *
  * 徽标用知识类型的识别色(UI-STYLE §3:精准 QA = 黄),S2/S3 加新类型时在
  * `KB_TYPE_DOT` 里已经有色了,这里只按 `citation_type` 取。
+ *
+ * ★ **S3 加出来的一层**:有些引用天生不是"一句原文摘录" —— 问数命中要显示结果表格 +
+ * 可展开的最终 SQL。所以 `citation_type` 可以由各域在 `module.ts` 的 `citations` 里
+ * 登记自己的渲染器(与审核台渲染器同一套 manifest 模式),没登记的照旧走下面这条通路。
+ * 登记表**在渲染时才查**,不在模块顶层算:那会在 DOMAINS 初始化期间被求值
+ * (`domains/index.ts` 的循环依赖坑),拿到 undefined。
  */
 
 import { ChevronDown, Quote } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
 
 import { KB_TYPE_DOT, KB_TYPE_LABEL, type MessageCitation } from '@/api/schema'
+import { DOMAINS } from '@/domains'
 import { cn } from '@/lib/utils'
 
-/** 引用类型 → 知识类型(S1:exact_qa 引用来自 exact_qa 知识库)。 */
-const CITATION_KB: Record<string, string> = { exact_qa: 'exact_qa' }
+/** 引用类型 → 知识类型(S1:exact_qa 引用来自 exact_qa 知识库;S3:sql 来自 text2sql)。 */
+const CITATION_KB: Record<string, string> = { exact_qa: 'exact_qa', sql: 'text2sql' }
+
+/** 一个域给某个 `citation_type` 提供的渲染器:整条引用由它画(含展开态)。 */
+export type CitationRenderer = ComponentType<{ citation: MessageCitation }>
+
+function rendererFor(citationType: string): CitationRenderer | undefined {
+  for (const d of DOMAINS) {
+    const r = d.citations?.[citationType]
+    if (r) return r
+  }
+  return undefined
+}
 
 export function Citations({ items }: { items: MessageCitation[] }) {
   const [openSeq, setOpenSeq] = useState<number | null>(null)
@@ -24,6 +42,8 @@ export function Citations({ items }: { items: MessageCitation[] }) {
   return (
     <div className="mt-3.5 flex flex-col gap-1 border-t border-[var(--border)] pt-2.5">
       {items.map((c) => {
+        const Domain = rendererFor(c.citation_type)
+        if (Domain) return <Domain key={c.seq} citation={c} />
         const kb = CITATION_KB[c.citation_type] ?? c.citation_type
         const extra = c.extra ?? {}
         const open = openSeq === c.seq

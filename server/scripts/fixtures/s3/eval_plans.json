@@ -1,0 +1,612 @@
+{
+ "_comment": "Stored rewrite plans from the B8 gate run (2026-08-23). Used by smoke_s3_e2e.py --check to replay applier+gate+assertions with zero LLM calls.",
+ "plans": {
+  "E01": {
+   "intent_id": "i01",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_customer_name",
+     "o_order_number",
+     "o_order_date",
+     "o_order_status",
+     "o_order_total_aud"
+    ],
+    "filters": [
+     {
+      "param_id": "f_name",
+      "enabled": true,
+      "value": "%Boomerang Textiles Pty Ltd%"
+     },
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": [
+     "Using default start date 2025-08-23 since no specific date was requested.",
+     "“Latest” is satisfied by existing ORDER BY (most recent first) and LIMIT 50."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E02": {
+   "intent_id": "i02",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_order_number",
+     "o_product_sku",
+     "o_product_name",
+     "o_quantity",
+     "o_unit_sell_price_aud",
+     "o_line_amount_aud"
+    ],
+    "filters": [
+     {
+      "param_id": "f_order_no",
+      "enabled": true,
+      "value": "SO-2026-01270"
+     },
+     {
+      "param_id": "f_is_active",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": []
+   },
+   "outcome": "executed"
+  },
+  "E03": {
+   "intent_id": "i15",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_product_sku",
+     "o_product_name",
+     "o_warehouse_name",
+     "o_movement_date",
+     "o_movement_type",
+     "o_quantity_moved",
+     "o_balance_after",
+     "o_source_reference",
+     "o_movement_id"
+    ],
+    "filters": [
+     {
+      "param_id": "f_sku",
+      "enabled": true,
+      "value": "%HC-300%"
+     },
+     {
+      "param_id": "f_warehouse",
+      "enabled": true,
+      "value": "Brisbane"
+     },
+     {
+      "param_id": "f_movement_date_ge",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_movement_date_le",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": [
+     "Mapped SKU fragment to %HC-300%.",
+     "Warehouse set to Brisbane.",
+     "Kept default date range 2024-09-01 to 2026-08-23."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E04": {
+   "intent_id": "i07",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_month",
+     "o_total_revenue_aud"
+    ],
+    "filters": [
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": "2026-01-01"
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [
+     "g_month"
+    ],
+    "notes": [
+     "Interpreted \"since January 2026\" as start date 2026-01-01."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E05": {
+   "intent_id": "i16",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_year_month",
+     "o_warehouse_name",
+     "o_outbound_units"
+    ],
+    "filters": [
+     {
+      "param_id": "f_movement_date",
+      "enabled": true,
+      "value": [
+       "2026-02-23",
+       "2026-08-23"
+      ]
+     },
+     {
+      "param_id": "f_movement_type",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_warehouse",
+      "enabled": true,
+      "value": [
+       "Brisbane",
+       "Melbourne"
+      ]
+     }
+    ],
+    "groupbys_selected": [
+     "g_year_month",
+     "g_warehouse_name"
+    ],
+    "notes": [
+     "Resolved “last 6 months” to 2026-02-23 through 2026-08-23.",
+     "Warehouses limited to Brisbane and Melbourne."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E06": {
+   "intent_id": "i18",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_product_id",
+     "o_product_sku",
+     "o_product_name",
+     "o_total_outbound_units"
+    ],
+    "filters": [
+     {
+      "param_id": "f_movement_date",
+      "enabled": true,
+      "value": "2026-07-25"
+     },
+     {
+      "param_id": "f_movement_type",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_warehouse",
+      "enabled": true,
+      "value": [
+       "Sydney"
+      ]
+     }
+    ],
+    "groupbys_selected": [
+     "g_product_id",
+     "g_product_sku",
+     "g_product_name"
+    ],
+    "notes": [
+     "Resolved 'last 30 days' to start date 2026-07-25 (through 2026-08-23).",
+     "Limited to Sydney warehouse as requested."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E07": {
+   "intent_id": "i09",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_customer_id",
+     "o_customer_name",
+     "o_total_revenue_aud",
+     "o_most_recent_order_date"
+    ],
+    "filters": [
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": "2026-02-23"
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [
+     "g_customer_id",
+     "g_customer_name"
+    ],
+    "notes": [
+     "Resolved \"past 6 months\" to 2026-02-23 through 2026-08-23.",
+     "Top 10 customers by revenue per template; ties broken by most recent order date."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E08": {
+   "intent_id": "i02",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_product_name",
+     "o_quantity"
+    ],
+    "filters": [
+     {
+      "param_id": "f_order_no",
+      "enabled": true,
+      "value": "SO-2026-01281"
+     },
+     {
+      "param_id": "f_is_active",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": []
+   },
+   "outcome": "executed"
+  },
+  "E09": {
+   "intent_id": "i15",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_movement_date",
+     "o_quantity_moved"
+    ],
+    "filters": [
+     {
+      "param_id": "f_sku",
+      "enabled": true,
+      "value": "%INV-110K%"
+     },
+     {
+      "param_id": "f_warehouse",
+      "enabled": true,
+      "value": "Sydney"
+     },
+     {
+      "param_id": "f_movement_date_ge",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_movement_date_le",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": [
+     "Date range kept as default: 2024-09-01 to 2026-08-23"
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E10": {
+   "intent_id": "i01",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_order_number",
+     "o_order_total_aud"
+    ],
+    "filters": [
+     {
+      "param_id": "f_name",
+      "enabled": true,
+      "value": "%Pacific Dairy Co-op Pty Ltd%"
+     },
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": [
+     "Customer filter set to %Pacific Dairy Co-op Pty Ltd% (case-insensitive contains).",
+     "\"Recent\" interpreted as the template’s default start date 2025-08-23 (past 1 year up to 2026-08-23).",
+     "Statuses kept at default: completed, paid, pending, shipped."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E11": {
+   "intent_id": "i16",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_warehouse_name",
+     "o_outbound_units"
+    ],
+    "filters": [
+     {
+      "param_id": "f_movement_date",
+      "enabled": true,
+      "value": [
+       "2026-02-23",
+       "2026-08-23"
+      ]
+     },
+     {
+      "param_id": "f_movement_type",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_warehouse",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [
+     "g_warehouse_name"
+    ],
+    "notes": [
+     "Resolved 'last 6 months' to 2026-02-23 through 2026-08-23.",
+     "Removed monthly breakdown as requested (aggregated totals per warehouse)."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E12": {
+   "intent_id": "i18",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_product_sku",
+     "o_total_outbound_units"
+    ],
+    "filters": [
+     {
+      "param_id": "f_movement_date",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_movement_type",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_warehouse",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [
+     "g_product_sku"
+    ],
+    "notes": [
+     "Resolved last 90 days as start date 2026-05-25 (anchored at 2026-08-23).",
+     "Per request, only SKU and units shown; product_id and product_name removed.",
+     "Warehouses kept at default: Brisbane, Melbourne, Sydney."
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E13": {
+   "intent_id": "i07",
+   "plan": {
+    "feasible": true,
+    "outputs_selected": [
+     "o_total_revenue_aud"
+    ],
+    "filters": [
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": "2026-01-01"
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": [
+     "Interpreted \"since January 2026\" as start date 2026-01-01",
+     "Dropped monthly grouping to return a single total"
+    ]
+   },
+   "outcome": "executed"
+  },
+  "E14": {
+   "intent_id": "i07",
+   "plan": {
+    "feasible": false,
+    "outputs_selected": [
+     "o_month",
+     "o_total_revenue_aud"
+    ],
+    "filters": [
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [
+     "g_month"
+    ],
+    "notes": [
+     "Not feasible: Template has no product category column/group-by; cannot break down by category without adding a new dimension.",
+     "Kept default start date 2025-08-23; results cover available data through 2026-08-23.",
+     "Default exclusion of status = cancelled retained."
+    ]
+   },
+   "outcome": "refused_out_of_template"
+  },
+  "E15": {
+   "intent_id": "i09",
+   "plan": {
+    "feasible": false,
+    "outputs_selected": [
+     "o_customer_id",
+     "o_customer_name",
+     "o_total_revenue_aud",
+     "o_most_recent_order_date"
+    ],
+    "filters": [
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [
+     "g_customer_id",
+     "g_customer_name"
+    ],
+    "notes": [
+     "User asked for ranking by profit margin, but this template only supports ranking by total revenue (AUD). Cannot add a profit margin metric or required columns/calculations.",
+     "\"Last 12 months\" resolved to 2025-08-23 to 2026-08-23; template default already matches this window."
+    ]
+   },
+   "outcome": "refused_out_of_template"
+  },
+  "E16": {
+   "intent_id": "i01",
+   "plan": {
+    "feasible": false,
+    "outputs_selected": [
+     "o_customer_name",
+     "o_order_number",
+     "o_order_date",
+     "o_order_status",
+     "o_order_total_aud"
+    ],
+    "filters": [
+     {
+      "param_id": "f_name",
+      "enabled": true,
+      "value": "%Summit Manufacturing Pty Ltd%"
+     },
+     {
+      "param_id": "f_order_date",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_status",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [],
+    "notes": [
+     "Infeasible: requested customer phone number and credit limit are not available in this template’s outputs; adding columns is outside planner powers.",
+     "Customer filter set to %Summit Manufacturing Pty Ltd%.",
+     "\"Recent\" left as the template default start date: 2025-08-23 (results cover 2025-08-23 to 2026-08-23)."
+    ]
+   },
+   "outcome": "refused_out_of_template"
+  },
+  "E17": {
+   "intent_id": "i16",
+   "plan": {
+    "feasible": false,
+    "outputs_selected": [
+     "o_year_month",
+     "o_warehouse_name",
+     "o_outbound_units"
+    ],
+    "filters": [
+     {
+      "param_id": "f_movement_date",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_movement_type",
+      "enabled": true,
+      "value": null
+     },
+     {
+      "param_id": "f_warehouse",
+      "enabled": true,
+      "value": null
+     }
+    ],
+    "groupbys_selected": [
+     "g_year_month",
+     "g_warehouse_name"
+    ],
+    "notes": [
+     "Cannot filter to battery cabinet products: template has no product field/filter.",
+     "Kept default date range 2025-08-23 to 2026-08-23."
+    ]
+   },
+   "outcome": "refused_out_of_template"
+  },
+  "E18": {
+   "intent_id": null,
+   "plan": null,
+   "outcome": "refused_non_data"
+  },
+  "E19": {
+   "intent_id": null,
+   "plan": null,
+   "outcome": "refused_non_data"
+  },
+  "E20": {
+   "intent_id": null,
+   "plan": null,
+   "outcome": "refused_non_data"
+  }
+ }
+}

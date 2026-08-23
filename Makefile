@@ -1,11 +1,12 @@
 # Clenergy 企业知识 Agent 系统 —— 开发命令入口
 # 详细说明见 README.md
 
-.PHONY: help bootstrap db db-stop db-wait migrate seed db-reset mineru mineru-stop api web dev types install psql smoke smoke-s1 smoke-sse test lint demo
+.PHONY: help bootstrap db db-stop db-wait migrate seed db-reset bizdb bizdb-wait bizdb-verify bizdb-reset bizdb-seed-gen seed-s3 mysql mineru mineru-stop api web dev types install psql smoke smoke-s1 smoke-s3 smoke-s3-api smoke-s3-chat smoke-sse test lint demo
 
 SHELL := /bin/bash
 COMPOSE := docker compose
 PG_CONTAINER := agent_system_pg
+BIZ_CONTAINER := agent_system_bizdb
 MINERU_CONTAINER := agent_system_mineru
 
 help:  ## 列出所有命令
@@ -18,12 +19,13 @@ bootstrap:  ## 新机器从零装:工具链检查 + .env + 依赖 + 库 + 迁移
 
 # ===== 数据库 =====
 
-db:  ## 起 Postgres(pgvector),等到健康为止
-	$(COMPOSE) up -d postgres
+db:  ## 起系统库 Postgres(pgvector)+ 演示业务库 MySQL,等到都健康为止
+	$(COMPOSE) up -d postgres biz-mysql
 	@$(MAKE) --no-print-directory db-wait
+	@$(MAKE) --no-print-directory bizdb-wait
 
-db-stop:  ## 停 Postgres(保留数据)
-	$(COMPOSE) stop postgres
+db-stop:  ## 停两个数据库(保留数据)
+	$(COMPOSE) stop postgres biz-mysql
 
 db-wait:
 	@echo "等待 Postgres 就绪..."
@@ -50,6 +52,36 @@ db-reset:  ## 删库重建 + 迁移 + seed(改表零成本的底气,会丢数据
 	@$(MAKE) --no-print-directory db
 	@$(MAKE) --no-print-directory migrate
 	@$(MAKE) --no-print-directory seed
+
+# ===== 演示业务库(S3 问数的查询目标,独立 MySQL 8.4 / 3307)=====
+
+bizdb:  ## 只起演示业务库 MySQL,等到健康为止
+	$(COMPOSE) up -d biz-mysql
+	@$(MAKE) --no-print-directory bizdb-wait
+
+bizdb-wait:
+	@echo "等待业务库 MySQL 就绪..."
+	@for i in $$(seq 1 60); do \
+		if [ "$$(docker inspect $(BIZ_CONTAINER) --format '{{.State.Health.Status}}' 2>/dev/null)" = healthy ]; then \
+			echo "业务库就绪(127.0.0.1:3307,只读账号 biz_reader)"; exit 0; \
+		fi; sleep 1; \
+	done; echo "业务库启动超时(看 docker compose logs biz-mysql)"; exit 1
+
+bizdb-verify:  ## 业务库自检:27 项断言(行数/对账/日期覆盖/库存流水/只读账号)
+	cd server && uv run python -m scripts.verify_bizdb
+
+mysql:  ## 进业务库 mysql(只读账号)
+	docker exec -it $(BIZ_CONTAINER) mysql -ubiz_reader -pbiz_reader clenergy_biz
+
+bizdb-reset:  ## 删业务库数据卷重建(init 脚本只在首次创建时执行,改了 SQL 必须走这条)
+	@vol=$$(docker inspect $(BIZ_CONTAINER) --format '{{range .Mounts}}{{if eq .Destination "/var/lib/mysql"}}{{.Name}}{{end}}{{end}}' 2>/dev/null); \
+		$(COMPOSE) rm -sf biz-mysql >/dev/null 2>&1 || true; \
+		if [ -n "$$vol" ]; then docker volume rm -f "$$vol" >/dev/null; echo "已删业务库数据卷 $$vol"; fi
+	@$(MAKE) --no-print-directory bizdb
+	@$(MAKE) --no-print-directory bizdb-verify
+
+bizdb-seed-gen:  ## 重新生成 03-seed.sql(改了生成器才用;之后必须 make bizdb-reset)
+	cd docker/mysql && python3 gen_seed.py
 
 # ===== PDF 解析服务(S1)=====
 
@@ -90,6 +122,20 @@ smoke-s1:  ## 冒烟:S1 精准问答全链路(LLM 三点 + 存储/pgvector 对�
 	cd server && uv run python -m scripts.smoke_exact_qa_store
 	cd server && ./scripts/smoke_s1_api.sh
 	cd server && uv run python -m scripts.smoke_s1_chat
+
+seed-s3:  ## 灌 S3 演示知识(数据源 + 语义层 + 7 个已验证意图 + 索引面;幂等)
+	cd server && uv run python -m scripts.seed_s3_demo
+
+smoke-s3:  ## 冒烟:S3 智能问数(业务库 27 项 + 索引对数 + 评测集在正式代码路径下重跑,零 LLM)
+	cd server && uv run python -m scripts.verify_bizdb
+	cd server && uv run python -m scripts.smoke_s3_index
+	cd server && uv run python -m scripts.smoke_s3_e2e --check
+
+smoke-s3-api:  ## 冒烟:S3 HTTP 层 27 步(含错误路径;不留痕、零 LLM。需先 make api)
+	cd server && ./scripts/smoke_s3_api.sh
+
+smoke-s3-chat:  ## 冒烟:S3 问数接进 chat 的三问(命中/模板外/非问数 + SSE 协议,真调 LLM)
+	cd server && uv run python -m scripts.smoke_s3_chat
 
 smoke-sse:  ## 冒烟:前端 SSE 客户端打真后端(需先 make api / make dev)
 	cd web && npm run smoke:sse

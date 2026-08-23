@@ -1,7 +1,9 @@
-# 两个服务:
-#   postgres   —— 带 pgvector 的 Postgres 16(系统库 + 演示业务库都在这里)
+# 三个服务:
+#   postgres   —— 带 pgvector 的 Postgres 16(本系统全部业务表)
+#   biz-mysql  —— 演示业务库 clenergy_biz(S3 智能问数的查询目标),只读账号 biz_reader
 #   mineru-api —— PDF 解析常驻服务(S1 用;那 4.9GB 依赖树永不进 server 镜像)
-# 默认 `make db` 只起 postgres;解析服务用 `make mineru` 单独起。
+# `make db` 起 postgres + biz-mysql(问数是核心演示能力,不该要额外一条命令);
+# 解析服务用 `make mineru` 单独起(它要 build 镜像 + 下 1GB 权重)。
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -17,13 +19,42 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # 仅数据卷首次创建时执行,建 clenergy_biz + biz_reader
+      # 仅数据卷首次创建时执行,装 vector / pgcrypto 扩展
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d agent_system"]
       interval: 3s
       timeout: 3s
       retries: 20
+
+  # 演示业务库(S3 智能问数的查询目标)。刻意用 MySQL 而不是复用上面那台 PG:
+  #   1. 演示的主张是"接入客户已有的库",客户库以 MySQL 为多;
+  #   2. 它逼着 introspection 走 information_schema + distinct 采样这条真实路径,
+  #      而不是 PG 的便捷目录视图;
+  #   3. 物理隔离 —— 问数的账号连不到系统库,不靠 GRANT 拧,靠不同实例。
+  # 端口 3307 避开本机可能已有的 MySQL。
+  biz-mysql:
+    image: mysql:8.4
+    container_name: agent_system_bizdb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: bizdb_root
+      MYSQL_DATABASE: clenergy_biz
+    ports:
+      - "3307:3306"
+    volumes:
+      - bizdata:/var/lib/mysql
+      # 仅数据卷首次创建时执行:01 建只读账号,02 建表,03 灌数
+      # (03 由 docker/mysql/gen_seed.py 生成,seed=42 可逐字节重现)
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pbizdb_root"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
 
   # PDF 解析服务:官方镜像基于 CUDA+sglang(amd64),Apple Silicon 不可用,所以自建 CPU 镜像
   mineru-api:
@@ -49,6 +80,7 @@ services:
 
 volumes:
   pgdata:
+  bizdata:
   mineru_models:
     # 固定卷名:换 compose 项目名也不会丢权重
     name: mineru_models

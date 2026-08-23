@@ -154,13 +154,15 @@ export function JobProgress({ jobId }: { jobId: string }) {
         </div>
       )}
 
-      {(job.status === 'review' || job.status === 'published') && (
+      {/* ★ 只有真的产出过待审/已发条目才画这块:S3 的同步与 AI 描述用 published 当终态
+          (它们不 staging 任何东西),没有这个条件就会出现"0 items published."
+          和一个点进去是空审核台的按钮 */}
+      {(job.status === 'review' || job.status === 'published') &&
+        reviewCount(job) > 0 && (
         <div className="mt-2 rounded-[var(--radius-panel)] border border-[var(--border)] px-5 py-5 text-center">
           {/* 数字单独拎大:一眼是"还剩多少条要审",句子照旧一字不改 */}
           <div className="mb-1.5 font-mono text-[30px] leading-none font-medium tracking-[-0.03em]">
-            {job.status === 'published'
-              ? ((job.stats?.published as number) ?? 0)
-              : ((job.stats?.staged as number) ?? 0)}
+            {reviewCount(job)}
           </div>
           <span className="text-faint mb-4 block text-[12.5px]">
             {job.status === 'published' ? 'items published.' : 'items are waiting for review.'}
@@ -175,6 +177,15 @@ export function JobProgress({ jobId }: { jobId: string }) {
       )}
     </div>
   )
+}
+
+/** 这个 Job 到底产出了多少条待审/已发条目。`stats` 是各任务自己写的(`ctx.scratch["stats"]`),
+ *  没写就是 0 —— 那种任务本来就不产出条目,审核台入口不该出现。 */
+function reviewCount(job: Job): number {
+  const stats = (job.stats ?? {}) as Record<string, unknown>
+  const key = job.status === 'published' ? 'published' : 'staged'
+  const v = stats[key]
+  return typeof v === 'number' ? v : 0
 }
 
 /** 时间轴上的状态点:统一 22px 圆底,颜色即状态,不用文字重复说一遍。 */

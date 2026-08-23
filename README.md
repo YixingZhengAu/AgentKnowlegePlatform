@@ -3,7 +3,7 @@
 A demo system for tiered enterprise knowledge governance with agent-routed Q&A. Three knowledge types are tiered by error tolerance: **exact Q&A pairs** (zero rewriting), **document knowledge** (RAG + mandatory citations), and **analytics Q&A** (semantic layer + Text2SQL).
 
 - Requirements & architecture: [documents/PRD.md](documents/PRD.md)
-- Stage plans: [S0](documents/S0-PLAN.md) (foundation) · [S1](documents/S1-PLAN.md) (exact Q&A, done)
+- Stage plans: [S0](documents/S0-PLAN.md) (foundation) · [S1](documents/S1-PLAN.md) (exact Q&A, done) · [S3](documents/S3-PLAN.md) (analytics Q&A, done — [requirements](documents/S3-PRD.md), [Text2SQL research notes](documents/S3-TEXT2SQL-RESEARCH.md))
 - Single source of truth for the schema: [documents/DB-DESIGN.md](documents/DB-DESIGN.md)
 - Single source of truth for frontend style: [documents/UI-STYLE.md](documents/UI-STYLE.md)
 
@@ -16,7 +16,7 @@ A demo system for tiered enterprise knowledge governance with agent-routed Q&A. 
 | Python | 3.13 |
 | uv | 0.8+ (uv is the only Python dependency manager; `pip install` is not allowed) |
 | Node | 22+ (tested on 24) |
-| Docker | 28+ (runs Postgres 16 + pgvector) |
+| Docker | 28+ (runs Postgres 16 + pgvector, and MySQL 8.4 for the demo business database) |
 
 ## From zero to running: one command
 
@@ -64,6 +64,20 @@ Once it is up, open http://localhost:5173:
   indexed phrasings per item and an unpublish toggle. The trash icon on a document row deletes a
   wrongly uploaded document (two-step confirmation; refused while it still has published Q&A —
   unpublish those first).
+- **Analytics Q&A governance** (`/ingest/text2sql`) — the full S3 pipeline: connect a read-only MySQL
+  account (**test the connection before it is stored**; the connection string is encrypted and never
+  returned by the API) → sync the schema → **govern the semantic layer** (AI-written table and column
+  descriptions, per-value meanings for enums, sampled values in view, switches to keep a table or column
+  out of the layer) → **draft question intents** from the tables you pick and adopt candidates in the
+  review console → for each intent: **generate a SQL template, Run it against the real database, edit
+  the SQL or the per-parameter hints, add phrasings, publish**. Adopting is not publishing: adopting
+  says "this question is worth a template" (`draft`), publishing says "I have signed this template off"
+  and is what builds the index faces. At query time the model never writes SQL — it may only change
+  filter values, drop output columns and drop group keys inside the reviewed template; anything else is
+  refused with a reason. In chat, an analytics hit carries the **Verified Answer** badge, the result
+  table, and the exact SQL that produced it (expandable, copyable — the copy is byte-identical to what
+  ran), while a question the template cannot cover gets a plain refusal and never reaches a generation
+  model.
 - **Knowledge Bases / Agents** — the 3 seeded KBs and the default agent (with its system prompt and KB bindings)
 - **Ingestion** — submit a fake job (`demo_sleep`) and watch the progress bar walk through four steps;
   `Inject a failure at` makes a chosen step fail so you can recover with "retry from failed step"
@@ -92,9 +106,13 @@ review console really changes state).
 ```
 make help       list every command
 make bootstrap  one-shot environment setup (same as ./bootstrap.sh — run this on a new machine)
-make db         start the database (waits until healthy)
+make db         start both databases (system Postgres + demo business MySQL; waits until healthy)
+make bizdb      start the demo business MySQL only (port 3307)
+make bizdb-verify  assert the demo business data is shaped correctly (27 checks)
+make bizdb-reset   drop and rebuild the business database volume (needed after editing its init SQL)
 make mineru     start the MinerU PDF parsing container (18001, needed for S1 uploads)
 make psql       open psql on the system database
+make mysql      open mysql on the demo business database (read-only account)
 make migrate    run Alembic migrations
 make seed       load the minimal demo data
 make db-reset   drop, recreate, migrate and seed (loses data; routine while the schema is changing)
@@ -103,6 +121,7 @@ make web        frontend only
 make dev        backend + frontend
 make smoke      smoke test: real LLM and embedding calls (verifies key / network / proxy)
 make smoke-s1   smoke test: the full S1 exact Q&A pipeline (needs make api + make mineru; costs real money)
+make smoke-s3   smoke test: S3 analytics Q&A (business-data assertions + the eval set replayed through the real code path)
 make smoke-sse  smoke test: the frontend SSE client against the real backend (start the backend first)
 make test       offline tests (no network, no DB)
 make lint       backend ruff + frontend eslint + TS compile
@@ -114,7 +133,7 @@ make types      openapi.json -> web/src/api/types.gen.ts (the frontend must neve
 
 ```
 bootstrap.sh     environment setup: toolchain check + .env + deps + db + migrate + seed + self-check
-docker/          container config: Postgres init scripts + the MinerU parsing image
+docker/          container config: Postgres init, the demo business MySQL (schema + generated seed), the MinerU image
 server/          FastAPI backend (managed by uv), see server/claude.md
 web/             React + Vite frontend, see web/claude.md
 documents/       PRD / stage plans / database design / UI guidelines
@@ -122,7 +141,14 @@ documents/       PRD / stage plans / database design / UI guidelines
 
 ## The two databases
 
-| Database | Purpose | Account |
-| --- | --- | --- |
-| `agent_system` | every business table of this system (knowledge, ingestion, sessions, traces, evaluation) | `postgres` |
-| `clenergy_biz` | the demo business database, target of analytics Q&A | `biz_reader` (read-only, no CREATE, cannot connect to the system database) |
+| Database | Engine | Purpose | Account |
+| --- | --- | --- | --- |
+| `agent_system` | Postgres 16 + pgvector, port 5432 | every business table of this system (knowledge, ingestion, sessions, traces, evaluation) | `postgres` |
+| `clenergy_biz` | MySQL 8.4, port 3307 | the demo business database, target of analytics Q&A | `biz_reader` (SELECT only, on a separate instance that has no access to the system database) |
+
+The business database is a **separate MySQL instance on purpose**: the pitch is "connect the
+customer's existing database", and customer databases are mostly MySQL. It also keeps schema
+introspection on the realistic path (`information_schema` plus distinct-value sampling), and it
+makes the isolation physical rather than a matter of getting GRANTs right. Its seven tables and
+two years of data are generated deterministically by `docker/mysql/gen_seed.py` (seed 42), so the
+same rows appear on every machine.

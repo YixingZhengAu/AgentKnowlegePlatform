@@ -1,0 +1,104 @@
+{
+  "intent": {
+    "intent_id": "i09",
+    "type": "stats",
+    "bucket": "ranking_stats",
+    "one_liner": "Stats: Top 10 customers by revenue (last 12 months)",
+    "brief": "Ranks customers by total booked revenue in AUD over a chosen period (commonly the last 12 months), excluding cancelled orders. Aggregation is the sum of order totals per customer; ties can be broken by most recent order date.",
+    "tables": [
+      "orders",
+      "customers"
+    ]
+  },
+  "sql": "SELECT c.id AS customer_id, c.name AS customer_name, SUM(o.total_amount) AS total_revenue_aud, MAX(o.order_date) AS most_recent_order_date FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.order_date >= '2025-08-23' AND o.status != 'cancelled' GROUP BY c.id, c.name ORDER BY total_revenue_aud DESC, most_recent_order_date DESC LIMIT 10",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_order_date",
+        "kind": "filter",
+        "source": "orders.order_date",
+        "operator": ">=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2025-08-23",
+        "predicate_sql": "o.order_date >= '2025-08-23'",
+        "business_name": "Order date on/after",
+        "hint": "Filter mapping: user phrases that set the earliest order date to include, e.g., \"last 12 months\", \"since 2025-05-01\", \"from Jan 1 2026\", \"year to date\", \"this year\", \"after 2025-08-01\". Value format must be a single date YYYY-MM-DD. Resolve any relative date phrases to absolute dates anchored at 2026-08-23. Examples: last 12 months -> 2025-08-23; year to date/this year -> 2026-01-01; since 2025-05-01 -> 2025-05-01; after 2025-08-01 -> 2025-08-02. Valid data window is 2024-09-01 to 2026-08-23; clamp to this range if needed. DEFAULT/DISABLE: If the user does not mention a time filter, keep the default 2025-08-23 (matches the brief of last 12 months). Disable this filter only if the user explicitly asks for all-time/no date filter or a period that starts before 2024-09-01 (then disable only if they clearly want no lower bound)."
+      },
+      {
+        "param_id": "f_status",
+        "kind": "filter",
+        "source": "orders.status",
+        "operator": "!=",
+        "value_type": "enum",
+        "value_shape": "scalar",
+        "default_value": "cancelled",
+        "predicate_sql": "o.status <> 'cancelled'",
+        "business_name": "Exclude order status",
+        "hint": "This filter excludes exactly one order status via !=. Map user intent like \"exclude cancelled\" (default), \"exclude shipped\", etc., by setting the value to that single status. Allowed values (must use one verbatim; reject anything else): cancelled (voided order), completed (fully fulfilled), paid (payment received), pending (awaiting processing), shipped (dispatched). DEFAULT/DISABLE: If the user does not mention status logic, keep the default exclusion of cancelled. Disable this filter only if the user explicitly wants all statuses included, including cancelled (e.g., \"include cancelled\" or \"don’t exclude any status\"). Note: You cannot switch this to an inclusion-only filter (e.g., \"only completed\")—that is not supported by this template."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_customer_id",
+        "kind": "output",
+        "expr": "c.id",
+        "alias": "customer_id",
+        "source": "customers.id",
+        "business_name": "Customer ID",
+        "hint": "Output: the internal unique customer identifier. Keep unless the user asks to hide IDs or wants a higher-level rollup without per-customer detail. Drop only if the user requests no customer-level detail or explicitly says to omit IDs; if dropped, also drop the matching group by (g_customer_id) to keep aggregation consistent."
+      },
+      {
+        "param_id": "o_customer_name",
+        "kind": "output",
+        "expr": "c.name",
+        "alias": "customer_name",
+        "source": "customers.name",
+        "business_name": "Customer name",
+        "hint": "Output: the customer’s legal/trading name. Keep by default to identify each ranked customer. Drop only if the user asks for no customer breakdown or explicitly asks to omit names; if dropped, also drop the matching group by (g_customer_name)."
+      },
+      {
+        "param_id": "o_total_revenue_aud",
+        "kind": "output",
+        "expr": "SUM(o.total_amount)",
+        "alias": "total_revenue_aud",
+        "source": "orders.total_amount",
+        "business_name": "Total revenue (AUD)",
+        "hint": "Output: sum of order totals in AUD per customer over the filtered period, excluding the status that is filtered out. This is the ranking metric. Keep unless the user explicitly asks for a different, narrower field list (rare); typically must be retained for a top-customer ranking."
+      },
+      {
+        "param_id": "o_most_recent_order_date",
+        "kind": "output",
+        "expr": "MAX(o.order_date)",
+        "alias": "most_recent_order_date",
+        "source": "orders.order_date",
+        "business_name": "Most recent order date",
+        "hint": "Output: the latest order date per customer within the filtered period; used as a tie-breaker in ordering. Keep by default; drop only if the user wants a minimal output without dates."
+      }
+    ],
+    "groupbys": [
+      {
+        "param_id": "g_customer_id",
+        "kind": "groupby",
+        "expr": "c.id",
+        "source": "customers.id",
+        "linked_output": "customer_id",
+        "business_name": "Group by customer ID",
+        "hint": "Dimension: groups results by unique customer. Dropping this aggregates customers together by whatever group-bys remain. Only drop if the user asks to: (a) hide IDs but still group by name (then drop this group-by together with the ID output), or (b) remove all customer breakdown (then drop both customer group-bys to get an overall total)."
+      },
+      {
+        "param_id": "g_customer_name",
+        "kind": "groupby",
+        "expr": "c.name",
+        "source": "customers.name",
+        "linked_output": "customer_name",
+        "business_name": "Group by customer name",
+        "hint": "Dimension: groups results by customer name. Dropping this rolls up multiple customers that share a name or, if both customer group-bys are dropped, produces a single overall total. Only drop if the user asks for less detail (e.g., no names shown) or for an overall total without per-customer rows; ensure you also drop the corresponding output when removing this grouping."
+      }
+    ]
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-23T17:55:40",
+  "human_edited": false,
+  "finalized_at": "2026-08-23T18:04:59"
+}

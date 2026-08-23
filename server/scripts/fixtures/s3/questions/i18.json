@@ -1,0 +1,16 @@
+{
+  "intent_id": "i18",
+  "summary": "Top products by outbound units (last 90 days)",
+  "questions": [
+    "Can you show top products by units shipped in the last 90 days?",
+    "Top 5 products by outbound units from Sydney over the past three months.",
+    "Which products rank highest by units shipped in the last 60 days, counting Brisbane and Melbourne only?",
+    "Top products by outbound volume last 90 days.",
+    "Which SKUs led by units shipped since 1 May 2026?",
+    "Rank products by quantity shipped to customers in the last quarter.",
+    "Top 10 products by units shipped year to date from the Brisbane warehouse.",
+    "Give me the products with the highest outbound units in the past month."
+  ],
+  "generated_at": "2026-08-23T18:50:18",
+  "human_edited": false
+}

@@ -22,7 +22,7 @@ class StagingItemOut(ORMModel):
     id: uuid.UUID
     job_id: uuid.UUID
     kb_id: uuid.UUID
-    # 决定前端用哪个渲染器:qa_pair / chunk / table_meta / metric / term
+    # 决定前端用哪个渲染器:qa_pair / chunk / sql_intent(取值见 models/ingest.py ITEM_TYPES)
     item_type: str
     payload: dict
     origin_ref: dict | None

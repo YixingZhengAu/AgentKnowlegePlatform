@@ -10,6 +10,7 @@
 | `src/App.tsx` | `path` + `IngestPage` → 生成 `/ingest/*` 路由 |
 | `src/layouts/AppLayout.tsx` | `label` + `path` + `toneClass` → "Knowledge Ingestion" 二级导航;`label` → 顶栏标题(`<label> Ingestion`) |
 | `src/components/staging/registry.ts` | `renderers`(item_type → 渲染器)→ 合并进审核台注册表 |
+| `src/components/Citations.tsx` | `citations`(citation_type → 引用渲染器)→ chat 气泡里那条引用;没登记走通用引用条(S3 加出来的一层:问数命中要画结果表格 + 最终 SQL) |
 
 于是"加一个域"对共享代码的影响收敛为 `index.ts` 的一行 import + 一行数组项 ——
 这是并行开发时唯一可能冲突的文件,冲突形态是相邻两行,git 自动合并即可。
@@ -19,12 +20,15 @@
 ## 域文件夹内的约定
 
 - `module.ts`:描述符,域对外的全部信息
-- `IngestPage.tsx`:当前为空白壳(识别色 + EmptyState,一个按钮都没有),
-  真实流程待需求确认后由各域开发者重写;本域的一切新代码(组件/hooks/渲染器)都落在本文件夹
+- `IngestPage.tsx`:域内**路由壳**(`exact-qa`、`text2sql` 已是真页面;`document` 仍是
+  识别色 + EmptyState 的空白壳)。域内二级页在这里摆 `<Routes>`,加页面不碰共享文件;
+  本域的一切新代码(组件/hooks/渲染器)都落在本文件夹
 - 识别色:UI-STYLE §2 —— QA=黄 / 文档=蓝 / 问数=紫;组件里只用 `bg-kb-*` 工具类,
   hex 只存在于 `src/index.css` 品牌层
 - 渲染器契约见 `src/components/staging/types.ts`;没注册的 item_type 走 JSON 兜底,
-  所以渲染器可以最后写
+  所以渲染器可以最后写。引用渲染器契约是 `src/components/Citations.tsx` 导出的
+  `CitationRenderer`,**登记表在渲染时才查** —— 在模块顶层算会在 DOMAINS 初始化期间
+  被求值,拿到 undefined(与"域里不许 import AppLayout"是同一个环)
 
 ## 依赖方向(禁止逆行/横行)
 

@@ -1,0 +1,19 @@
+{
+  "_comment": "空路由(null route)的负例面:索引进同一个向量空间,top1 落在这里 → 判非问数。人可编辑。",
+  "_discipline": "这些面**不得与 run_b7_retrieve.py 的测试负例 NON_DATA、run_b8_e2e.py 的 E18-E20 逐字重合** —— 否则就是拿答案考自己。它们只覆盖同样的**类别**(产品规格/质保/操作手册/故障码/流程政策/助理杂务/闲聊),措辞另写。",
+  "faces": [
+    "Does the HC series come with an extended warranty option?",
+    "What is the operating temperature range of the INV-250K inverter?",
+    "Which certifications does the PowerCab cabinet hold for the Australian market?",
+    "How do I wire the Monitoring Gateway G2 to a third-party meter?",
+    "What annual maintenance does the HVAC cooling module need?",
+    "Explain the difference between the EMS Lite and EMS Pro licences.",
+    "What does a flashing red LED on the inverter mean?",
+    "Who do I escalate a customer complaint to?",
+    "What is our returns process for a faulty accessory?",
+    "Can you write a follow-up email to a distributor?",
+    "What are the public holidays in Queensland this year?",
+    "Good morning — how are you today?"
+  ],
+  "human_edited": false
+}

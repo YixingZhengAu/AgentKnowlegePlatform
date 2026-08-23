@@ -1,0 +1,154 @@
+{
+  "intent": {
+    "intent_id": "i15",
+    "type": "query",
+    "bucket": "single_table_query",
+    "one_liner": "Query: Stock movement history for a product at a warehouse",
+    "brief": "Shows the chronological ledger of movements for a chosen product at one warehouse over a date range, including movement date, type (inbound/outbound/adjustment), quantity, running balance after, and source reference. Users typically set the product, warehouse, and time window to investigate receipts, deliveries, or stocktakes. Useful for tracing discrepancies or confirming dispatches.",
+    "tables": [
+      "stock_movements",
+      "products"
+    ]
+  },
+  "sql": "SELECT p.sku AS product_sku, p.name AS product_name, sm.warehouse AS warehouse_name, sm.movement_date AS movement_date, sm.movement_type AS movement_type, sm.quantity AS quantity_moved, sm.balance_after AS balance_after, sm.reference_no AS source_reference, sm.id AS movement_id FROM stock_movements sm JOIN products p ON sm.product_id = p.id WHERE p.sku LIKE '%ACC-CBL50%' AND sm.warehouse = 'Melbourne' AND sm.movement_date >= '2024-09-01' AND sm.movement_date <= '2026-08-23' ORDER BY sm.movement_date ASC, sm.id ASC LIMIT 50",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_sku",
+        "kind": "filter",
+        "source": "products.sku",
+        "operator": "LIKE",
+        "value_type": "string",
+        "value_shape": "scalar",
+        "default_value": "%ACC-CBL50%",
+        "predicate_sql": "p.sku LIKE '%ACC-CBL50%'",
+        "business_name": "Product SKU",
+        "hint": "Filter. Maps from user mentions of the product code/SKU such as “SKU”, “product code”, or fragments like “ACC-CBL50”, “starts with ACC-”, or “contains CBL50”. This is a partial, case-insensitive contains match. Replace the default with the user’s SKU fragment while keeping the surrounding % wildcards (e.g., %CBL50%). Do not attempt to use product names here. DEFAULT: keep %ACC-CBL50% if the user does not specify a SKU. DISABLE: do not disable this filter; a specific product is required for this ledger."
+      },
+      {
+        "param_id": "f_warehouse",
+        "kind": "filter",
+        "source": "stock_movements.warehouse",
+        "operator": "=",
+        "value_type": "enum",
+        "value_shape": "scalar",
+        "default_value": "Melbourne",
+        "predicate_sql": "sm.warehouse = 'Melbourne'",
+        "business_name": "Warehouse",
+        "hint": "Filter. Maps from phrases like “at/in the Melbourne warehouse”, “Sydney warehouse”, or “Brisbane”. Allowed values only: Brisbane (Brisbane warehouse), Melbourne (Melbourne warehouse), Sydney (Sydney warehouse). Reject any value outside this list; do not guess. DEFAULT: keep Melbourne if the user does not mention a warehouse. DISABLE: only disable if the user explicitly asks for all/any warehouses; otherwise keep it enabled for a single-warehouse ledger."
+      },
+      {
+        "param_id": "f_movement_date_ge",
+        "kind": "filter",
+        "source": "stock_movements.movement_date",
+        "operator": ">=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2024-09-01",
+        "predicate_sql": "sm.movement_date >= '2024-09-01'",
+        "business_name": "From date",
+        "hint": "Filter. Lower bound of movement date. Accept YYYY-MM-DD. Resolve relative phrases (e.g., “since Jan 2025”, “from last month”, “after 2025-03-10”, “on 2025-04-10”, “July 2025”) to absolute dates anchored at 2026-08-23. Valid data window is 2024-09-01 to 2026-08-23; clamp earlier values up to 2024-09-01 if needed. For “on <date>”, set both lower and upper to that date. For “<month/year>”, set to the first day of that month. DEFAULT: keep 2024-09-01 if the user does not specify a start. DISABLE: disable this lower bound only if the user asks for “before <date>”, “up to <date>”, or “all dates” (in which case rely on the upper bound/window)."
+      },
+      {
+        "param_id": "f_movement_date_le",
+        "kind": "filter",
+        "source": "stock_movements.movement_date",
+        "operator": "<=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2026-08-23",
+        "predicate_sql": "sm.movement_date <= '2026-08-23'",
+        "business_name": "To date",
+        "hint": "Filter. Upper bound of movement date. Accept YYYY-MM-DD. Resolve relative phrases (e.g., “until 2025-06-30”, “before April 2025”, “this month”, “through last week”, “on 2025-04-10”, “July 2025”) to absolute dates anchored at 2026-08-23. Valid data window is 2024-09-01 to 2026-08-23; clamp later values down to 2026-08-23 if needed. For “on <date>”, set both lower and upper to that date. For “<month/year>”, set to the last day of that month (bounded by the window). DEFAULT: keep 2026-08-23 if the user does not specify an end. DISABLE: disable this upper bound only if the user asks for “since/from <date>”, “after <date>”, or “all dates” (in which case rely on the lower bound/window)."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_product_sku",
+        "kind": "output",
+        "expr": "p.sku",
+        "alias": "product_sku",
+        "source": "products.sku",
+        "business_name": "SKU",
+        "hint": "Output. Shows the product’s SKU on each movement row. Keep unless the user asks to hide product identifiers; safe to drop for a narrower answer."
+      },
+      {
+        "param_id": "o_product_name",
+        "kind": "output",
+        "expr": "p.name",
+        "alias": "product_name",
+        "source": "products.name",
+        "business_name": "Product name",
+        "hint": "Output. Human-readable product name associated with the SKU. Keep by default; drop only if the user requests fewer columns or identifiers."
+      },
+      {
+        "param_id": "o_warehouse_name",
+        "kind": "output",
+        "expr": "sm.warehouse",
+        "alias": "warehouse_name",
+        "source": "stock_movements.warehouse",
+        "business_name": "Warehouse name",
+        "hint": "Output. Warehouse (city) where the movement occurred. Keep by default to confirm location; drop only if the user wants fewer columns and the warehouse is already fixed by the filter."
+      },
+      {
+        "param_id": "o_movement_date",
+        "kind": "output",
+        "expr": "sm.movement_date",
+        "alias": "movement_date",
+        "source": "stock_movements.movement_date",
+        "business_name": "Movement date",
+        "hint": "Output. Calendar date of each stock movement in the ledger. Keep unless the user explicitly wants to hide dates."
+      },
+      {
+        "param_id": "o_movement_type",
+        "kind": "output",
+        "expr": "sm.movement_type",
+        "alias": "movement_type",
+        "source": "stock_movements.movement_type",
+        "business_name": "Movement type",
+        "hint": "Output. Whether the movement is inbound, outbound, or an adjustment. Keep by default; drop only on explicit request for fewer details."
+      },
+      {
+        "param_id": "o_quantity_moved",
+        "kind": "output",
+        "expr": "sm.quantity",
+        "alias": "quantity_moved",
+        "source": "stock_movements.quantity",
+        "business_name": "Quantity moved",
+        "hint": "Output. Units moved in the transaction. Keep by default; drop only if the user asks for a slimmer view without quantities."
+      },
+      {
+        "param_id": "o_balance_after",
+        "kind": "output",
+        "expr": "sm.balance_after",
+        "alias": "balance_after",
+        "source": "stock_movements.balance_after",
+        "business_name": "Balance after",
+        "hint": "Output. On-hand quantity immediately after the movement (running balance). Keep by default; drop only if the user wants just movement details without balances."
+      },
+      {
+        "param_id": "o_source_reference",
+        "kind": "output",
+        "expr": "sm.reference_no",
+        "alias": "source_reference",
+        "source": "stock_movements.reference_no",
+        "business_name": "Source reference",
+        "hint": "Output. Origin document/reference (e.g., GRN/DO), or NULL for stocktake adjustments. Keep by default; drop only if the user asks to hide references."
+      },
+      {
+        "param_id": "o_movement_id",
+        "kind": "output",
+        "expr": "sm.id",
+        "alias": "movement_id",
+        "source": "stock_movements.id",
+        "business_name": "Movement ID",
+        "hint": "Output. System identifier of the movement row. Keep by default as a unique reference; drop only if the user requests a cleaner display without IDs."
+      }
+    ],
+    "groupbys": []
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-23T17:55:57",
+  "human_edited": false,
+  "finalized_at": "2026-08-23T18:04:59"
+}

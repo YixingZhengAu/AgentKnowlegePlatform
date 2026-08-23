@@ -1,0 +1,16 @@
+{
+  "intent_id": "i01",
+  "summary": "Recent orders for a specific customer",
+  "questions": [
+    "Show me the most recent orders for Summit Manufacturing Pty Ltd over the last six months, excluding cancelled, with totals.",
+    "List all orders for Boomerang Textiles Pty Ltd placed since 2026-01-01, with status and order total, newest first.",
+    "Pacific Dairy Co-op Pty Ltd orders from 2025-07-01 to 2026-08-23, only show paid or completed.",
+    "Can I get the recent order history for Coastal Aggregates Pty Ltd this quarter and hide any that were cancelled?",
+    "Summit Logistics Pty Ltd orders year to date, include order number, date, status, and total, sorted by highest value.",
+    "Summit Manufacturing Pty Ltd recent orders last 90 days exclude cancelled.",
+    "Recent orders for Boomerang Manufacturing Pty Ltd in the past 30 days, all statuses, most recent first.",
+    "Customer: Pacific Dairy Co-op Pty Ltd — show orders from July 2026, exclude cancelled and pending."
+  ],
+  "generated_at": "2026-08-23T18:50:18",
+  "human_edited": false
+}

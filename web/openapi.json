@@ -1585,6 +1585,1394 @@
           }
         }
       }
+    },
+    "/api/text2sql/datasources": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "List Datasources",
+        "operationId": "list_datasources_api_text2sql_datasources_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_DatasourceOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Create Datasource",
+        "description": "新建数据源。连接串在这里被加密,**明文不再出现在任何地方**。",
+        "operationId": "create_datasource_api_text2sql_datasources_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasourceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasourceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/datasources/{datasource_id}": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Get Datasource",
+        "operationId": "get_datasource_api_text2sql_datasources__datasource_id__get",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasourceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Update Datasource",
+        "description": "改数据源。传了 `conn` 就是整套换掉(口令不可能\"部分更新\")。",
+        "operationId": "update_datasource_api_text2sql_datasources__datasource_id__patch",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasourceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasourceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Delete Datasource",
+        "description": "删一个数据源(级联带走它的语义层:表/列/join)。\n\n**挂着意图的数据源不许删**(409):意图的模板 SQL 是这个库的表名与方言写的,\n删了数据源那些模板就再也跑不起来,而它们可能已经被历史消息的引用指过。\n要清掉这类数据源,先把它的意图逐条下线并删掉 —— 那是个显式动作,\n不该由\"删数据源\"顺手替人做。\n\n这是给演示现场准备的:填错连接、接错库能自己清掉,不用去翻数据库。",
+        "operationId": "delete_datasource_api_text2sql_datasources__datasource_id__delete",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/datasources/test": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Test New Connection",
+        "description": "测一套**还没保存**的连接要素(D1 的\"先测再存\")。\n\n连不上返回 `ok=false` 而不是 4xx:连不上是这个接口要报告的**业务结果**,\n不是调用方用错了接口。前端据此在表单上显示红字,不用去解析错误码。",
+        "operationId": "test_new_connection_api_text2sql_datasources_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasourceConnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestConnectionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/datasources/{datasource_id}/test": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Test Datasource",
+        "description": "测一个已保存的数据源。**不查 readonly_confirmed** —— 测连正是确认它的手段。",
+        "operationId": "test_datasource_api_text2sql_datasources__datasource_id__test_post",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestConnectionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/datasources/{datasource_id}/sync": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Sync Schema",
+        "description": "同步库表结构(`t2s_sync_schema`)。零 LLM,随时可重跑 —— 库变了就该跑一次。\n\n**只覆盖物理事实**(类型/注释/采样/枚举/join),治理字段(description/enabled/\nis_sensitive)一个字都不碰。所以\"同步会不会把我改的描述冲掉\"的答案是:不会。",
+        "operationId": "sync_schema_api_text2sql_datasources__datasource_id__sync_post",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/datasources/{datasource_id}/describe": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Describe Schema",
+        "description": "批量写表/列描述(`t2s_describe`)。**每张启用的表一次 gpt-5**,所以走 Job。",
+        "operationId": "describe_schema_api_text2sql_datasources__datasource_id__describe_post",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DescribeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/datasources/{datasource_id}/intents": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Generate Intents",
+        "description": "批量提意图候选(`t2s_intents`)→ 审核台。终态 `review`,等人采纳。\n\n再点一次就是**追加生成**:已有意图的 one-liner 会被喂回 prompt 要求避重\n(在源头防重复,比事后判重便宜 —— 判重只能告诉你钱已经花了)。",
+        "operationId": "generate_intents_api_text2sql_datasources__datasource_id__intents_post",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateIntentsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/datasources/{datasource_id}/schema": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Get Schema",
+        "description": "治理页一次拿全:数据源 + 表(含列、采样值、枚举字典)+ join 提示。\n\n**停用的表列也返回** —— 治理页要能把它们勾回来。运行时的语义层才按 enabled 过滤\n(`semantic.load_layer`),那是同一个开关的另一端。",
+        "operationId": "get_schema_api_text2sql_datasources__datasource_id__schema_get",
+        "parameters": [
+          {
+            "name": "datasource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datasource Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/tables/{table_meta_id}": {
+      "put": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Save Table",
+        "description": "按表保存(D2 的 Save):表级字段 + 若干列,**一个事务**。\n\n整表一次提交而不是逐格 PATCH:审描述是\"看完一张表再存\"的动作,逐格保存会把\n一次人工评审拆成几十个请求,中途失败还会留下半改的表。",
+        "operationId": "save_table_api_text2sql_tables__table_meta_id__put",
+        "parameters": [
+          {
+            "name": "table_meta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Table Meta Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableSave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/tables/{table_meta_id}/describe": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Describe Table",
+        "description": "单点 AI 生成一张表的描述,**同步返回建议、不落库**(人确认后走 `PUT /tables/{id}`)。\n\n★ 为什么单列的\"AI 按钮\"也要整表生成:评审过的 prompt 是**表级**的 ——\n它靠同表其他列、join 关系和采样值一起判断一列是什么。只喂一列会得到更差的描述,\n而那就不再是 B2 验收过的那个 prompt 了。前端拿到整表建议,回填哪一格由它决定。",
+        "operationId": "describe_table_api_text2sql_tables__table_meta_id__describe_post",
+        "parameters": [
+          {
+            "name": "table_meta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Table Meta Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DescribeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeSuggestion"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "List Intents",
+        "operationId": "list_intents_api_text2sql_intents_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(draft|published|disabled)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_SqlIntentOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Create Intent",
+        "description": "手工新建一个意图(D3 的\"手工新建\")。建出来是 **draft** —— 和采纳候选一样,\n\"这类问题值得做成模板\"和\"这条模板我验收了\"是两件事。",
+        "operationId": "create_intent_api_text2sql_intents_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SqlIntentDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Get Intent",
+        "operationId": "get_intent_api_text2sql_intents__intent_id__get",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SqlIntentDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Update Intent",
+        "description": "就地编辑(含直接改 SQL 与参数区)。\n\n★ **已发布的意图改了 SQL/参数区,不会自动重新发布** —— 索引面挂的是问法与摘要,\n改 SQL 不影响检索,但改完必须自己 Run 一遍再点发布。改摘要会影响检索,\n所以那一路会重建索引面(见下)。",
+        "operationId": "update_intent_api_text2sql_intents__intent_id__patch",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SqlIntentDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Delete Intent",
+        "description": "删一个**草稿**意图(手工建错、采纳错了都用它)。\n\n已发布/已下线的不许删(409):它们可能被 `message_citations.ref_id` 指过,\n删了历史消息的引用就悬空 —— 与 S1 同一条纪律,下线用 `POST …/disable`。\n\n如果它是从候选采纳来的,这里会把那条候选的\"已发布\"标记撤掉,\n让它重新出现在审核台上 —— 那才是\"采纳\"的真正逆操作,不然会留下一条\n指向不存在意图的候选。",
+        "operationId": "delete_intent_api_text2sql_intents__intent_id__delete",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}/template": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Generate Template",
+        "description": "★ 生成 SQL 模板 + 参数区,**同步返回**(一次意图一次,慢且贵:gpt-5 数次调用)。\n\n走完的是 B4 + B5 的完整链路,一步都没省:\n生成 → 9 条确定性静态校验 → **真库试执行** → 报错回灌自修 ≤2 轮 → AST 拆三区参数\n→ AI 预填 business_name/hint → 校验回灌 ≤2 轮。所以它返回时,这条 SQL 已经在真库上\n跑出过非空结果 —— `trial_*` 就是那一次的结果,不是前端另外发起的。\n\n覆盖已有的 SQL:重生成会**整条替换** sql 与 params(人工改过的 hint 也会没)。\n这是\"重新生成\"的应有语义,前端要在按钮上说清楚。",
+        "operationId": "generate_template_api_text2sql_intents__intent_id__template_post",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}/parse-params": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Parse Params",
+        "description": "按当前 SQL 重解析参数区(D4:改完 SQL 参数区要跟着变)。**纯代码,零 LLM。**\n\n按 `param_id` 保住人写过的 business_name/hint —— 改一处 WHERE 值不该让整页注释重写。\n对不上的参数(列换了、谓词删了)就是新的,注释留空等 AI 预填或人手写。",
+        "operationId": "parse_params_api_text2sql_intents__intent_id__parse_params_post",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseParamsResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}/run": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Run Template",
+        "description": "★ 试跑一条 SQL。走的是**运行时那一道执行闸**,不是另开一条通路。\n\n所以\"Run 过了\"含义明确:它在运行时不会因为闸(非单条 SELECT / 表列不在语义层白名单 /\nLIMIT 超限 / 超时)而失败。被闸拒或 SQL 报错都返回 `ok=false` + 原因 ——\n在编辑器里改 SQL 本来就会写错,那是**这个接口要报告的结果**,不是接口调用错误。",
+        "operationId": "run_template_api_text2sql_intents__intent_id__run_post",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}/publish": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Publish Intent",
+        "description": "发布:校验 → `status=published` → 重建索引面(意图的 + 本 kb 的空路由面)。\n\n一个事务。**向量写失败状态就不该改** —— 否则会留下一个\"已发布但检索不到\"的意图,\n而这种半残状态在界面上完全看不出来。",
+        "operationId": "publish_intent_api_text2sql_intents__intent_id__publish_post",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntentPublishResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}/disable": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Disable Intent",
+        "description": "下线:`status=disabled` + 删索引面。正式行留着 —— 它可能被历史消息的引用指过。",
+        "operationId": "disable_intent_api_text2sql_intents__intent_id__disable_post",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntentPublishResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}/questions": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "List Questions",
+        "operationId": "list_questions_api_text2sql_intents__intent_id__questions_get",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_IntentQuestionOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Save Questions",
+        "description": "整组替换 + **保存即重建索引面**(意图已发布时)。\n\n不做逐条 diff:向量挂在 `intent_vectors` 而不是问法行上,正是为了不必处理\n\"改一条、删一条、又加回来\"的组合(见 `models/text2sql.py` 的 IntentQuestion 注释)。",
+        "operationId": "save_questions_api_text2sql_intents__intent_id__questions_put",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionsSave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsSaveResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/intents/{intent_id}/questions/generate": {
+      "post": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Generate Questions",
+        "description": "AI 生成相似问法**建议**(未落库,人在页面上增删改后走 `PUT`)。\n\n两件不能省的事:\n* **喂真实取值**(`value_book`):B7 首轮没喂时,模型编出了 Perth/Adelaide 仓库和\n  不存在的客户与产品 —— 相似问法是会进演示、会被人审的资产,编造值既误导审阅者,\n  也教会路由器一堆库里没有的说法;\n* **跨意图文本冲突过滤**:撞上别的意图的摘要或已存问法的那句被丢掉并给出理由\n  (`dropped`),不是静默扔掉 —— 界面要能解释\"为什么只留下 6 条\"。",
+        "operationId": "generate_questions_api_text2sql_intents__intent_id__questions_generate_post",
+        "parameters": [
+          {
+            "name": "intent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Intent Id"
+            }
+          },
+          {
+            "name": "n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 8,
+              "title": "N"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionsGenerated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/non-data-faces": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "List Non Data Faces",
+        "operationId": "list_non_data_faces_api_text2sql_non_data_faces_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_NonDataFaceOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Save Non Data Faces",
+        "description": "整组替换本 kb 的空路由负例面,保存即重建向量。\n\n★ **这不是可选的调优项**:非问数问题是靠\"索引里有更像的负例\"拦下的,靠阈值拦不住\n(B8 实测:质保题以 0.5183 确信命中库存意图,而应命中类最低分 0.4981 ——\n抬阈值必先误杀真正例)。清空这一组等于关掉空路由,所以清空会返回 `indexed=0`\n并在服务端日志里留一条 warning。",
+        "operationId": "save_non_data_faces_api_text2sql_non_data_faces_put",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NonDataFacesSave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NonDataFacesSaveResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text2sql/index-stats": {
+      "get": {
+        "tags": [
+          "text2sql"
+        ],
+        "summary": "Index Stats",
+        "description": "索引体检:各类面各有多少。`summary + question + non_data` 就是检索的全部输入。",
+        "operationId": "index_stats_api_text2sql_index_stats_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndexStats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1995,6 +3383,246 @@
         "title": "CitationExtra",
         "description": "引用的附加信息。**故意允许多余字段**(`extra=\"allow\"`):\nS1 只用得到分数/命中面/页码,S2 的文档引用会带 chunk 序号、S3 的问数会带 SQL 与行数;\n在这里把已知字段写出来是为了让前端有类型可用,不是为了封死结构。"
       },
+      "ColumnMetaOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "column_name": {
+            "type": "string",
+            "title": "Column Name"
+          },
+          "ordinal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordinal"
+          },
+          "data_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Type"
+          },
+          "is_nullable": {
+            "type": "boolean",
+            "title": "Is Nullable"
+          },
+          "key_flag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Flag"
+          },
+          "physical_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Physical Comment"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_sensitive": {
+            "type": "boolean",
+            "title": "Is Sensitive"
+          },
+          "distinct_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distinct Count"
+          },
+          "is_enum_like": {
+            "type": "boolean",
+            "title": "Is Enum Like"
+          },
+          "enum_values": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EnumValueOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enum Values"
+          },
+          "sample_values": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Values"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "column_name",
+          "is_nullable",
+          "is_sensitive",
+          "is_enum_like",
+          "enabled"
+        ],
+        "title": "ColumnMetaOut"
+      },
+      "ColumnPatch": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_sensitive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Sensitive"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ColumnPatch",
+        "description": "按表保存时的一列。只有出现在请求里的字段会被写。"
+      },
+      "ColumnSuggestion": {
+        "properties": {
+          "column_name": {
+            "type": "string",
+            "title": "Column Name"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "enum_values": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EnumValueOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enum Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "column_name"
+        ],
+        "title": "ColumnSuggestion"
+      },
       "ConfirmExtractResult": {
         "properties": {
           "job_id": {
@@ -2070,6 +3698,354 @@
           "created_at"
         ],
         "title": "ConversationOut"
+      },
+      "DatasourceConnIn": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Host"
+          },
+          "port": {
+            "type": "integer",
+            "maximum": 65535.0,
+            "minimum": 1.0,
+            "title": "Port",
+            "default": 3306
+          },
+          "database": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Database"
+          },
+          "user": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "User"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Password",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "host",
+          "database",
+          "user"
+        ],
+        "title": "DatasourceConnIn",
+        "description": "连接要素。**这是全项目唯一接收数据库口令的地方**,它只会被加密后落库。"
+      },
+      "DatasourceCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "conn": {
+            "$ref": "#/components/schemas/DatasourceConnIn"
+          },
+          "kb_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kb Id"
+          },
+          "db_type": {
+            "type": "string",
+            "const": "mysql",
+            "title": "Db Type",
+            "default": "mysql"
+          },
+          "readonly_confirmed": {
+            "type": "boolean",
+            "title": "Readonly Confirmed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "conn"
+        ],
+        "title": "DatasourceCreate"
+      },
+      "DatasourceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "db_type": {
+            "type": "string",
+            "title": "Db Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "readonly_confirmed": {
+            "type": "boolean",
+            "title": "Readonly Confirmed"
+          },
+          "host": {
+            "type": "string",
+            "title": "Host"
+          },
+          "port": {
+            "type": "integer",
+            "title": "Port"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database"
+          },
+          "user": {
+            "type": "string",
+            "title": "User"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "tables": {
+            "type": "integer",
+            "title": "Tables",
+            "default": 0
+          },
+          "enabled_tables": {
+            "type": "integer",
+            "title": "Enabled Tables",
+            "default": 0
+          },
+          "described_tables": {
+            "type": "integer",
+            "title": "Described Tables",
+            "default": 0
+          },
+          "published_intents": {
+            "type": "integer",
+            "title": "Published Intents",
+            "default": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kb_id",
+          "name",
+          "db_type",
+          "status",
+          "readonly_confirmed",
+          "host",
+          "port",
+          "database",
+          "user",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DatasourceOut"
+      },
+      "DatasourceUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "conn": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DatasourceConnIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "readonly_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readonly Confirmed"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "disabled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "DatasourceUpdate",
+        "description": "全字段可选:只改名、只换口令、只翻开关都是合法请求。"
+      },
+      "DescribeRequest": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "fill",
+              "rewrite"
+            ],
+            "title": "Mode",
+            "default": "fill"
+          },
+          "tables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tables"
+          }
+        },
+        "type": "object",
+        "title": "DescribeRequest",
+        "description": "批量写描述。`fill` 只填空缺(人写的注释逐字保留),`rewrite` 全量重写。"
+      },
+      "DescribeSuggestion": {
+        "properties": {
+          "table_name": {
+            "type": "string",
+            "title": "Table Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnSuggestion"
+            },
+            "type": "array",
+            "title": "Columns",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "table_name"
+        ],
+        "title": "DescribeSuggestion",
+        "description": "单点 AI 生成的**建议**,没有落库 —— 人在页面上确认后才走保存接口。"
+      },
+      "DesignFilter": {
+        "properties": {
+          "column": {
+            "type": "string",
+            "title": "Column",
+            "default": ""
+          },
+          "operator": {
+            "type": "string",
+            "title": "Operator",
+            "default": ""
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "default": ""
+          },
+          "why": {
+            "type": "string",
+            "title": "Why",
+            "default": ""
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "DesignFilter",
+        "description": "模板里写死的一个默认过滤条件。`why` 是它凭什么被写死 —— 评审就看这一句。"
+      },
+      "DesignMeasure": {
+        "properties": {
+          "expr": {
+            "type": "string",
+            "title": "Expr",
+            "default": ""
+          },
+          "meaning": {
+            "type": "string",
+            "title": "Meaning",
+            "default": ""
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "DesignMeasure",
+        "description": "一个度量的表达式与口径。"
       },
       "DocumentFunnel": {
         "properties": {
@@ -2228,6 +4204,31 @@
         ],
         "title": "DocumentOut",
         "description": "文档列表/详情的一行。\n\n`stage` 是给界面用的**推导态**:文档表只存解析态(4 态),\n\"待校对 / 抽取中 / 待采纳 / 已完成\"由关联 Job 的状态推出来(S1-plan §8.4)。"
+      },
+      "EnumValueOut": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "meaning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meaning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "EnumValueOut",
+        "description": "枚举字典的一项。改写阶段真正需要的是\"值 → 含义\",裸 string 给不了这个。"
       },
       "ExactQaItemDetail": {
         "properties": {
@@ -2401,6 +4402,33 @@
         "title": "ExactQaItemOut",
         "description": "正式 QA 列表的一行(**不带长答案正文**,S1-plan §4 决策 5:列表轻详情重)。"
       },
+      "GenerateIntentsRequest": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "default": 10
+          },
+          "tables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tables"
+          }
+        },
+        "type": "object",
+        "title": "GenerateIntentsRequest"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2452,6 +4480,303 @@
           "embedding_dim"
         ],
         "title": "HealthResponse"
+      },
+      "IndexStats": {
+        "properties": {
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "summary": {
+            "type": "integer",
+            "title": "Summary",
+            "default": 0
+          },
+          "question": {
+            "type": "integer",
+            "title": "Question",
+            "default": 0
+          },
+          "non_data": {
+            "type": "integer",
+            "title": "Non Data",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "published_intents": {
+            "type": "integer",
+            "title": "Published Intents",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "kb_id"
+        ],
+        "title": "IndexStats",
+        "description": "索引体检:各类面各有多少。`summary + question + non_data` 就是检索的全部输入。"
+      },
+      "IntentCreate": {
+        "properties": {
+          "intent_type": {
+            "type": "string",
+            "enum": [
+              "query",
+              "stats"
+            ],
+            "title": "Intent Type"
+          },
+          "one_liner": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "One Liner"
+          },
+          "brief": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Brief"
+          },
+          "tables": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Tables"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket"
+          },
+          "kb_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kb Id"
+          },
+          "datasource_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datasource Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "intent_type",
+          "one_liner",
+          "brief",
+          "tables"
+        ],
+        "title": "IntentCreate",
+        "description": "手工新建一个意图(D3 的\"手工新建\")。建出来是 draft,SQL 与参数区随后再做。"
+      },
+      "IntentParams": {
+        "properties": {
+          "filters": {
+            "items": {
+              "$ref": "#/components/schemas/ParamFilter"
+            },
+            "type": "array",
+            "title": "Filters",
+            "default": []
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/ParamOutput"
+            },
+            "type": "array",
+            "title": "Outputs",
+            "default": []
+          },
+          "groupbys": {
+            "items": {
+              "$ref": "#/components/schemas/ParamGroupBy"
+            },
+            "type": "array",
+            "title": "Groupbys",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "IntentParams",
+        "description": "三区参数 = **运行时权力的完整清单**。字段级定义见 DB-DESIGN §4.8。"
+      },
+      "IntentPublishResult": {
+        "properties": {
+          "intent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Intent Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "faces": {
+            "type": "integer",
+            "title": "Faces",
+            "default": 0
+          },
+          "non_data_faces": {
+            "type": "integer",
+            "title": "Non Data Faces",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "intent_id",
+          "code",
+          "status"
+        ],
+        "title": "IntentPublishResult"
+      },
+      "IntentQuestionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question_text",
+          "origin"
+        ],
+        "title": "IntentQuestionOut"
+      },
+      "IntentUpdate": {
+        "properties": {
+          "intent_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "query",
+                  "stats"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intent Type"
+          },
+          "one_liner": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "One Liner"
+          },
+          "brief": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brief"
+          },
+          "tables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tables"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket"
+          },
+          "sql": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sql"
+          },
+          "params": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntentParams"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "IntentUpdate",
+        "description": "就地编辑。**任何一次带内容的 PATCH 都会把 `human_edited` 置 true** ——\n\"这条被人改过\"是评审材料里必须留的痕。"
       },
       "JobOut": {
         "properties": {
@@ -2601,6 +4926,26 @@
         ],
         "title": "JobOut"
       },
+      "JobStarted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "job_type": {
+            "type": "string",
+            "title": "Job Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "job_type"
+        ],
+        "title": "JobStarted",
+        "description": "派发了一个后台 Job。进度轮询走 `GET /api/jobs/{id}`(S0 的通用接口)。"
+      },
       "JobSubmitRequest": {
         "properties": {
           "job_type": {
@@ -2735,6 +5080,27 @@
         ],
         "title": "ListResponse[ConversationOut]"
       },
+      "ListResponse_DatasourceOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DatasourceOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[DatasourceOut]"
+      },
       "ListResponse_DocumentOut_": {
         "properties": {
           "items": {
@@ -2776,6 +5142,27 @@
           "total"
         ],
         "title": "ListResponse[ExactQaItemOut]"
+      },
+      "ListResponse_IntentQuestionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IntentQuestionOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[IntentQuestionOut]"
       },
       "ListResponse_JobOut_": {
         "properties": {
@@ -2839,6 +5226,48 @@
           "total"
         ],
         "title": "ListResponse[MessageOut]"
+      },
+      "ListResponse_NonDataFaceOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NonDataFaceOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[NonDataFaceOut]"
+      },
+      "ListResponse_SqlIntentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SqlIntentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[SqlIntentOut]"
       },
       "ListResponse_StagingItemOut_": {
         "properties": {
@@ -3020,6 +5449,80 @@
         ],
         "title": "MessageOut"
       },
+      "NonDataFaceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "face_text": {
+            "type": "string",
+            "title": "Face Text"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kb_id",
+          "face_text",
+          "origin",
+          "enabled"
+        ],
+        "title": "NonDataFaceOut"
+      },
+      "NonDataFacesSave": {
+        "properties": {
+          "faces": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Faces"
+          }
+        },
+        "type": "object",
+        "required": [
+          "faces"
+        ],
+        "title": "NonDataFacesSave",
+        "description": "整组替换本 kb 的负例面,保存即重建。\n\n★ 这不是\"可选的调优项\":非问数问题靠\"索引里有更像的负例\"拦下,靠阈值拦不住\n(B8 实测,见 `services/text2sql/architect.md` §4)。清空它等于关掉空路由。"
+      },
+      "NonDataFacesSaveResult": {
+        "properties": {
+          "faces": {
+            "items": {
+              "$ref": "#/components/schemas/NonDataFaceOut"
+            },
+            "type": "array",
+            "title": "Faces"
+          },
+          "indexed": {
+            "type": "integer",
+            "title": "Indexed",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "faces"
+        ],
+        "title": "NonDataFacesSaveResult"
+      },
       "OriginRef": {
         "properties": {
           "document_id": {
@@ -3089,6 +5592,175 @@
         ],
         "title": "PageInfo",
         "description": "一页的物理尺寸(PDF point),前端把归一化 bbox 换算回 PDF 坐标做高亮时要用。"
+      },
+      "ParamFilter": {
+        "properties": {
+          "param_id": {
+            "type": "string",
+            "title": "Param Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "operator": {
+            "type": "string",
+            "title": "Operator"
+          },
+          "value_type": {
+            "type": "string",
+            "title": "Value Type"
+          },
+          "value_shape": {
+            "type": "string",
+            "title": "Value Shape"
+          },
+          "default_value": {
+            "title": "Default Value"
+          },
+          "predicate_sql": {
+            "type": "string",
+            "title": "Predicate Sql",
+            "default": ""
+          },
+          "business_name": {
+            "type": "string",
+            "title": "Business Name",
+            "default": ""
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint",
+            "default": ""
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "param_id",
+          "source",
+          "operator",
+          "value_type",
+          "value_shape"
+        ],
+        "title": "ParamFilter",
+        "description": "WHERE 的一个可改值参数。运行时只能改 `default_value` 或禁用它。"
+      },
+      "ParamGroupBy": {
+        "properties": {
+          "param_id": {
+            "type": "string",
+            "title": "Param Id"
+          },
+          "expr": {
+            "type": "string",
+            "title": "Expr"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "linked_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Output"
+          },
+          "business_name": {
+            "type": "string",
+            "title": "Business Name",
+            "default": ""
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint",
+            "default": ""
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "param_id",
+          "expr"
+        ],
+        "title": "ParamGroupBy",
+        "description": "一个分组维度。减掉它时 `linked_output` 那一列必须同时减(应用器强制)。"
+      },
+      "ParamOutput": {
+        "properties": {
+          "param_id": {
+            "type": "string",
+            "title": "Param Id"
+          },
+          "expr": {
+            "type": "string",
+            "title": "Expr"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "business_name": {
+            "type": "string",
+            "title": "Business Name",
+            "default": ""
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint",
+            "default": ""
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "param_id",
+          "expr",
+          "alias"
+        ],
+        "title": "ParamOutput",
+        "description": "一个输出列。运行时只能减,不能加、不能改表达式。"
+      },
+      "ParseParamsResult": {
+        "properties": {
+          "params": {
+            "$ref": "#/components/schemas/IntentParams"
+          },
+          "kept_annotations": {
+            "type": "integer",
+            "title": "Kept Annotations",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "params"
+        ],
+        "title": "ParseParamsResult",
+        "description": "按当前 SQL 重解析参数区。`kept_annotations` = 按 param_id 保住的 业务名/hint 条数。"
       },
       "ParseStats": {
         "properties": {
@@ -3186,6 +5858,69 @@
         "title": "PublishResult",
         "description": "发布结果 = 一条审计记录 + 发布后的 job 状态。"
       },
+      "QuestionsGenerated": {
+        "properties": {
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Questions",
+            "default": []
+          },
+          "dropped": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Dropped",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "QuestionsGenerated",
+        "description": "AI 生成的相似问法**建议**(未落库)。`dropped` 是被跨意图冲突过滤掉的。"
+      },
+      "QuestionsSave": {
+        "properties": {
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questions"
+        ],
+        "title": "QuestionsSave",
+        "description": "整组替换(不做逐条 diff)。已发布的意图保存后立即重建索引面。"
+      },
+      "QuestionsSaveResult": {
+        "properties": {
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/IntentQuestionOut"
+            },
+            "type": "array",
+            "title": "Questions"
+          },
+          "faces": {
+            "type": "integer",
+            "title": "Faces",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "questions"
+        ],
+        "title": "QuestionsSaveResult"
+      },
       "RejectRequest": {
         "properties": {
           "note": {
@@ -3201,6 +5936,68 @@
         ],
         "title": "RejectRequest",
         "description": "不采纳必须填理由:它是下一轮调 prompt 的原始素材。"
+      },
+      "RelationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "from_table": {
+            "type": "string",
+            "title": "From Table"
+          },
+          "from_column": {
+            "type": "string",
+            "title": "From Column"
+          },
+          "to_table": {
+            "type": "string",
+            "title": "To Table"
+          },
+          "to_column": {
+            "type": "string",
+            "title": "To Column"
+          },
+          "relation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation Type"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "from_table",
+          "from_column",
+          "to_table",
+          "to_column",
+          "source"
+        ],
+        "title": "RelationOut",
+        "description": "join 提示。`source` 必须能一眼分开真 FK 与命名启发式猜的 —— 可信度不同。"
       },
       "ReviewTextOut": {
         "properties": {
@@ -3265,6 +6062,416 @@
         ],
         "title": "ReviewTextUpdate",
         "description": "保存校对结果。永不覆盖 paged.md —— 原始解析件留着可对比。"
+      },
+      "RunRequest": {
+        "properties": {
+          "sql": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sql"
+          }
+        },
+        "type": "object",
+        "title": "RunRequest",
+        "description": "在意图详情页试跑一条 SQL。不传 sql 就跑意图当前存着的那条。"
+      },
+      "RunResult": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "sql_executed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sql Executed"
+          },
+          "cols": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cols",
+            "default": []
+          },
+          "rowcount": {
+            "type": "integer",
+            "title": "Rowcount",
+            "default": 0
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Rows",
+            "default": []
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Flags",
+            "default": []
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "title": "RunResult",
+        "description": "★ Run 走的是**运行时那一道执行闸**(单条 SELECT / 白名单 / 强制 LIMIT / 超时)。\n\n所以\"Run 过了\"这件事的含义是明确的:它在运行时不会因为闸而失败。\n`sql_executed` 是闸改写后真正发给数据库的那条(LIMIT 可能被它压过)。"
+      },
+      "SchemaOut": {
+        "properties": {
+          "datasource": {
+            "$ref": "#/components/schemas/DatasourceOut"
+          },
+          "tables": {
+            "items": {
+              "$ref": "#/components/schemas/TableDetailOut"
+            },
+            "type": "array",
+            "title": "Tables"
+          },
+          "relations": {
+            "items": {
+              "$ref": "#/components/schemas/RelationOut"
+            },
+            "type": "array",
+            "title": "Relations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "datasource",
+          "tables",
+          "relations"
+        ],
+        "title": "SchemaOut",
+        "description": "Schema 治理页一次拿全:数据源 + 表(含列)+ join。"
+      },
+      "SqlIntentDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "datasource_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Datasource Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "intent_type": {
+            "type": "string",
+            "title": "Intent Type"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket"
+          },
+          "one_liner": {
+            "type": "string",
+            "title": "One Liner"
+          },
+          "brief": {
+            "type": "string",
+            "title": "Brief"
+          },
+          "tables": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tables",
+            "default": []
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "human_edited": {
+            "type": "boolean",
+            "title": "Human Edited"
+          },
+          "prefill_rounds": {
+            "type": "integer",
+            "title": "Prefill Rounds"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "source_staging_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Staging Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count",
+            "default": 0
+          },
+          "face_count": {
+            "type": "integer",
+            "title": "Face Count",
+            "default": 0
+          },
+          "has_sql": {
+            "type": "boolean",
+            "title": "Has Sql",
+            "default": false
+          },
+          "sql": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sql"
+          },
+          "params": {
+            "$ref": "#/components/schemas/IntentParams",
+            "default": {
+              "filters": [],
+              "outputs": [],
+              "groupbys": []
+            }
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/IntentQuestionOut"
+            },
+            "type": "array",
+            "title": "Questions",
+            "default": []
+          },
+          "publish_blockers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Publish Blockers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kb_id",
+          "datasource_id",
+          "code",
+          "intent_type",
+          "one_liner",
+          "brief",
+          "status",
+          "human_edited",
+          "prefill_rounds",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SqlIntentDetail"
+      },
+      "SqlIntentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kb_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kb Id"
+          },
+          "datasource_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Datasource Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "intent_type": {
+            "type": "string",
+            "title": "Intent Type"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket"
+          },
+          "one_liner": {
+            "type": "string",
+            "title": "One Liner"
+          },
+          "brief": {
+            "type": "string",
+            "title": "Brief"
+          },
+          "tables": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tables",
+            "default": []
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "human_edited": {
+            "type": "boolean",
+            "title": "Human Edited"
+          },
+          "prefill_rounds": {
+            "type": "integer",
+            "title": "Prefill Rounds"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "source_staging_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Staging Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count",
+            "default": 0
+          },
+          "face_count": {
+            "type": "integer",
+            "title": "Face Count",
+            "default": 0
+          },
+          "has_sql": {
+            "type": "boolean",
+            "title": "Has Sql",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kb_id",
+          "datasource_id",
+          "code",
+          "intent_type",
+          "one_liner",
+          "brief",
+          "status",
+          "human_edited",
+          "prefill_rounds",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SqlIntentOut"
       },
       "StagingBulkRequest": {
         "properties": {
@@ -3520,6 +6727,327 @@
         ],
         "title": "StagingSummary",
         "description": "一个 job 下的审核进度。审核台顶部的筛选标签直接渲染它,不在前端数数\n(前端只拿到当前页的条目,数不准)。"
+      },
+      "TableDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "datasource_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Datasource Id"
+          },
+          "schema_name": {
+            "type": "string",
+            "title": "Schema Name"
+          },
+          "table_name": {
+            "type": "string",
+            "title": "Table Name"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "physical_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Physical Comment"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "row_count_estimate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Count Estimate"
+          },
+          "column_count": {
+            "type": "integer",
+            "title": "Column Count",
+            "default": 0
+          },
+          "described_columns": {
+            "type": "integer",
+            "title": "Described Columns",
+            "default": 0
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnMetaOut"
+            },
+            "type": "array",
+            "title": "Columns",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "datasource_id",
+          "schema_name",
+          "table_name",
+          "enabled"
+        ],
+        "title": "TableDetailOut"
+      },
+      "TableSave": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnPatch"
+            },
+            "type": "array",
+            "title": "Columns",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "TableSave",
+        "description": "按表保存(D2 的 Save 按钮):表级字段 + 若干列,一个事务。"
+      },
+      "TemplateDesign": {
+        "properties": {
+          "join_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Path"
+          },
+          "measures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DesignMeasure"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measures"
+          },
+          "group_by_dims": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group By Dims"
+          },
+          "default_filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DesignFilter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Filters"
+          },
+          "caliber_notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caliber Notes"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "TemplateDesign",
+        "description": "★ 生成器的结构化设计说明:join 路径 / 度量口径 / 分组维度 / 默认过滤及其理由。\n\n它是**评审材料**,不是给用户看的提示文案 —— 形状由 `template.py` 的\n结构化输出 schema 冻结(那边 measures/group_by_dims 允许 null),所以这里逐项可空。"
+      },
+      "TemplateResult": {
+        "properties": {
+          "intent": {
+            "$ref": "#/components/schemas/SqlIntentDetail"
+          },
+          "design": {
+            "$ref": "#/components/schemas/TemplateDesign",
+            "default": {}
+          },
+          "repair_rounds": {
+            "type": "integer",
+            "title": "Repair Rounds",
+            "default": 0
+          },
+          "prefill_rounds": {
+            "type": "integer",
+            "title": "Prefill Rounds",
+            "default": 0
+          },
+          "trial_cols": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Trial Cols",
+            "default": []
+          },
+          "trial_rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Trial Rows",
+            "default": []
+          },
+          "trial_rowcount": {
+            "type": "integer",
+            "title": "Trial Rowcount",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "intent"
+        ],
+        "title": "TemplateResult",
+        "description": "AI 生成模板的返回:SQL + 参数区 + **试执行结果**。\n\n试执行不是附赠品:模板生成器的通过条件之一就是\"在真库上跑得出非空结果\",\n所以这里返回的 trial 是它已经跑过的那一次,不是前端另外发起的。"
+      },
+      "TestConnectionResult": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target"
+          },
+          "server_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Version"
+          },
+          "table_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Count"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "target"
+        ],
+        "title": "TestConnectionResult",
+        "description": "Test connection 的结果。失败也是 200 —— 连不上是**业务结果**,不是接口错误。"
       },
       "TraceOut": {
         "properties": {

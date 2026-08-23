@@ -56,12 +56,15 @@ async with traced(ctx, "generate", input={...}) as span:
 `run_chat()` 只是把它消费到底拼成 `ChatResult`(S6 评测执行器用这个)。
 流式与非流式共用一份代码,S1–S4 插阶段不可能只改到一边(D4)。
 
-S1 链路:
+S1 + S3 链路:
 
 ```
 加载 agent → 存用户消息(先 commit)→ [stage: retrieve_exact_qa]
    ├─ HIT       → 原样返回标准答案 + 写 message_citations + verified 事件,**不调生成模型**
-   └─ 其他       → [stage: generate] 调 LLM
+   └─ 其他       → [stage: retrieve_text2sql](Agent 绑了问数库才跑,没绑一个事件都不发)
+                     ├─ executed                 → 确定性结论 + sql 引用(SQL+表格),标 verified
+                     ├─ refused_out_of_template   → 返回拒答理由,**也不调生成模型**
+                     └─ refused_non_data / 出错   → [stage: generate] 调 LLM
 → 存助手消息(+ citations)→ flush traces
 ```
 
@@ -76,6 +79,21 @@ S1 链路:
 - **BORDERLINE 也要留 trace**:分数 + 命中面 + 是哪道关否决的(护栏差集 / 复核理由),
   这是后续调阈值的唯一依据(见 `chat.py::_retrieval_trace`)
 - light 模型复核的 usage 也 `span.record_llm()`,否则那 2.9s 和几分钱是黑账
+
+问数 stage 的四条(C5):
+
+- **两种拒答分岔是刻意的**:模板外拒答(问对了域、超出了已验收模板)**不交给生成模型**
+  —— 那只会换来一个听起来合理的编数,而这是问数链路最不能出的错;非问数拒答
+  (检索层零 LLM 就判掉了)本来就该由别的链路接手,所以照常走生成。
+- **`execution_failed` 永远算 bug**,不是业务边界:`log.error` + 一个 `error` 事件,
+  然后退回生成(让整条问答挂掉更糟)。它出现在日志里就该有人去看。
+- **编排不在这里**:三个 stage 的内容来自 `pipeline.answer()`(被评测集守着的代码),
+  这里只负责把它摊成 span —— 埋点字段的唯一出处是 `pipeline.trace_events()`。
+  两件必须自己动手的事写在 `chat.py::_t2s_spans` 的 docstring 里:把
+  `retrieve_text2sql` 的耗时改成"只有检索那一段"(否则 `total_latency_ms` 会翻倍),
+  以及把 LLM 的账记在 `rewrite_sql` 上(唯一一次模型调用是改写计划)。
+- **非问数问题的 `rewrite_sql` span 不存在,于是也没有账** —— 那就是"检索层拒答
+  零成本"的机器可证形式(`scripts/smoke_s3_chat.py` 就是这么断言的)。
 
 S4 插 `route` 同理:加一个 `async with traced(...)` 块,事件协议只增不改。
 

@@ -1,0 +1,129 @@
+{
+  "intent": {
+    "intent_id": "i18",
+    "type": "stats",
+    "bucket": "ranking_stats",
+    "one_liner": "Stats: Top products by outbound units (last 90 days)",
+    "brief": "Ranks products by shipment volume over a recent period. Groups by product and sums quantity where movement_type is outbound within the chosen window (e.g., last 90 days), then orders descending to return the top N products; this reflects units shipped to customers. Users vary the lookback window and optionally limit to certain warehouses.",
+    "tables": [
+      "stock_movements",
+      "products"
+    ]
+  },
+  "sql": "SELECT p.id AS product_id, p.sku AS product_sku, p.name AS product_name, SUM(sm.quantity) AS total_outbound_units FROM stock_movements sm JOIN products p ON sm.product_id = p.id WHERE sm.movement_date >= '2026-05-25' AND sm.movement_type = 'outbound' AND sm.warehouse IN ('Brisbane','Melbourne','Sydney') GROUP BY p.id, p.sku, p.name ORDER BY total_outbound_units DESC LIMIT 10",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_movement_date",
+        "kind": "filter",
+        "source": "stock_movements.movement_date",
+        "operator": ">=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2026-05-25",
+        "predicate_sql": "sm.movement_date >= '2026-05-25'",
+        "business_name": "Earliest movement date",
+        "hint": "Filter by the earliest movement date to include. Map user phrases like: last 90 days, last month, this month, year to date, since 2026-06-01, from May 1 2026, after 2025-12-31. Set a single start date in format YYYY-MM-DD. Resolve all relative dates to absolute dates anchored at 2026-08-23. Valid data window is 2024-09-01 to 2026-08-23. If the user gives a range (e.g., Jun 1–Jun 30), use the stated start date only; no end date can be applied. DEFAULT: if the user does not mention timing, keep 2026-05-25 (last 90 days). DISABLE: only if the user explicitly asks for all time/no date limit; otherwise keep a start date."
+      },
+      {
+        "param_id": "f_movement_type",
+        "kind": "filter",
+        "source": "stock_movements.movement_type",
+        "operator": "=",
+        "value_type": "enum",
+        "value_shape": "scalar",
+        "default_value": "outbound",
+        "predicate_sql": "sm.movement_type = 'outbound'",
+        "business_name": "Movement type",
+        "hint": "Choose exactly one movement type. Allowed values (must match verbatim): inbound = stock received; outbound = stock dispatched; adjustment = manual correction (can add or remove). DEFAULT: outbound. Change only if the user clearly asks for a different movement type. Reject any value not in the list. DISABLE: only if the user explicitly requests all movement types with no restriction; otherwise keep this filter."
+      },
+      {
+        "param_id": "f_warehouse",
+        "kind": "filter",
+        "source": "stock_movements.warehouse",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "Brisbane",
+          "Melbourne",
+          "Sydney"
+        ],
+        "predicate_sql": "sm.warehouse IN ('Brisbane', 'Melbourne', 'Sydney')",
+        "business_name": "Warehouses",
+        "hint": "Limit to one or more warehouses. Allowed values (must match exactly): Brisbane, Melbourne, Sydney. Map user requests like: only Brisbane; Brisbane and Sydney; exclude Melbourne (select Brisbane and Sydney); or Melbourne warehouse. Do not infer from abbreviations (e.g., SYD, Bris) or states; reject values outside the list. DEFAULT: Brisbane, Melbourne, Sydney. Change to the subset the user names. DISABLE: only if the user explicitly asks for all warehouses/no warehouse filter (otherwise keep the default list)."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_product_id",
+        "kind": "output",
+        "expr": "p.id",
+        "alias": "product_id",
+        "source": "products.id",
+        "business_name": "Product ID",
+        "hint": "Shows the internal product identifier. Keep unless the user asks to hide IDs or wants fewer columns (e.g., just SKU/name and units). Drop only when the user requests a narrower output."
+      },
+      {
+        "param_id": "o_product_sku",
+        "kind": "output",
+        "expr": "p.sku",
+        "alias": "product_sku",
+        "source": "products.sku",
+        "business_name": "SKU",
+        "hint": "Shows the product SKU code. Keep by default; drop only if the user asks for fewer columns or does not need SKU."
+      },
+      {
+        "param_id": "o_product_name",
+        "kind": "output",
+        "expr": "p.name",
+        "alias": "product_name",
+        "source": "products.name",
+        "business_name": "Product name",
+        "hint": "Shows the human-readable product name. Keep by default; drop only if the user asks for fewer columns (e.g., just SKU and units)."
+      },
+      {
+        "param_id": "o_total_outbound_units",
+        "kind": "output",
+        "expr": "SUM(sm.quantity)",
+        "alias": "total_outbound_units",
+        "source": "stock_movements.quantity",
+        "business_name": "Total units shipped",
+        "hint": "Sum of movement quantities for rows that pass the filters (movement_type, date, warehouses). This is the metric used to rank products. Always keep unless the user explicitly requests only identifiers without metrics (rare)."
+      }
+    ],
+    "groupbys": [
+      {
+        "param_id": "g_product_id",
+        "kind": "groupby",
+        "expr": "p.id",
+        "source": "products.id",
+        "linked_output": "product_id",
+        "business_name": "Group by product ID",
+        "hint": "Groups results at the product level. Dropping this makes the aggregation coarser: if you also drop SKU/Name, all products roll up into a single total; if you keep Name or SKU without ID, products sharing that value will be combined. Drop only if the user asks for less detail/roll-up."
+      },
+      {
+        "param_id": "g_product_sku",
+        "kind": "groupby",
+        "expr": "p.sku",
+        "source": "products.sku",
+        "linked_output": "product_sku",
+        "business_name": "Group by SKU",
+        "hint": "Groups by product SKU. With product ID kept, dropping SKU does not change totals; it only removes that attribute from the output. If ID is dropped and SKU kept, products with the same SKU (if any) will be combined. Drop only when the user wants less detail."
+      },
+      {
+        "param_id": "g_product_name",
+        "kind": "groupby",
+        "expr": "p.name",
+        "source": "products.name",
+        "linked_output": "product_name",
+        "business_name": "Group by product name",
+        "hint": "Groups by product name. With product ID kept, dropping Name does not change totals; it only removes that attribute from the output. If ID is dropped and Name kept, products sharing the same name will be combined. Drop only when the user asks for less detail."
+      }
+    ]
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-23T17:56:36",
+  "human_edited": false,
+  "finalized_at": "2026-08-23T18:04:59"
+}

@@ -122,7 +122,22 @@
 
 ---
 
-## 4. 智能问数域(语义层即知识)
+## 4. 智能问数域(语义层 + 已验证意图)
+
+> **本节在 S3 开工时按实测重写(2026-08-23)**,替换 v0.1 的草稿。改动的依据不是审美,
+> 而是 Phase B 的实测结论(逐条证据见 `documents/S3-PLAN.md` 的 B1–B8 证据块):
+>
+> 1. **不做"自由 Text2SQL"**。运行时不让模型现写 SQL,而是**命中一条人工验收过的
+>    SQL 模板**,再在模板的参数区里做受约束改写(只准换值、减列、减分组,不准加谓词、
+>    不准换表)。所以这里的一等公民是 **`sql_intents`(意图 = 模板 + 参数区)**。
+> 2. **`metrics` / `terms` / `rules` / `sql_examples` 四张表废弃**(见下方"§4.9 废弃说明")。
+>    它们服务的是"自由生成 + few-shot"路线;模板路线里指标口径已经**焊死在模板 SQL 里**,
+>    再放一份可漂移的口径定义,等于给同一件事留两个出处。
+> 3. **演示业务库改用 MySQL 8.4**(独立容器,端口 3307),所以 `datasources.db_type`
+>    放开到 `mysql`。理由:面试演示要展示"接入客户已有的库",而客户库以 MySQL 为多;
+>    同时它逼着 introspection 走 `information_schema` + distinct 采样这条真实路径。
+> 4. 检索层是**语义路由**:意图的相似问法与"以上都不是"的负例面进**同一个向量空间**,
+>    所以索引面表 `intent_vectors` 的 `intent_id` 可空(空 = 空路由伪意图)。
 
 ### datasources
 
@@ -131,11 +146,14 @@
 | id | uuid | PK | |
 | kb_id | uuid | FK→knowledge_bases, NOT NULL | |
 | name | text | NOT NULL | |
-| db_type | text | CHECK IN ('postgres') DEFAULT 'postgres' | 演示只支持 PG |
-| dsn_enc | text | NOT NULL | 连接串,Fernet 对称加密,密钥来自 env `SECRET_KEY` |
-| readonly_confirmed | boolean | DEFAULT false | 运维确认该账号只读;false 时问数功能拒绝执行 |
+| db_type | text | CHECK IN ('mysql','postgres') DEFAULT 'mysql' | 演示库是 MySQL 8.4;PG 留着是因为 introspection 走的是 `information_schema`,换库只换方言 |
+| dsn_enc | text | NOT NULL | 连接串,Fernet 对称加密,密钥来自 env `SECRET_KEY`。**明文永不落库、永不出接口** |
+| readonly_confirmed | boolean | DEFAULT false | 运维确认该账号只读;false 时执行闸直接拒(不是提示,是拒) |
 | status | text | CHECK IN ('active','disabled') DEFAULT 'active' | |
+| last_synced_at | timestamptz | | 最近一次 schema 同步完成时间(前端显示"元数据是否过期") |
 | created_at / updated_at | timestamptz | | |
+
+约束:UNIQUE `(kb_id, name)`。
 
 ### table_meta
 
@@ -143,12 +161,13 @@
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | datasource_id | uuid | FK→datasources ON DELETE CASCADE | |
-| schema_name | text | DEFAULT 'public' | |
+| schema_name | text | NOT NULL | MySQL 下就是 database 名(`clenergy_biz`);PG 下是 schema |
 | table_name | text | NOT NULL | |
-| display_name | text | | 中文名,如"订单表" |
-| description | text | | 给 LLM 的表用途说明 |
-| enabled | boolean | DEFAULT true | 是否纳入问数范围(治理开关) |
-| row_count_estimate | bigint | | schema 同步时统计 |
+| display_name | text | | 业务名(英文,平台面向澳洲用户) |
+| description | text | | 给 LLM 的表用途说明,**AI 预填 + 人工确认**(B2) |
+| physical_comment | text | | 库里原本的表注释,同步时抓取。是治理素材,不是成品 —— 演示库刻意只有一部分表列有注释 |
+| enabled | boolean | DEFAULT true | 治理开关:是否纳入问数范围 |
+| row_count_estimate | bigint | | 同步时统计 |
 | created_at / updated_at | timestamptz | | |
 
 约束:UNIQUE `(datasource_id, schema_name, table_name)`。
@@ -160,11 +179,18 @@
 | id | uuid | PK | |
 | table_meta_id | uuid | FK→table_meta ON DELETE CASCADE | |
 | column_name | text | NOT NULL | |
-| data_type | text | | 同步时抓取 |
-| display_name / description | text | | 治理录入 |
-| is_sensitive | boolean | DEFAULT false | true 时生成的 SQL 禁止 SELECT 此列 |
-| enum_values | jsonb | NULL | 低基数列取值字典,如 `["华东","华南"]`,直接进 prompt |
-| sample_values | jsonb | NULL | 同步时采样 3–5 个值,帮 LLM 理解格式 |
+| ordinal | int | | 库里的列序,前端表格按它排(按字母排会让 id/主键跑到中间) |
+| data_type | text | | 同步时抓取,如 `varchar(128)` / `decimal(12,2)` |
+| is_nullable | boolean | DEFAULT true | 同步时抓取 |
+| key_flag | text | | `PRI` / `UNI` / `MUL`,同步时抓取;join 提示与主键识别都要它 |
+| physical_comment | text | | 库里原本的列注释,同步时抓取 |
+| display_name | text | | 业务名,AI 预填 + 人工确认 |
+| description | text | | 给 LLM 的列说明,AI 预填 + 人工确认 |
+| is_sensitive | boolean | DEFAULT false | true 时模板生成与改写都禁止 SELECT 此列 |
+| distinct_count | int | | 同步时统计,判"像不像枚举"用 |
+| is_enum_like | boolean | DEFAULT false | 低基数且类型合适 → 视为枚举维度 |
+| enum_values | jsonb | NULL | **结构变了**:`[{"value":"NSW","meaning":"New South Wales."}]`。v0.1 是裸 string[],但改写阶段真正需要的是"值→含义",模型才敢把"新南威尔士的单"映射到 `NSW` |
+| sample_values | jsonb | NULL | 同步时采样 ≤5 个值(截断到 80 字符),帮模型理解格式 |
 | enabled | boolean | DEFAULT true | |
 | created_at / updated_at | timestamptz | | |
 
@@ -178,62 +204,148 @@
 | datasource_id | uuid | FK→datasources ON DELETE CASCADE | |
 | from_table / from_column / to_table / to_column | text | NOT NULL | |
 | relation_type | text | CHECK IN ('many_to_one','one_to_one') | |
+| source | text | CHECK IN ('foreign_key','heuristic','human') DEFAULT 'foreign_key' | **来源必须留痕**:演示库刻意有两处"该有 FK 但没建"的逻辑关联(`orders.sales_rep_id`、`inventory.product_id`),它们是命名启发式猜出来的,可信度与真 FK 不同,人审时要能一眼分开 |
 | description | text | | |
 
-### metrics(指标口径)
+约束:UNIQUE `(datasource_id, from_table, from_column, to_table, to_column)`。
+
+### sql_intents(★ 本域的核心表:意图 = 已验收的 SQL 模板 + 参数区)
+
+一条 `sql_intent` 就是"一类能被准确回答的数据问题"。它不是 few-shot 素材,是**运行时唯一
+会被执行的 SQL 的来源** —— 运行时只在它的参数区内做受约束改写,不重新生成 SQL。
 
 | 列 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | kb_id | uuid | FK→knowledge_bases, NOT NULL | |
-| name | text | NOT NULL | 如"销售额" |
-| aliases | jsonb | DEFAULT '[]' | string[],如 ["营收","GMV"] |
-| definition_sql | text | NOT NULL | 如 `SUM(oi.qty * oi.unit_price)` |
-| unit | text | | 元 / 台 / % |
-| description | text | | |
-| status | text | CHECK IN ('enabled','disabled') DEFAULT 'enabled' | |
+| datasource_id | uuid | FK→datasources ON DELETE CASCADE | 模板绑死在某个数据源上(SQL 方言与表名都是它的) |
+| code | text | NOT NULL | 人可见的稳定短标识(`i01`…),报告/trace/评测集都引它;换 uuid 会让所有人审材料失去可读性 |
+| intent_type | text | CHECK IN ('query','stats') NOT NULL | 列明细 / 出聚合。**分型决定模板生成策略与参数区形状**,不是标签 |
+| bucket | text | | 生成期的归类(`multi_table_query` / `time_stats` …),用于覆盖面自查 |
+| one_liner | text | NOT NULL | 一句话摘要(带 `Query:`/`Stats:` 治理前缀)。**进索引前会剥掉前缀** —— 前缀是内部治理标签,用户问句里绝不会出现 |
+| brief | text | NOT NULL | 说明书体详述(给模板生成与人审看)。**刻意不进检索索引**:B7 消融实测它对"问句 vs 问句"匹配零增益,却制造 3 条意图间自洽性冲突 |
+| tables | jsonb | DEFAULT '[]' | string[],涉及的物理表 |
+| sql | text | | 已验收的模板 SQL(带默认参数值,可直接执行) |
+| params | jsonb | DEFAULT '{}' | 参数区三段结构,见 §4.8 |
+| status | text | CHECK IN ('draft','published','disabled') DEFAULT 'draft' | published 才进检索索引 |
+| prefill_rounds | int | DEFAULT 0 | 参数区 AI 预填用了几轮(含回灌自修),质量留痕 |
+| human_edited | boolean | DEFAULT false | 人是否改过 SQL 或参数区 |
+| source_staging_id | uuid | FK→staging_items ON DELETE SET NULL | 溯源到候选(与 S1 同一条纪律:正式表不复制 origin_ref) |
+| published_at | timestamptz | | |
 | created_at / updated_at | timestamptz | | |
 
-约束:UNIQUE `(kb_id, name)`。
+约束:UNIQUE `(kb_id, code)`。索引:`(datasource_id)`、`(kb_id, status)`。
 
-### terms(业务术语映射)
+### intent_questions(相似问法:可编辑子资产)
+
+概念与 S1 精准问答的"相似问题"完全一致 —— 检索时比的是**问句 vs 问句**,而不是问句 vs 说明文。
+AI 生成 ~8 条,人可增删改;**保存即重建该意图的索引面**。
 
 | 列 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | id | uuid | PK | |
-| kb_id | uuid | FK→knowledge_bases, NOT NULL | |
-| term | text | NOT NULL | 如"华东区" |
-| definition | text | NOT NULL | 自然语言口径,如 `regions.name = '华东'` |
-| aliases | jsonb | DEFAULT '[]' | |
+| intent_id | uuid | FK→sql_intents ON DELETE CASCADE | |
+| question_text | text | NOT NULL | 英文,一句一条 |
+| origin | text | CHECK IN ('ai','human') DEFAULT 'ai' | 人改过的那条要能看出来 |
 | created_at / updated_at | timestamptz | | |
 
-约束:UNIQUE `(kb_id, term)`。
+约束:UNIQUE `(intent_id, question_text)`。
 
-### rules(问数全局规则)
+> **本表不存向量** —— 向量在 `intent_vectors`。分开的理由和 S1 一样:问法集合一变就
+> **全删重建**该意图的索引面,不做增量 diff;把向量挂在可编辑资产行上,就得处理
+> "改了一条、删了一条、又加回来"的组合,是自找麻烦。
+
+### non_data_faces(空路由负例面:"以上都不是"的示例)
 
 | 列 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | kb_id | uuid | FK→knowledge_bases, NOT NULL | |
-| rule_type | text | CHECK IN ('scope','filter','style') | 范围限制 / 默认过滤 / 输出风格 |
-| content | text | NOT NULL | 如"默认排除 status='cancelled' 的订单" |
+| face_text | text | NOT NULL | 一句"明显不是问数"的问题(产品规格/质保/操作手册/故障码/流程政策/闲聊) |
+| origin | text | CHECK IN ('ai','human') DEFAULT 'human' | |
 | enabled | boolean | DEFAULT true | |
+| created_at / updated_at | timestamptz | | |
+
+约束:UNIQUE `(kb_id, face_text)`。
+
+> **这张表为什么必须存在**(B8 实测逼出来的,不是设计洁癖):
+> `What's the warranty period on the HC-300 battery cabinet?` 会**确信地**命中库存流水意图
+> (相似度 0.5183、边距 0.2575),因为它和一条含产品全名的相似问法**共享产品名**。
+> 调阈值救不了 —— 0.5183 高于"应命中类"的最低分 0.4981,抬阈值必先误杀真正例。
+> 区分它靠的不是分数高低,而是**索引里有没有一个更像的负例**。
+> 实测:加上它,非问数负例 13/14 → 14/14,而正例 32/32、均分、均边距、命中面构成**全不变**。
+
+### intent_vectors(索引面:一面一行)
+
+运行时检索的唯一数据来源。一次问答只读这一张表(按 kb 取全部面 → 每意图取其所有面的
+**max** 相似度 → 双门槛判定)。
+
+| 列 | 类型 | 约束 | 说明 |
+| --- | --- | --- | --- |
+| id | uuid | PK | |
+| kb_id | uuid | FK→knowledge_bases, NOT NULL | 检索的过滤维度 |
+| intent_id | uuid | FK→sql_intents ON DELETE CASCADE, **NULL 允许** | NULL = 空路由伪意图(`__non_data__`)。**这一列可空是本域最需要解释的设计**:空路由要能和真意图在同一次比较里竞争,才可能"比所有真意图都更像",所以它必须住在同一张索引表里 |
+| face_kind | text | CHECK IN ('summary','question','non_data') NOT NULL | 评审报告要能回答"哪一类面在真正干活" |
+| face_text | text | NOT NULL | 被嵌入的原文(剥过治理前缀) |
+| embedding | vector(DIM) | NOT NULL | |
 | created_at | timestamptz | | |
 
-### sql_examples(few-shot 示范)
+约束:CHECK `(face_kind = 'non_data') = (intent_id IS NULL)`(两边必须同时成立,防出现"挂在真意图上的负例面"这种脏数据)。
+索引:HNSW `(embedding)` + `(kb_id)`。
 
-| 列 | 类型 | 约束 | 说明 |
-| --- | --- | --- | --- |
-| id | uuid | PK | |
-| kb_id | uuid | FK→knowledge_bases, NOT NULL | |
-| question | text | NOT NULL | |
-| sql | text | NOT NULL | |
-| note | text | | 讲解这条 SQL 的要点 |
-| embedding | vector(DIM) | | 按 question 嵌入,运行时检索最相似的 few-shot |
-| verified | boolean | DEFAULT true | |
-| created_at / updated_at | timestamptz | | |
+> **维护规则**:意图发布 / 相似问法保存 / 负例面保存 → **全删重建**对应的面
+> (意图的:该 intent_id 的全部行;负例的:该 kb 下 `intent_id IS NULL` 的全部行)。
+> 意图下线(`status='disabled'`)= 删它的面,正式行留着可追溯。
 
-索引:HNSW `(embedding)`。
+### §4.8 `sql_intents.params` 的三段结构
+
+参数区由**代码从模板 SQL 的 AST 解析出骨架**(不是 LLM 想象出来的),再由 AI 给每个参数
+预填业务名与 `hint`(人可改)。运行时改写只允许在这三段之内动。
+
+```json
+{
+  "filters": [{
+    "param_id": "f_movement_date",
+    "kind": "filter",
+    "source": "stock_movements.movement_date",
+    "operator": "BETWEEN",
+    "value_type": "date",          // date | enum | number | string | id
+    "value_shape": "range",        // scalar | range | list
+    "default_value": ["2025-08-23", "2026-08-23"],
+    "predicate_sql": "sm.movement_date BETWEEN '2025-08-23' AND '2026-08-23'",
+    "business_name": "Movement date range",
+    "hint": "给改写模型看的映射说明:什么样的用户说法该改成什么值,默认值是什么,什么情况下才允许禁用"
+  }],
+  "outputs":  [{ "param_id": "o_...", "kind": "output",  "expr": "...", "alias": "outbound_units", "source": "...", "business_name": "...", "hint": "..." }],
+  "groupbys": [{ "param_id": "g_...", "kind": "groupby", "expr": "...", "source": "...", "linked_output": "o_...", "business_name": "...", "hint": "..." }]
+}
+```
+
+三段各自允许的运行时动作(**这就是"能力边界"的定义,超出的一律拒答**):
+
+| 段 | 允许 | 不允许 |
+| --- | --- | --- |
+| `filters` | 改值(在 `value_type`/枚举字典允许的范围内)、禁用 | 加新谓词、改算子、改列 |
+| `outputs` | 减列 | 加列、改表达式 |
+| `groupbys` | 减分组(连带删掉 `linked_output` 那一列) | 加分组维度 |
+
+> `linked_output` 存在的原因:SQL 里减掉一个 GROUP BY 维度却把对应的 SELECT 列留着,
+> 在 MySQL 严格模式下直接是语法错。这条链接让"减分组"变成一个原子动作。
+
+### §4.9 废弃说明:metrics / terms / rules / sql_examples
+
+四张表在 S3 开工时**物理删除**(它们从建库起就是空的,没有任何代码写过)。删而不是留空的理由:
+schema 是给后来的人读的文档,留四张永不写入的表,等于留四条会误导人的线索。
+
+| 废弃的表 | 它服务的路线 | 在模板路线里被谁替代 |
+| --- | --- | --- |
+| `metrics`(指标口径) | 自由生成时告诉模型"营收怎么算" | **焊死在 `sql_intents.sql` 里**,并经人工验收。口径只有一个出处,不会漂移 |
+| `terms`(业务术语) | 自由生成时做同义词映射 | `intent_questions`(用户怎么问 → 命中哪个意图)+ `column_meta.enum_values` 的 value→meaning |
+| `rules`(全局口径规则) | 拼进 prompt 的软约束 | 模板 SQL 里的固化谓词 + 参数区 `hint`(硬约束),软约束改成硬约束 |
+| `sql_examples`(few-shot) | 提示模型照着写 | 模板本身就是"被验证过的答案",不再需要"像什么样"的示范 |
+
+> 如果日后要做"自由 Text2SQL"兜底(模板全都不命中时现写 SQL),这四张表要连同它们的
+> 治理界面一起重新引入 —— 那是一条独立的、准确率完全不同的链路,不是本表的扩展。
 
 ---
 
@@ -528,11 +640,26 @@ Pydantic 侧为每种 payload 建 schema,PATCH 审核修改时校验。
 
 **chunk**(S2):`{"content": "...", "heading_path": "...", "summary": "...", "hypo_questions": [...]}`
 
-**table_meta**(S3):`{"table_name": "orders", "display_name": "订单表", "description": "...", "columns": [{"column_name": "...", "display_name": "...", "description": "..."}]}`
+**sql_intent**(S3,意图候选 —— AI 提的"这类问题值得做成模板吗"等人采纳):
+```json
+{
+  "code": "i16", "intent_type": "stats", "bucket": "time_stats",
+  "one_liner": "Stats: Monthly outbound units trend by warehouse",
+  "brief": "Aggregates outbound movements into a monthly trend ...",
+  "tables": ["stock_movements"]
+}
+```
 
-**metric**(S3):`{"name": "销售额", "aliases": [...], "definition_sql": "...", "unit": "元"}`
-
-**term**(S3):`{"term": "华东区", "definition": "...", "aliases": [...]}`
+> **S3 只有这一种候选进审核台**,v0.1 的 `table_meta` / `metric` / `term` 三种 payload 一起废弃。
+> 另外两样 S3 产物刻意不走 staging,各有自己的界面:
+>
+> | 产物 | 为什么不进泛型审核台 | 它的审核界面 |
+> | --- | --- | --- |
+> | 表/列 description | 审它的时候必须**同屏看到采样值与枚举字典**,否则没法判断描述对不对;而审核台是一列卡片,给不了这个上下文 | Schema 治理页(就地编辑 + 单字段 AI + 表级批量 AI) |
+> | SQL 模板与参数区 | 审的是"**这条 SQL 能不能跑出对的数**",要能改 SQL 再 Run 一遍看结果 | 意图详情页(生成 → Run → 改 → 发布) |
+>
+> 于是 S3 的采纳与发布是**两件事**:采纳(审核台)= "这类问题值得做成模板",
+> 意图落成 `status='draft'`;发布(意图详情页)= "这条模板我验收了",才 `published` 并建索引面。
 
 ---
 
@@ -543,7 +670,9 @@ users ─┬─ knowledge_bases ─┬─ exact_qa_items ── exact_qa_vectors
        │                   ├─ documents ── chunks
        │                   ├─ datasources ─┬─ table_meta ── column_meta
        │                   │               └─ relations
-       │                   ├─ metrics / terms / rules / sql_examples
+       │                   ├─ sql_intents ─┬─ intent_questions
+       │                   │               └─ intent_vectors ←── non_data_faces
+       │                   │                  (intent_id IS NULL 的面 = 空路由)
        │                   └─ ingest_sources ── ingest_jobs ── staging_items ── publish_records
        │
        ├─ agents ── agent_kb_bindings ──→ knowledge_bases
@@ -555,7 +684,7 @@ eval_sets ── eval_cases ── eval_results ── eval_runs(→ agents)
 unanswered_pool(→ agents, messages)
 ```
 
-共 30 张表(逐项数下来是 30,早先文中写的 28 是笔误)。
+共 30 张表。S3 开工时**净数不变**:新增 4 张(`sql_intents` / `intent_questions` / `non_data_faces` / `intent_vectors`),删除 4 张(§4.9 的 `metrics` / `terms` / `rules` / `sql_examples`)。
 
 **代码对应**:`server/app/models/`,一表一模型,汇总导出在 `models/__init__.py`;
 初始 migration 为 `server/migrations/versions/*_initial_schema.py`。

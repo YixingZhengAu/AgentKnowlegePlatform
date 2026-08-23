@@ -1,24 +1,30 @@
-/** 智能问数 ingestion 页 —— 空白壳(结构调整决策:空白壳,见 S0-PLAN §5)。
- *  真实流程待需求确认后,由本域开发者在 src/domains/text2sql/ 内自行搭建。 */
+/** 智能问数域的路由壳(S3-PLAN Phase D)。
+ *
+ * 共享路由表只给每个域一个 `/ingest/<域>/*` 空间(见 `src/App.tsx`),域内二级页在这里摆 ——
+ * 于是"本域加一个页面"不需要碰任何共享文件。
+ *
+ *   /ingest/text2sql                                     数据源管理(D1)
+ *   /ingest/text2sql/datasources/:datasourceId/schema     Schema 治理(D2)
+ *   /ingest/text2sql/intents                              意图列表 + 空路由负例面(D3)
+ *   /ingest/text2sql/intents/:intentId                    意图详情:SQL / 参数区 / 问法(D4)
+ *
+ * 意图候选的审核走共享路由 `/jobs/:jobId/review`(泛型审核台 + 本域渲染器,D3)。
+ */
 
-import { Database } from 'lucide-react'
+import { Route, Routes } from 'react-router-dom'
 
-import { EmptyState } from '@/components/EmptyState'
+import { DatasourcesPage } from './DatasourcesPage'
+import { IntentDetailPage } from './IntentDetailPage'
+import { IntentsPage } from './IntentsPage'
+import { SchemaPage } from './SchemaPage'
 
 export function IngestPage() {
   return (
-    <div className="flex flex-col gap-5">
-      <div className="-mt-1 flex items-center gap-2.5">
-        <span className="bg-kb-text2sql size-2.5 rounded-full" />
-        <span className="text-faint text-[13px]">Structured data knowledge</span>
-      </div>
-      <div className="bg-card rounded-[var(--radius-card)] border border-[var(--border)] shadow-[var(--shadow-card)]">
-        <EmptyState
-          icon={Database}
-          title="Text-to-SQL ingestion"
-          description="The ingestion workflow for table metadata, metrics and business terms has not been built yet. This workspace is reserved for it."
-        />
-      </div>
-    </div>
+    <Routes>
+      <Route index element={<DatasourcesPage />} />
+      <Route path="datasources/:datasourceId/schema" element={<SchemaPage />} />
+      <Route path="intents" element={<IntentsPage />} />
+      <Route path="intents/:intentId" element={<IntentDetailPage />} />
+    </Routes>
   )
 }

@@ -12,6 +12,7 @@ from app.api import (
     jobs,
     kbs,
     staging,
+    text2sql,
     traces,
 )
 
@@ -27,5 +28,7 @@ api_router.include_router(staging.router)
 # S1:精准问答的域接口 + 解析产物图片出口(M1.5)
 api_router.include_router(exact_qa.router)
 api_router.include_router(files.router)
+# S3:智能问数的域接口(数据源 / Schema 治理 / 意图与模板 / 发布)
+api_router.include_router(text2sql.router)
 
 __all__ = ["api_router"]

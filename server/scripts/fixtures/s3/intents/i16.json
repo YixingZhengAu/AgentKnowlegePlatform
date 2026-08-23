@@ -1,0 +1,113 @@
+{
+  "intent": {
+    "intent_id": "i16",
+    "type": "stats",
+    "bucket": "time_stats",
+    "one_liner": "Stats: Monthly outbound units trend by warehouse",
+    "brief": "Aggregates outbound movements into a monthly trend to show shipping volume. Groups by year–month and warehouse, summing quantity where movement_type is outbound; this measures units dispatched to customers or transfers out. Users vary the date range and may include or exclude specific warehouses.",
+    "tables": [
+      "stock_movements"
+    ]
+  },
+  "sql": "SELECT DATE_FORMAT(sm.movement_date, '%Y-%m') AS `year_month`, sm.warehouse AS `warehouse_name`, SUM(sm.quantity) AS `outbound_units` FROM stock_movements sm WHERE sm.movement_date BETWEEN '2025-08-23' AND '2026-08-23' AND sm.movement_type = 'outbound' AND sm.warehouse IN ('Brisbane', 'Melbourne', 'Sydney') GROUP BY DATE_FORMAT(sm.movement_date, '%Y-%m'), sm.warehouse ORDER BY DATE_FORMAT(sm.movement_date, '%Y-%m') ASC LIMIT 200",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_movement_date",
+        "kind": "filter",
+        "source": "stock_movements.movement_date",
+        "operator": "BETWEEN",
+        "value_type": "date",
+        "value_shape": "range",
+        "default_value": [
+          "2025-08-23",
+          "2026-08-23"
+        ],
+        "predicate_sql": "sm.movement_date BETWEEN '2025-08-23' AND '2026-08-23'",
+        "business_name": "Movement date range",
+        "hint": "Maps from user phrases about time such as: date ranges (between 2025-01-01 and 2025-12-31), since/until (since 2025-07-01, until 2026-03-31), recent periods (last month, last 3 months, last 12 months, year to date, this year, last year), or specific months (June 2026). Always convert to an absolute start and end date in YYYY-MM-DD. Resolve all relative dates anchored at 2026-08-23. Valid data window is 2024-09-01 to 2026-08-23; clamp requested dates to this window. Default: keep the template range 2025-08-23 to 2026-08-23 if the user does not mention time. Disable only if the user explicitly asks for “all time”, “entire dataset”, or equivalent; disabling means include all available dates (2024-09-01 to 2026-08-23)."
+      },
+      {
+        "param_id": "f_movement_type",
+        "kind": "filter",
+        "source": "stock_movements.movement_type",
+        "operator": "=",
+        "value_type": "enum",
+        "value_shape": "scalar",
+        "default_value": "outbound",
+        "predicate_sql": "sm.movement_type = 'outbound'",
+        "business_name": "Movement type",
+        "hint": "Maps from user terms describing direction/type: shipments/dispatches/ship-outs/outbound → outbound; receipts/incoming/inbound → inbound; stocktake correction/adjustment → adjustment; “all movement types” → disable this filter. Allowed values (must use exactly one of these or disable): inbound (Stock received into the warehouse), outbound (Stock dispatched from the warehouse), adjustment (Manual stock correction). Default: keep outbound. Change only if the user clearly requests a different type. Disable only if the user explicitly requests all movement types; otherwise do not disable."
+      },
+      {
+        "param_id": "f_warehouse",
+        "kind": "filter",
+        "source": "stock_movements.warehouse",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "Brisbane",
+          "Melbourne",
+          "Sydney"
+        ],
+        "predicate_sql": "sm.warehouse IN ('Brisbane', 'Melbourne', 'Sydney')",
+        "business_name": "Warehouses",
+        "hint": "Maps from user mentions of locations: Brisbane, Melbourne, Sydney. Also handle include/exclude phrasing: “Sydney only” → [\"Sydney\"]; “exclude Melbourne” → include all other allowed values except Melbourne (i.e., [\"Brisbane\",\"Sydney\"]). This is an enum list; allowed values only: Brisbane, Melbourne, Sydney. Reject any value outside this list (do not guess). Default: keep [\"Brisbane\",\"Melbourne\",\"Sydney\"] if the user doesn’t specify. Disable only if the user asks for all warehouses; disabling means include every warehouse in the data (i.e., remove the IN filter)."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_year_month",
+        "kind": "output",
+        "expr": "DATE_FORMAT(sm.movement_date, '%Y-%m')",
+        "alias": "year_month",
+        "source": "stock_movements.movement_date",
+        "business_name": "Month",
+        "hint": "Output shows the calendar year–month (YYYY-MM) bucket of the movement date. Keep this unless the user asks for no timeline (e.g., just totals by warehouse or a single overall total). Drop only when the user explicitly wants a higher-level summary without monthly breakdown."
+      },
+      {
+        "param_id": "o_warehouse_name",
+        "kind": "output",
+        "expr": "sm.warehouse",
+        "alias": "warehouse_name",
+        "source": "stock_movements.warehouse",
+        "business_name": "Warehouse",
+        "hint": "Output shows the warehouse name (city) associated with the movement. Keep this to compare warehouses. Drop only if the user asks for a single combined total across all warehouses or only cares about the time trend without warehouse split."
+      },
+      {
+        "param_id": "o_outbound_units",
+        "kind": "output",
+        "expr": "SUM(sm.quantity)",
+        "alias": "outbound_units",
+        "source": "stock_movements.quantity",
+        "business_name": "Units moved",
+        "hint": "Output shows the total quantity moved (sum of quantity) within each group. Always keep unless the user asks for a purely dimensional listing without measures (unlikely). This is the primary metric for shipping volume."
+      }
+    ],
+    "groupbys": [
+      {
+        "param_id": "g_year_month",
+        "kind": "groupby",
+        "expr": "DATE_FORMAT(sm.movement_date, '%Y-%m')",
+        "source": "stock_movements.movement_date",
+        "linked_output": "year_month",
+        "business_name": "Group by month",
+        "hint": "Dimension: calendar year–month of movement date. Dropping this aggregates all selected dates together, producing totals per remaining dimensions (e.g., per warehouse) or a single grand total if no other group remains. Drop only if the user asks for a summary without monthly detail (e.g., total by warehouse for the period or overall total)."
+      },
+      {
+        "param_id": "g_warehouse_name",
+        "kind": "groupby",
+        "expr": "sm.warehouse",
+        "source": "stock_movements.warehouse",
+        "linked_output": "warehouse_name",
+        "business_name": "Group by warehouse",
+        "hint": "Dimension: warehouse (city). Dropping this aggregates across all warehouses, yielding a single time series by month (if month kept) or one overall total for the date range (if month also dropped). Drop only if the user asks to combine all warehouses or not to split by warehouse."
+      }
+    ]
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-23T17:56:17",
+  "human_edited": false,
+  "finalized_at": "2026-08-23T18:04:59"
+}

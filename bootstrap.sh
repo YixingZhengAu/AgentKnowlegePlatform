@@ -2,12 +2,12 @@
 # Clenergy 企业知识 Agent 系统 —— 一键装环境
 #
 # 干什么:把「新克隆的仓库」变成「能跑起来的系统」——检查工具链、生成 .env、装前后端依赖、
-#        起 Postgres(pgvector)、建表、灌演示数据,最后自检一遍并打印下一步。
+#        起 Postgres(pgvector)与演示业务库 MySQL、建表、灌演示数据,最后自检一遍并打印下一步。
 # 幂等:重复跑安全(依赖是 sync、迁移到 head、seed 是 upsert;已存在的 .env 不会被覆盖)。
 #
 # 用法:./bootstrap.sh [选项]
 #   --with-mineru   连 PDF 解析容器一起装(build 镜像 + 下 1GB 权重,约 10 分钟;S1 上传解析要用)
-#   --reset         先删库重建(会丢现有演示数据)
+#   --reset         先删库重建(会丢现有演示数据;两个数据库的卷都删)
 #   --skip-smoke    跳过真实调 LLM/Embedding 的冒烟(省钱,但也就不验 key 是否可用)
 #   -y, --yes       非交互:缺 uv 直接装,不再问任何确认(CI / 无人值守用)
 #   -h, --help      看这段说明
@@ -29,7 +29,7 @@ else
 fi
 
 STEP_NO=0
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 WARN_COUNT=0
 WARN_LOG="$(mktemp -t bootstrap-warn)"
 
@@ -72,7 +72,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 	shift
 done
-[[ $WITH_MINERU -eq 1 ]] && TOTAL_STEPS=8
+[[ $WITH_MINERU -eq 1 ]] && TOTAL_STEPS=9
 
 confirm() {  # confirm "问题" -> 0=yes;-y 时一律 yes;非交互终端一律 no
 	[[ $ASSUME_YES -eq 1 ]] && return 0
@@ -176,7 +176,7 @@ ok "前端依赖就绪(web/node_modules)"
 step "起 Postgres 16 + pgvector"
 
 if [[ $DO_RESET -eq 1 ]]; then
-	if confirm "--reset 会删掉数据库卷(现有演示数据全丢),继续?"; then
+	if confirm "--reset 会删掉两个数据库的卷(现有演示数据全丢),继续?"; then
 		# 只删 pg 的卷:compose down -v 会连 MinerU 那 1GB 权重卷一起删掉,重下很贵
 		PGVOL="$(docker inspect agent_system_pg \
 			--format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}' 2>/dev/null || true)"
@@ -186,6 +186,13 @@ if [[ $DO_RESET -eq 1 ]]; then
 			ok "旧数据卷已删($PGVOL);MinerU 权重卷未受影响"
 		else
 			warn "没找到已有的 pg 数据卷(容器可能从没起过),当作全新安装继续"
+		fi
+		BIZVOL="$(docker inspect agent_system_bizdb \
+			--format '{{range .Mounts}}{{if eq .Destination "/var/lib/mysql"}}{{.Name}}{{end}}{{end}}' 2>/dev/null || true)"
+		docker compose rm -sf biz-mysql >/dev/null 2>&1 || true
+		if [[ -n "$BIZVOL" ]]; then
+			docker volume rm -f "$BIZVOL" >/dev/null
+			ok "旧业务库数据卷已删($BIZVOL)"
 		fi
 	else
 		die "已取消(去掉 --reset 再跑)"
@@ -201,9 +208,27 @@ for _ in $(seq 1 60); do
 	sleep 1
 done
 [[ "${READY:-0}" -eq 1 ]] || die "Postgres 60s 内没就绪。看日志:docker compose logs postgres"
-ok "Postgres 就绪(localhost:5432);首次启动已建 clenergy_biz 与只读账号 biz_reader"
+ok "Postgres 就绪(localhost:5432);扩展 vector / pgcrypto 已装"
 
-# ===== 5. 建表 + 演示数据 =====
+# ===== 5. 演示业务库(S3 问数的查询目标)=====
+
+step "起演示业务库 MySQL 8.4(clenergy_biz,只读账号 biz_reader)"
+
+docker compose up -d biz-mysql
+info "等业务库就绪(首次启动要建表 + 灌 24 个月的演示数据)..."
+for _ in $(seq 1 120); do
+	if [[ "$(docker inspect agent_system_bizdb --format '{{.State.Health.Status}}' 2>/dev/null)" == healthy ]]; then
+		BIZ_READY=1; break
+	fi
+	sleep 2
+done
+if [[ "${BIZ_READY:-0}" -eq 1 ]]; then
+	ok "业务库就绪(127.0.0.1:3307);init 脚本已建七表并灌数"
+else
+	die "业务库 4 分钟内没就绪。看日志:docker compose logs biz-mysql"
+fi
+
+# ===== 6. 建表 + 演示数据 =====
 
 step "建表(Alembic)+ 灌最小演示数据"
 
@@ -212,7 +237,16 @@ ok "迁移到 head"
 (cd server && uv run python -m scripts.seed_minimal)
 ok "演示数据就绪(1 用户 / 1 agent / 3 个空知识库;seed 幂等)"
 
-# ===== 6. MinerU(可选)=====
+# S3 的演示知识(语义层 + 7 个已验证意图 + 索引面)。要现算 embedding,所以要 key;
+# 没 key 时跳过而不是失败 —— 其余功能不依赖它
+if grep -q '^OPENAI_API_KEY=sk-你的key' .env; then
+	warn "OPENAI_API_KEY 没填,跳过 S3 演示知识(问数会没有可命中的意图)。填好后跑:make seed-s3"
+else
+	(cd server && uv run python -m scripts.seed_s3_demo >/dev/null)
+	ok "S3 演示知识就绪(7 个已验证意图 + 75 条索引面;含空路由负例面)"
+fi
+
+# ===== 7. MinerU(可选)=====
 
 if [[ $WITH_MINERU -eq 1 ]]; then
 	step "起 MinerU PDF 解析容器(首次要 build 镜像 + 下 1GB 权重,慢)"
@@ -233,17 +267,20 @@ else
 	info "跳过 MinerU(S1 上传 PDF 才需要)。要装:./bootstrap.sh --with-mineru 或 make mineru"
 fi
 
-# ===== 7. 自检 =====
+# ===== 8. 自检 =====
 
-step "自检:离线测试 + lint"
+step "自检:离线测试 + lint + 业务库数据断言"
 
 (cd server && uv run pytest -q)
 ok "后端离线测试通过(不联网、不连库)"
 (cd server && uv run ruff check app scripts tests)
 (cd web && npm run lint --silent && npx tsc -b)
 ok "lint + TS 编译通过(契约链路的守门人)"
+# 演示数据是生成的,形状不对时症状会伪装成"AI 算错了" —— 所以装机就断言一遍
+(cd server && uv run python -m scripts.verify_bizdb >/dev/null)
+ok "业务库 27 项数据断言全过(含只读账号写入被拒)"
 
-# ===== 8. 冒烟(真花钱)=====
+# ===== 9. 冒烟(真花钱)=====
 
 step "冒烟:真实调 LLM 与 Embedding(验证 key / 网络 / 代理)"
 
@@ -270,6 +307,7 @@ cat <<'EOF'
   make dev        起前后端 -> 前端 http://localhost:5173  后端 http://localhost:8000/docs
   make help       看全部命令
   make mineru     起 PDF 解析容器(上传 PDF 走 S1 抽取流水线要它)
+  make mysql      进演示业务库看数据(问数演示的那七张表)
 
 读什么:
   README.md                       环境要求 / 命令表 / 界面能点什么

@@ -1,0 +1,76 @@
+{
+  "intent": {
+    "intent_id": "i07",
+    "type": "stats",
+    "bucket": "time_stats",
+    "one_liner": "Stats: Monthly revenue trend (excluding cancelled)",
+    "brief": "Aggregates total booked revenue per calendar month based on order date, summing order totals in AUD and excluding orders with status cancelled. Users vary the date range and may filter by status to focus on completed/paid bookings.",
+    "tables": [
+      "orders"
+    ]
+  },
+  "sql": "SELECT DATE_FORMAT(o.order_date, '%Y-%m') AS month, SUM(o.total_amount) AS total_revenue_aud FROM orders o WHERE o.order_date >= '2025-08-23' AND o.status != 'cancelled' GROUP BY DATE_FORMAT(o.order_date, '%Y-%m') ORDER BY month ASC LIMIT 200",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_order_date",
+        "kind": "filter",
+        "source": "orders.order_date",
+        "operator": ">=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2025-08-23",
+        "predicate_sql": "o.order_date >= '2025-08-23'",
+        "business_name": "Order date from",
+        "hint": "Filter: Maps phrases like \"from\", \"since\", \"starting\", \"after\" to this lower bound on order date. Accept a single date in format YYYY-MM-DD. Resolve relative dates (e.g., \"last month\", \"last 90 days\", \"since Jan 2026\") to absolute dates anchored at 2026-08-23. Valid data window is 2024-09-01 to 2026-08-23; if a parsed date falls outside, clamp to this window. DEFAULT/DISABLE: If the user does not mention a start date, keep the template default 2025-08-23. You may disable this condition only if the user explicitly asks for \"all dates\", \"no start date\", or \"from the beginning\"."
+      },
+      {
+        "param_id": "f_status",
+        "kind": "filter",
+        "source": "orders.status",
+        "operator": "!=",
+        "value_type": "enum",
+        "value_shape": "scalar",
+        "default_value": "cancelled",
+        "predicate_sql": "o.status <> 'cancelled'",
+        "business_name": "Exclude order status",
+        "hint": "Filter (enum exclusion): This parameter excludes exactly one status value from results. Map user intent like \"exclude X\", \"hide X\", or \"without X\" to set X here. Allowed values only (must match exactly): cancelled (exclude cancelled orders), completed (exclude completed orders), paid (exclude paid orders), pending (exclude pending orders), shipped (exclude shipped orders). Values outside this list must not be used. Note: This is NOT an include-only filter; it cannot restrict results to only one status. DEFAULT/DISABLE: If the user says nothing about status, keep the default exclude cancelled. Disable this filter only when the user asks to include cancelled orders or wants \"all statuses\" with no exclusions."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_month",
+        "kind": "output",
+        "expr": "DATE_FORMAT(o.order_date, '%Y-%m')",
+        "alias": "month",
+        "source": "orders.order_date",
+        "business_name": "Month",
+        "hint": "Output: Calendar month of the order date, formatted as YYYY-MM (e.g., 2026-03). Keep this column for any monthly trend or breakdown. Drop it only if the user explicitly asks for a single overall total without monthly detail."
+      },
+      {
+        "param_id": "o_total_revenue_aud",
+        "kind": "output",
+        "expr": "SUM(o.total_amount)",
+        "alias": "total_revenue_aud",
+        "source": "orders.total_amount",
+        "business_name": "Total revenue (AUD)",
+        "hint": "Output: Sum of order totals in AUD within each month (or overall if month grouping is dropped). This reflects booked revenue for included statuses and dates. Keep unless the user explicitly requests to see only the month labels without amounts."
+      }
+    ],
+    "groupbys": [
+      {
+        "param_id": "g_month",
+        "kind": "groupby",
+        "expr": "DATE_FORMAT(o.order_date, '%Y-%m')",
+        "source": "orders.order_date",
+        "linked_output": "month",
+        "business_name": "Group by month",
+        "hint": "Group by: Aggregates results per calendar month (YYYY-MM). Dropping this makes the numbers roll up to a single total over the selected date range. Only drop if the user asks for an overall/grand total with no monthly breakdown or for less detail than monthly."
+      }
+    ]
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-23T17:55:21",
+  "human_edited": false,
+  "finalized_at": "2026-08-23T18:04:59"
+}

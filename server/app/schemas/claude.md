@@ -12,5 +12,6 @@
 | `job.py` | `JobSubmitRequest` / `JobOut`(jsonb 字段保持宽松,结构由 Job 框架约定) |
 | `exact_qa.py` | **S1 精准问答契约**:产物文件名/图片 URL 常量 + ContentBlock/ParseResult + OriginRef/QaCandidate + HitTier/RetrievalResult |
 | `staging.py` | `StagingItemOut` / `StagingItemPatch` / `StagingBulkRequest` / `StagingSummary` / `PublishResult` |
+| `text2sql.py` | **S3 智能问数契约**:数据源(口令只进不出)/ Schema 治理 / 三区参数 `IntentParams` / 意图与模板 Run(`TemplateDesign` 跟着 `template.py` 的结构化输出走)/ 相似问法 / 空路由负例面 |
 
 详见 `architect.md`。

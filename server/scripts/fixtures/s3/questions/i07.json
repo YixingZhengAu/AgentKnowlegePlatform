@@ -1,0 +1,16 @@
+{
+  "intent_id": "i07",
+  "summary": "Monthly revenue trend (excluding cancelled)",
+  "questions": [
+    "Show monthly sales revenue in AUD for the last 12 months, excluding cancelled.",
+    "Monthly booked revenue by order date since 2025, paid and completed only.",
+    "Can you chart total order revenue by month from 2024-09 through today?",
+    "Revenue by month (AUD) for last quarter, completed status only.",
+    "Monthly sales totals in AUD year to date, exclude cancelled orders.",
+    "Trend of booked revenue per calendar month for 2025.",
+    "Revenue by month since Jan 2026, paid orders only.",
+    "Monthly revenue trend AUD, 2025-01 to 2025-12, exclude cancelled"
+  ],
+  "generated_at": "2026-08-23T18:50:18",
+  "human_edited": false
+}

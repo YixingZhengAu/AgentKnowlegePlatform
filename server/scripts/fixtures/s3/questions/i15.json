@@ -1,0 +1,16 @@
+{
+  "intent_id": "i15",
+  "summary": "Stock movement history for a product at a warehouse",
+  "questions": [
+    "Can you show me the stock movement ledger for HC-300 at the Sydney warehouse for June 2026, with running balances?",
+    "I need the in/out/adjustment history and running balance for PowerCab HC-100 Battery Cabinet 100kWh in Brisbane since March 2026.",
+    "Give me the chronological stock movements for HC-215 at Melbourne for the last 90 days, including source references.",
+    "HC-215 Sydney stock movements since 2026-07-01",
+    "Show all movements and balances for HC-50 in Sydney for 2026 year to date.",
+    "I want the detailed movement log (receipts, dispatches, adjustments) for PowerCab HC-1000 Battery Cabinet 1MWh at Melbourne for July 2026.",
+    "Pull the movement ledger for HC-500 at Brisbane for 2026-08-01 to 2026-08-07, with running balances.",
+    "Trace every stock movement for PowerCab HC-300 Battery Cabinet 300kWh at Sydney from 2026-05-01 to 2026-08-23, with references."
+  ],
+  "generated_at": "2026-08-23T18:50:18",
+  "human_edited": false
+}

@@ -17,12 +17,12 @@ from app.models.observability import Feedback, Trace, UnansweredItem
 from app.models.text2sql import (
     ColumnMeta,
     Datasource,
-    Metric,
+    IntentQuestion,
+    IntentVector,
+    NonDataFace,
     Relation,
-    Rule,
-    SqlExample,
+    SqlIntent,
     TableMeta,
-    Term,
 )
 from app.models.user import User
 
@@ -42,10 +42,10 @@ __all__ = [
     "TableMeta",
     "ColumnMeta",
     "Relation",
-    "Metric",
-    "Term",
-    "Rule",
-    "SqlExample",
+    "SqlIntent",
+    "IntentQuestion",
+    "NonDataFace",
+    "IntentVector",
     # 摄取骨架
     "IngestSource",
     "IngestJob",

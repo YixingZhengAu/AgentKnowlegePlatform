@@ -10,7 +10,7 @@
 | `knowledge.py` | knowledge_bases |
 | `exact_qa.py` | exact_qa_items / exact_qa_vectors |
 | `document.py` | documents / chunks |
-| `text2sql.py` | datasources / table_meta / column_meta / relations / metrics / terms / rules / sql_examples |
+| `text2sql.py` | datasources / table_meta / column_meta / relations / **sql_intents / intent_questions / non_data_faces / intent_vectors**(S3 重审:废弃了 metrics / terms / rules / sql_examples,见 DB-DESIGN §4.9) |
 | `ingest.py` | ingest_sources / ingest_jobs / staging_items / publish_records |
 | `agent.py` | agents / agent_kb_bindings |
 | `conversation.py` | conversations / messages / message_citations |

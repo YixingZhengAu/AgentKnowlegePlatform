@@ -1,0 +1,707 @@
+{
+  "database": "clenergy_biz",
+  "generated_at": "2026-08-23T16:09:51",
+  "tables": [
+    {
+      "name": "customers",
+      "description": "Each row represents a customer account in Australia that Clenergy sells to or through. The table stores customer identity, location (state), sales channel, industry segment, and the date the account was created. It links to orders so sales can be attributed to the correct customer.",
+      "mode": "fill",
+      "columns": [
+        {
+          "name": "id",
+          "display_name": "Customer ID",
+          "description": "System-generated unique identifier for the customer account. Referenced by orders.customer_id to link each order to this customer.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "PRI",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "display_name": "Customer Name",
+          "description": "Legal or trading name of the customer, as stored in the CRM/ERP. Text up to 128 characters.",
+          "enum_values": null,
+          "type": "varchar(128)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "state",
+          "display_name": "State",
+          "description": "Australian state: NSW / VIC / QLD / SA / WA",
+          "enum_values": [
+            {
+              "value": "NSW",
+              "meaning": "New South Wales."
+            },
+            {
+              "value": "QLD",
+              "meaning": "Queensland."
+            },
+            {
+              "value": "SA",
+              "meaning": "South Australia."
+            },
+            {
+              "value": "VIC",
+              "meaning": "Victoria."
+            },
+            {
+              "value": "WA",
+              "meaning": "Western Australia."
+            }
+          ],
+          "type": "varchar(3)",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "channel_type",
+          "display_name": "Channel Type",
+          "description": "Sales channel relationship for this customer account. Indicates whether Clenergy sells to this account directly or via distribution.",
+          "enum_values": [
+            {
+              "value": "direct",
+              "meaning": "Clenergy sells directly to this customer (end account)."
+            },
+            {
+              "value": "distributor",
+              "meaning": "The customer is a distributor/reseller purchasing for onward sale."
+            }
+          ],
+          "type": "varchar(16)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "industry",
+          "display_name": "Industry",
+          "description": "Primary industry segment for the customer account. Used for segmentation and reporting.",
+          "enum_values": [
+            {
+              "value": "agriculture",
+              "meaning": "Farms and agricultural producers or agribusiness operations."
+            },
+            {
+              "value": "commercial_complex",
+              "meaning": "Shopping centres, office parks, or mixed-use commercial complexes."
+            },
+            {
+              "value": "factory",
+              "meaning": "Manufacturing plants and production facilities."
+            },
+            {
+              "value": "industrial_park",
+              "meaning": "Multi-tenant industrial estates or business parks."
+            },
+            {
+              "value": "logistics",
+              "meaning": "Warehousing, distribution, and freight/logistics operators."
+            }
+          ],
+          "type": "varchar(32)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "display_name": "Created Date",
+          "description": "Date the customer record was created/onboarded (YYYY‑MM‑DD, day-level). Useful for cohorting and account age analysis.",
+          "enum_values": null,
+          "type": "date",
+          "key": null,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "inventory",
+      "description": "Current inventory by product and warehouse. Each row represents the latest stock position for one product at one Clenergy warehouse location, including on-hand and reserved quantities.",
+      "mode": "fill",
+      "columns": [
+        {
+          "name": "id",
+          "display_name": "Inventory ID",
+          "description": "Surrogate primary key for this inventory row. Uniquely identifies the product–warehouse stock record.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "PRI",
+          "nullable": false
+        },
+        {
+          "name": "product_id",
+          "display_name": "Product",
+          "description": "References products.id; identifies which product this stock row is for. Join to Products to get SKU, name, series, category, and pricing details.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "warehouse",
+          "display_name": "Warehouse",
+          "description": "Warehouse city: Sydney / Melbourne / Brisbane",
+          "enum_values": [
+            {
+              "value": "Brisbane",
+              "meaning": "Stock stored in the Brisbane warehouse."
+            },
+            {
+              "value": "Melbourne",
+              "meaning": "Stock stored in the Melbourne warehouse."
+            },
+            {
+              "value": "Sydney",
+              "meaning": "Stock stored in the Sydney warehouse."
+            }
+          ],
+          "type": "varchar(32)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "on_hand_qty",
+          "display_name": "On-hand Quantity",
+          "description": "Integer count of units physically on hand at the warehouse at the last update. Represents the total stock present, in whole units (no partials).",
+          "enum_values": null,
+          "type": "int",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "reserved_qty",
+          "display_name": "Reserved Quantity",
+          "description": "Integer count of units allocated to open orders and therefore not available for new allocation. Represents a subset of on-hand stock that is reserved until released or shipped.",
+          "enum_values": null,
+          "type": "int",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "display_name": "Last Updated",
+          "description": "Timestamp when the quantities were last refreshed for this product and warehouse. Datetime in ISO 8601 format (YYYY-MM-DDThh:mm:ss), to the minute/second precision.",
+          "enum_values": null,
+          "type": "datetime",
+          "key": null,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "order_items",
+      "description": "One row represents a single line item on a customer order. It records which product was sold on the order, the quantity, the actual per‑unit sell price in AUD after discounts, and the extended line amount.",
+      "mode": "fill",
+      "columns": [
+        {
+          "name": "id",
+          "display_name": "Line Item ID",
+          "description": "Unique identifier for the order line item. One row per product line on an order.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "PRI",
+          "nullable": false
+        },
+        {
+          "name": "order_id",
+          "display_name": "Order ID",
+          "description": "References orders.id; links this line item to the specific customer order it belongs to.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "product_id",
+          "display_name": "Product ID",
+          "description": "References products.id; identifies the specific product (SKU) sold on this line.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "display_name": "Quantity",
+          "description": "Number of units of the product on this line, as defined by the product’s selling unit. Whole number (no decimals).",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "unit_price",
+          "display_name": "Unit Price AUD",
+          "description": "Actual sell price per unit in AUD after discount (may differ from list price)",
+          "enum_values": null,
+          "type": "decimal(12,2)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "line_amount",
+          "display_name": "Line Amount AUD",
+          "description": "Extended line total in AUD, typically quantity × unit_price. Stored as decimal with two decimal places.",
+          "enum_values": null,
+          "type": "decimal(14,2)",
+          "key": null,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "orders",
+      "description": "One row represents a single customer sales order placed with Clenergy. The table tracks who the customer and sales rep are, the order date and status, and the total order value in AUD; detailed products are stored in order_items.",
+      "mode": "fill",
+      "columns": [
+        {
+          "name": "id",
+          "display_name": "Order ID",
+          "description": "System-generated primary key for the order. Used to join to order_items.order_id.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "PRI",
+          "nullable": false
+        },
+        {
+          "name": "order_no",
+          "display_name": "Order Number",
+          "description": "Business order number, e.g. SO-2025-00123",
+          "enum_values": null,
+          "type": "varchar(20)",
+          "key": "UNI",
+          "nullable": false
+        },
+        {
+          "name": "customer_id",
+          "display_name": "Customer ID",
+          "description": "References customers.id, linking the order to the purchasing customer. Use to join and retrieve customer details such as name, state, and industry.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "sales_rep_id",
+          "display_name": "Sales Rep ID",
+          "description": "References sales_reps.id, indicating the sales representative responsible for the order. Use to join for rep name, team, and territory details.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "order_date",
+          "display_name": "Order Date",
+          "description": "Calendar date the order was created, stored as YYYY-MM-DD (day-level granularity). Used for booking and time-based reporting.",
+          "enum_values": null,
+          "type": "date",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "display_name": "Order Status",
+          "description": "Current lifecycle state of the order. Used to track processing, fulfillment, and closure.",
+          "enum_values": [
+            {
+              "value": "cancelled",
+              "meaning": "Order was voided and will not be fulfilled or invoiced further."
+            },
+            {
+              "value": "completed",
+              "meaning": "Order has been fully fulfilled and closed out."
+            },
+            {
+              "value": "paid",
+              "meaning": "Payment has been received for the order."
+            },
+            {
+              "value": "pending",
+              "meaning": "Order has been created and is awaiting further processing (e.g., payment or fulfillment)."
+            },
+            {
+              "value": "shipped",
+              "meaning": "Goods have been dispatched to the customer."
+            }
+          ],
+          "type": "varchar(16)",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "total_amount",
+          "display_name": "Order Total",
+          "description": "Order total in AUD, equals the sum of its line amounts",
+          "enum_values": null,
+          "type": "decimal(14,2)",
+          "key": null,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "products",
+      "description": "One row represents a distinct product that Clenergy sells, including hardware and software such as mounting accessories, inverters, battery cabinets, and EMS licenses. The table stores identifiers, classification (series/category), list price in AUD (ex GST), launch date, and whether the product is active.",
+      "mode": "fill",
+      "columns": [
+        {
+          "name": "id",
+          "display_name": "Product ID",
+          "description": "Surrogate primary key for the product. Referenced by order_items.product_id, inventory.product_id, and stock_movements.product_id to link line items and stock to this product.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "PRI",
+          "nullable": false
+        },
+        {
+          "name": "sku",
+          "display_name": "SKU",
+          "description": "Product SKU, e.g. HC-215",
+          "enum_values": null,
+          "type": "varchar(32)",
+          "key": "UNI",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "display_name": "Product Name",
+          "description": "Human-readable product name up to 128 characters. Used on customer documents and internal listings.",
+          "enum_values": null,
+          "type": "varchar(128)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "series",
+          "display_name": "Product Series",
+          "description": "Product series: HC (battery cabinet) / INV (inverter) / EMS (energy mgmt system) / ACC (accessory)",
+          "enum_values": [
+            {
+              "value": "ACC",
+              "meaning": "Accessory products and add-on kits related to the core systems."
+            },
+            {
+              "value": "EMS",
+              "meaning": "Energy management system products (GridMind EMS platform)."
+            },
+            {
+              "value": "HC",
+              "meaning": "HC battery cabinet hardware line."
+            },
+            {
+              "value": "INV",
+              "meaning": "Power inverter product line."
+            }
+          ],
+          "type": "varchar(8)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "category",
+          "display_name": "Product Category",
+          "description": "Business category used for reporting and pricing segmentation.",
+          "enum_values": [
+            {
+              "value": "accessory",
+              "meaning": "Ancillary parts and kits that complement core products."
+            },
+            {
+              "value": "battery_cabinet",
+              "meaning": "Battery cabinet hardware (primarily HC series)."
+            },
+            {
+              "value": "ems_software",
+              "meaning": "GridMind EMS software licenses/editions."
+            },
+            {
+              "value": "inverter",
+              "meaning": "AC power inverter units."
+            }
+          ],
+          "type": "varchar(32)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "unit_price",
+          "display_name": "List Price (AUD)",
+          "description": "List price in AUD, ex GST",
+          "enum_values": null,
+          "type": "decimal(12,2)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "launch_date",
+          "display_name": "Launch Date",
+          "description": "Date the product was launched to market (YYYY-MM-DD, day-level granularity). Useful for cohorting and lifecycle analysis.",
+          "enum_values": null,
+          "type": "date",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "is_active",
+          "display_name": "Active Flag",
+          "description": "Indicates whether the product is currently active/for sale; stored as tinyint(1). Value 1 appears for active products in the data.",
+          "enum_values": [
+            {
+              "value": "1",
+              "meaning": "Product is active and available for sale."
+            }
+          ],
+          "type": "tinyint(1)",
+          "key": null,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "sales_reps",
+      "description": "One row represents a sales representative employed by Clenergy in Australia. The table records each rep’s name, base state, team type, hire date, and active status, and is referenced by orders via sales_rep_id.",
+      "mode": "fill",
+      "columns": [
+        {
+          "name": "id",
+          "display_name": "Rep ID",
+          "description": "Unique identifier for the sales representative. Referenced by orders.sales_rep_id to attribute orders to the responsible rep.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "PRI",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "display_name": "Full Name",
+          "description": "Sales representative’s full name (first and last). Text up to 64 characters.",
+          "enum_values": null,
+          "type": "varchar(64)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "state",
+          "display_name": "State",
+          "description": "Three-letter Australian state code indicating the rep’s base location.",
+          "enum_values": [
+            {
+              "value": "NSW",
+              "meaning": "New South Wales."
+            },
+            {
+              "value": "QLD",
+              "meaning": "Queensland."
+            },
+            {
+              "value": "SA",
+              "meaning": "South Australia."
+            },
+            {
+              "value": "VIC",
+              "meaning": "Victoria."
+            },
+            {
+              "value": "WA",
+              "meaning": "Western Australia."
+            }
+          ],
+          "type": "varchar(3)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "team",
+          "display_name": "Sales Team",
+          "description": "direct = own sales team, channel = distributor manager",
+          "enum_values": [
+            {
+              "value": "channel",
+              "meaning": "Rep manages distributor/channel partner relationships."
+            },
+            {
+              "value": "direct",
+              "meaning": "Rep belongs to the in-house direct sales team handling end-customer accounts."
+            }
+          ],
+          "type": "varchar(16)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "hired_date",
+          "display_name": "Hire Date",
+          "description": "Date the rep started employment. Date format YYYY-MM-DD (day-level granularity).",
+          "enum_values": null,
+          "type": "date",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "is_active",
+          "display_name": "Active Flag",
+          "description": "Boolean-like flag indicating if the rep is currently active on staff. Stored as tinyint(1).",
+          "enum_values": [
+            {
+              "value": "1",
+              "meaning": "Rep is currently active."
+            }
+          ],
+          "type": "tinyint(1)",
+          "key": null,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "stock_movements",
+      "description": "Each row records a single inventory movement for a specific product at a specific warehouse. It captures inbound, outbound, and adjustment events, the quantity moved, the resulting on‑hand balance, the movement date, and the source document reference.",
+      "mode": "fill",
+      "columns": [
+        {
+          "name": "id",
+          "display_name": "Movement ID",
+          "description": "System-generated unique identifier for the stock movement record. Use this to reference a specific ledger entry.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "PRI",
+          "nullable": false
+        },
+        {
+          "name": "product_id",
+          "display_name": "Product",
+          "description": "Links to products.id; identifies which product the stock movement is for. Join to Products to see SKU, name, and other product details.",
+          "enum_values": null,
+          "type": "int unsigned",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "warehouse",
+          "display_name": "Warehouse",
+          "description": "Warehouse where the movement occurred. Values indicate the physical warehouse location by city.",
+          "enum_values": [
+            {
+              "value": "Brisbane",
+              "meaning": "Movement occurred at the Brisbane warehouse."
+            },
+            {
+              "value": "Melbourne",
+              "meaning": "Movement occurred at the Melbourne warehouse."
+            },
+            {
+              "value": "Sydney",
+              "meaning": "Movement occurred at the Sydney warehouse."
+            }
+          ],
+          "type": "varchar(32)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "movement_type",
+          "display_name": "Movement Type",
+          "description": "Categorizes the movement as inbound, outbound, or an adjustment. Used together with quantity to determine stock increase or decrease.",
+          "enum_values": [
+            {
+              "value": "inbound",
+              "meaning": "Stock received into the warehouse (e.g., purchase receipt or transfer-in)."
+            },
+            {
+              "value": "outbound",
+              "meaning": "Stock dispatched from the warehouse (e.g., customer delivery or transfer-out)."
+            },
+            {
+              "value": "adjustment",
+              "meaning": "Manual correction from stocktake or error correction; can increase or decrease stock."
+            }
+          ],
+          "type": "varchar(16)",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "display_name": "Quantity Moved",
+          "description": "Units moved; positive for inbound/outbound (direction given by movement_type), signed for adjustment",
+          "enum_values": null,
+          "type": "int",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "balance_after",
+          "display_name": "Balance After",
+          "description": "On-hand quantity in this warehouse right after this movement (running balance)",
+          "enum_values": null,
+          "type": "int",
+          "key": null,
+          "nullable": false
+        },
+        {
+          "name": "movement_date",
+          "display_name": "Movement Date",
+          "description": "Calendar date of the movement (YYYY‑MM‑DD, day-level granularity).",
+          "enum_values": null,
+          "type": "date",
+          "key": "MUL",
+          "nullable": false
+        },
+        {
+          "name": "reference_no",
+          "display_name": "Source Reference",
+          "description": "Source document: GRN-yyyy-nnnnn goods receipt, DO-yyyy-nnnnn delivery order; NULL for stocktake adjustments",
+          "enum_values": null,
+          "type": "varchar(24)",
+          "key": null,
+          "nullable": true
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "from_table": "order_items",
+      "from_column": "order_id",
+      "to_table": "orders",
+      "to_column": "id",
+      "source": "foreign_key"
+    },
+    {
+      "from_table": "order_items",
+      "from_column": "product_id",
+      "to_table": "products",
+      "to_column": "id",
+      "source": "foreign_key"
+    },
+    {
+      "from_table": "orders",
+      "from_column": "customer_id",
+      "to_table": "customers",
+      "to_column": "id",
+      "source": "foreign_key"
+    },
+    {
+      "from_table": "stock_movements",
+      "from_column": "product_id",
+      "to_table": "products",
+      "to_column": "id",
+      "source": "foreign_key"
+    },
+    {
+      "from_table": "inventory",
+      "from_column": "product_id",
+      "to_table": "products",
+      "to_column": "id",
+      "source": "name_heuristic"
+    },
+    {
+      "from_table": "orders",
+      "from_column": "sales_rep_id",
+      "to_table": "sales_reps",
+      "to_column": "id",
+      "source": "name_heuristic"
+    }
+  ]
+}

@@ -47,6 +47,30 @@ event: error        data: {"stage": "generate", "message": "..."}    # 仅失败
 **S1 对协议的改动只有"加"**:新增 `verified` 事件、`done` 新增 `verified` 布尔字段、
 `citations` 从恒空变成命中时有一条。已有事件的形状一个字没改。
 
+**S3(C5)对协议的改动是零**:它复用同样的事件,只是多了三个 stage 名与一个新的
+`verified.source`。Agent 没绑问数库时**一个事件都不多发** —— 只绑精准问答的 Agent,
+它的事件流与 S1 时代逐字相同。
+
+```
+event: stage_start  data: {"stage": "retrieve_text2sql"}   # 只在 Agent 绑了问数库时出现
+event: stage_end    data: {"stage": "retrieve_text2sql", ...}
+event: stage_start  data: {"stage": "rewrite_sql"}         # 判成问数才有(唯一一次 LLM 在这)
+event: stage_end    data: {"stage": "rewrite_sql", ..., "model": "gpt-5", "usage": {...}}
+event: stage_start  data: {"stage": "execute_sql"}         # 计划通过应用器才有
+event: stage_end    data: {"stage": "execute_sql", ...}
+event: verified     data: {"source": "text2sql", "score": 0.79, "matched_question": "<意图摘要>",
+                           "citations": [{"citation_type": "sql", "snippet": "<最终 SQL>",
+                                          "extra": {"cols", "rows", "rowcount", "intent_code"}}]}
+```
+
+问数三种结局对前端的意义(实测序列见 `scripts/smoke_s3_chat.py`):
+
+| 结局 | 事件上看得到什么 | 有没有 generate |
+| --- | --- | --- |
+| `executed` | `verified(source=text2sql)` + 一条 `sql` 引用(**带结果表格**,前端不必再请求一次) | **没有** |
+| `refused_out_of_template` | 只有 token + done(`verified=false`、无引用),内容是拒答理由 | **没有**(交给它只会换来编数) |
+| `refused_non_data` | 三个 stage 里只有 `retrieve_text2sql`,然后照常 generate | 有 |
+
 命中精准 QA 时的事件序列(实测):
 `meta → stage_start(retrieve_exact_qa) → stage_end → verified → token → done`
 —— **没有 generate 的 stage_start**:命中就原样返回人工采纳过的答案,不调生成模型。
@@ -76,6 +100,53 @@ conversation_id / message_id,否则没法把这条消息挂到正确的会话上
 - `/api/agents/{id}/chat`:`app.core.chat`(编排),自己开 session,不用 `SessionDep`
 - `/api/traces/{message_id}`:traces 表按 seq 升序;**消息不存在报 404**,
   "消息存在但没有 trace"返回空数组(两件事要分清)
+
+## 智能问数接口(text2sql.py,C4)
+
+前缀 `/api/text2sql`,21 条路径 / 29 个操作。**候选意图的列表与编辑不在这里** ——
+走泛型审核接口(`GET /api/staging?job_id=`、`POST /api/staging/bulk`),
+因为"筛选/编辑/批量采纳"对三类知识是同一套流程。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET/POST | `/datasources` | 列表 / 新建(**连接串在这里被 Fernet 加密,明文不再出现在任何地方**) |
+| GET/PATCH/DELETE | `/datasources/{id}` | 详情 / 改(传 `conn` 就是整套换掉)/ 删(**挂着意图的 409**) |
+| POST | `/datasources/test` | 测**还没保存**的表单(D1 的"先测再存") |
+| POST | `/datasources/{id}/test` | 测已保存的;**这是唯一不查 `readonly_confirmed` 的动作** |
+| POST | `/datasources/{id}/sync` | 派 `t2s_sync_schema`(零 LLM,随时可重跑) |
+| GET | `/datasources/{id}/schema` | 治理页一次拿全:表 + 列 + 采样值 + 枚举字典 + join |
+| POST | `/datasources/{id}/describe` | 派 `t2s_describe`(每张启用的表一次 gpt-5) |
+| POST | `/datasources/{id}/intents` | 派 `t2s_intents`(候选进审核台,终态 `review`) |
+| PUT | `/tables/{id}` | **按表保存**:表级字段 + 若干列,一个事务;跨表改列 409 |
+| POST | `/tables/{id}/describe` | 单点 AI 生成描述,**同步返回建议、不落库** |
+| GET/POST | `/intents` | 列表(可按 status)/ 手工新建(建出来是 **draft**) |
+| GET/PATCH/DELETE | `/intents/{id}` | 详情(含三区参数 + `publish_blockers`)/ 就地编辑 / 删(**只许删 draft**) |
+| POST | `/intents/{id}/template` | ★ B4+B5 全链路,**同步**(慢且贵),返回时 SQL 已在真库跑出过非空结果;`design` 是**结构化**设计说明(`TemplateDesign`:join 路径 / 度量 / 写死的过滤及其理由),不是一段文字 |
+| POST | `/intents/{id}/parse-params` | 按当前 SQL 重解析参数区(纯代码,零 LLM),按 param_id 保住已写的 hint |
+| POST | `/intents/{id}/run` | ★ 走**运行时那道执行闸**;被闸拒是 `ok=false`,不是 4xx |
+| POST | `/intents/{id}/publish` | 校验 → published → 重建索引面(意图的 + 本 kb 的空路由面) |
+| POST | `/intents/{id}/disable` | disabled + 删索引面;**正式行留着**(历史引用不能悬空) |
+| GET | `/intents/{id}/questions` | 相似问法 |
+| POST | `/intents/{id}/questions/generate` | AI 生成建议(未落库),带 `dropped` 与被丢弃的理由 |
+| PUT | `/intents/{id}/questions` | 整组替换 + **保存即重建索引面** |
+| GET/PUT | `/non-data-faces` | 空路由负例面(整组替换,保存即重建);清空 = 关掉空路由 |
+| GET | `/index-stats` | 各类面各有多少(`summary + question + non_data` 就是检索的全部输入) |
+
+四条规则,每条都在拦一类真实事故:
+
+1. **口令进不出**。入参收到明文立刻加密落库,任何出参只回 host/port/user/database。
+   冒烟脚本对此有断言(断的是 `user:pass@` 这个泄漏形态)。
+2. **要连客户库的动作都先查 `readonly_confirmed`**,不过就 409 `datasource_not_readonly`
+   —— 这不是提示,是拒:可写账号接进来,四道安全关就少了最硬的那一道。测连是唯一例外。
+3. **贵的活分两种**:批量(每表一次 gpt-5)一律派 Job 让页面可以离开,单点(一条模板)
+   同步返回。Job 的 `params` 里**只放 `datasource_id`** —— 它会落库、会出接口。
+4. **"连不上"和"SQL 写错了"是业务结果,不是接口错误**:`/datasources/test` 与
+   `/intents/{id}/run` 失败都返回 200 + `ok=false` + 原因。前端在表单/编辑器里显示红字,
+   不用去解析错误码。
+
+冒烟:`make smoke-s3-api`(27 步,含 9 条错误路径;**不留痕** —— 建的临时数据源与草稿
+意图会删掉、下线的意图重新发布、索引面回到原数,所以跑完 `make smoke-s3` 的评测集
+分数一个字不变)。
 
 ## 摄取 Job 接口(jobs.py)
 

@@ -1,0 +1,107 @@
+{
+  "intent": {
+    "intent_id": "i02",
+    "type": "query",
+    "bucket": "multi_table_query",
+    "one_liner": "Query: Line items for an order number",
+    "brief": "Lists all product lines on a given order: product SKU/name, quantity, unit sell price, and line amount in AUD. Users provide an order number and may also filter to active products only for validation.",
+    "tables": [
+      "orders",
+      "order_items",
+      "products"
+    ]
+  },
+  "sql": "SELECT o.order_no AS order_number, p.sku AS product_sku, p.name AS product_name, oi.quantity AS quantity, oi.unit_price AS unit_sell_price_aud, oi.line_amount AS line_amount_aud FROM order_items oi JOIN orders o ON oi.order_id = o.id JOIN products p ON oi.product_id = p.id WHERE o.order_no = 'SO-2024-00001' AND p.is_active IN (0, 1) ORDER BY oi.id ASC LIMIT 50",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_order_no",
+        "kind": "filter",
+        "source": "orders.order_no",
+        "operator": "=",
+        "value_type": "string",
+        "value_shape": "scalar",
+        "default_value": "SO-2024-00001",
+        "predicate_sql": "o.order_no = 'SO-2024-00001'",
+        "business_name": "Order number",
+        "hint": "Filter: Maps from phrases like “order number,” “order no,” “SO number,” “sales order,” or a value like SO-2025-00123. Take exactly one order number as a single string, preserving the SO prefix, hyphens, and zero padding (e.g., SO-2025-00123). Do not split or expand to multiple orders. DEFAULT: Keep SO-2024-00001 when the user does not supply an order number. DISABLE: Only if the user explicitly asks for all orders or to remove the order-number filter; otherwise never disable."
+      },
+      {
+        "param_id": "f_is_active",
+        "kind": "filter",
+        "source": "products.is_active",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          0,
+          1
+        ],
+        "predicate_sql": "p.is_active IN (0, 1)",
+        "business_name": "Product status",
+        "hint": "Filter: Maps from phrases like “active only,” “only active products,” “inactive only,” “discontinued,” “retired,” or “all statuses/both.” Value is a list of enums; allowed values only: 1 = Product is active and available for sale; 0 = Product is inactive/not for sale. Accept lists [1], [0], or [0,1] only; reject anything else. DEFAULT: Keep [0,1] (both) if the user does not specify. DISABLE: Only if the user explicitly asks to remove the status filter (note this is effectively the same as [0,1] in most cases)."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_order_number",
+        "kind": "output",
+        "expr": "o.order_no",
+        "alias": "order_number",
+        "source": "orders.order_no",
+        "business_name": "Order number",
+        "hint": "Output: Shows the business order number for each line. Keep unless the user asks to omit it; drop only if they want fewer columns and the order is already known from context."
+      },
+      {
+        "param_id": "o_product_sku",
+        "kind": "output",
+        "expr": "p.sku",
+        "alias": "product_sku",
+        "source": "products.sku",
+        "business_name": "Product SKU",
+        "hint": "Output: Shows the product SKU for each line. Keep by default; drop only if the user explicitly wants fewer columns (e.g., name only)."
+      },
+      {
+        "param_id": "o_product_name",
+        "kind": "output",
+        "expr": "p.name",
+        "alias": "product_name",
+        "source": "products.name",
+        "business_name": "Product name",
+        "hint": "Output: Shows the human-readable product name. Keep by default; drop only if the user asks for fewer columns (e.g., SKU only)."
+      },
+      {
+        "param_id": "o_quantity",
+        "kind": "output",
+        "expr": "oi.quantity",
+        "alias": "quantity",
+        "source": "order_items.quantity",
+        "business_name": "Quantity",
+        "hint": "Output: Units ordered on the line (whole number). Keep by default; drop only if the user asks to exclude quantities."
+      },
+      {
+        "param_id": "o_unit_sell_price_aud",
+        "kind": "output",
+        "expr": "oi.unit_price",
+        "alias": "unit_sell_price_aud",
+        "source": "order_items.unit_price",
+        "business_name": "Unit price (AUD)",
+        "hint": "Output: Actual sell price per unit in AUD. Keep by default; drop only if the user wants a narrower view without pricing."
+      },
+      {
+        "param_id": "o_line_amount_aud",
+        "kind": "output",
+        "expr": "oi.line_amount",
+        "alias": "line_amount_aud",
+        "source": "order_items.line_amount",
+        "business_name": "Line amount (AUD)",
+        "hint": "Output: Extended line total in AUD (typically quantity × unit price). Keep by default; drop only if the user requests fewer columns or no totals."
+      }
+    ],
+    "groupbys": []
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-23T17:55:08",
+  "human_edited": false,
+  "finalized_at": "2026-08-23T18:04:59"
+}

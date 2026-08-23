@@ -4,19 +4,27 @@
 非流式的 `run_chat()` 只是把这个事件流消费到底再拼成 `ChatResult`。
 所以"流式"和"非流式"不是两份代码 —— S1–S4 往编排里插阶段,两条路径同时生效,不可能只改到一边。
 
-S1 之后的链路:
+S1 / S3 之后的链路:
 
     加载 agent → 存用户消息 → [stage: retrieve_exact_qa] → 命中?
         命中 → 原样返回标准答案(**不调生成模型**)+ 写 message_citations + 标 Verified Answer
-        未命中 → [stage: generate] 调 LLM
+        未命中 → [stage: retrieve_text2sql](Agent 绑了问数库才跑)
+            executed → 返回确定性结论 + 数据表格 + 最终 SQL(citation_type=sql),标 Verified
+            refused_out_of_template → 直接返回拒答话术(**不让生成模型接手**)
+            refused_non_data / 链路出错 → 继续走 [stage: generate] 调 LLM
     → 存回复 → flush traces
 
 ★ **命中时零改写、零生成调用**是 PRD 的零幻觉承诺落地的地方:答案是人工采纳过的原文,
 不让模型碰它,连"润色一下"都不做 —— 一旦过生成模型,"已验证"这个标注就不成立了。
+问数命中同理:结论那句话是**代码从结果集算出来的**,不是模型写的(自然语言叙述归 S4)。
+
+★ 两种拒答的分岔是刻意的:模板外拒答(问对了域、超出了已验收模板)交给生成模型只会
+换来一个听起来合理的编数;非问数拒答(检索层零 LLM 就判掉了)本来就该由别的链路接手。
 
 S4 插 `route` 同理:往这里加一个 `async with traced(...)` 块,
 **事件协议只增加事件类型,不改已有事件的形状**(S1 新增 `verified` 事件,
-`done` 新增 `verified` 布尔字段与真正有内容的 `citations`)。
+`done` 新增 `verified` 布尔字段与真正有内容的 `citations`;S3 复用同两个事件,
+只是 `verified.source` 变成 `text2sql`、引用类型变成 `sql`)。
 """
 
 import asyncio
@@ -32,13 +40,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError
 from app.core.logging import get_logger
-from app.core.trace import ChatContext, flush_traces, spans_as_dicts, traced
+from app.core.trace import ChatContext, TraceSpan, flush_traces, spans_as_dicts, traced
 from app.db import SessionLocal
 from app.models import Agent, Conversation, Message, MessageCitation, User
 from app.models.user import DEFAULT_USERNAME
 from app.providers import ChatMessage, get_llm
 from app.schemas.exact_qa import HitTier, RetrievalResult
 from app.services.exact_qa.retriever import agent_exact_qa_kb_ids, retrieve
+from app.services.text2sql import runtime as t2s
 
 log = get_logger(__name__)
 
@@ -204,6 +213,9 @@ async def _persist(
 
 #: stage 名。前端轨迹面板按 stage 名分组,改名等于改公共契约
 STAGE_EXACT_QA = "retrieve_exact_qa"
+#: 问数链路的第一个 stage(后面两个 stage 名由 pipeline.trace_events() 给出:
+#: rewrite_sql / execute_sql)。三个合起来就是 trace 五要素
+STAGE_TEXT2SQL = "retrieve_text2sql"
 
 
 def _retrieval_trace(result: RetrievalResult) -> dict:
@@ -247,6 +259,75 @@ def _exact_qa_citations(result: RetrievalResult) -> list[dict]:
             },
         }
     ]
+
+
+# ---------------------------------------------------------------- 命中路径的收尾
+
+
+async def _finish(
+    ctx: ChatContext,
+    *,
+    conv_id: uuid.UUID,
+    question: str,
+    content: str,
+    citations: list[dict],
+    verified: bool,
+) -> AsyncIterator[ChatEvent]:
+    """命中路径的收尾:token → 落库 → done。**两条命中链路共用**(精准问答 / 问数)。
+
+    抽出来不是为了少写几行,是为了保证两条链路的**事件顺序与 done 的字段完全一样** ——
+    前端只有一条渲染路径,一旦哪条链路少给一个字段,那是只在某种问题上才复现的 bug。
+    """
+    # 命中也走 token 事件:前端只有一条渲染路径(与失败兜底同一个理由)
+    yield ChatEvent("token", {"text": content})
+    await _persist(ctx, content=content, status="completed", question=question,
+                   citations=citations)
+    yield ChatEvent(
+        "done",
+        {
+            "message_id": str(ctx.message_id),
+            "conversation_id": str(conv_id),
+            "status": "completed",
+            "usage": ctx.total_usage.as_dict(),
+            "cost_usd": str(ctx.total_cost),
+            "latency_ms": ctx.total_latency_ms,
+            "citations": citations,
+            "verified": verified,
+            "trace": spans_as_dicts(ctx.spans),
+            "error": None,
+        },
+    )
+
+
+# ---------------------------------------------------------------- 智能问数(S3)
+
+
+def _t2s_spans(
+    ctx: ChatContext, result: dict, head: TraceSpan, usages: list
+) -> None:
+    """把链路摊成三个 trace span(五要素:意图分数 / 模板 id / 计划 / 最终 SQL / 行数+耗时)。
+
+    ★ 为什么不是三个 `async with traced(...)`:编排在 `pipeline.answer()` 里面,
+      它是被评测集守着的代码(`make smoke-s3`),不该为了埋点被拆开。它已经逐段计了时,
+      所以这里按 `trace_events()` 给出的形状**照抄**即可 —— 埋点字段的出处只有那一个。
+
+    两处必须自己动手的:
+
+    * **`head` 的耗时要改成"只有检索那一段"**。`traced()` 量的是整条链路,直接留着的话
+      它和后两个 span 相加会把总耗时算成两倍(`ChatContext.total_latency_ms` 是求和)。
+    * **LLM 的账记在 `rewrite_sql` 上**,不记在检索那一段 —— 唯一一次模型调用是改写计划。
+      非问数问题没有 rewrite span,于是也没有账:那正是"检索层拒答零成本"的机器可证形式。
+    """
+    events = t2s.trace_events(result)
+    head.output = events[0]["output"]
+    head.latency_ms = events[0]["latency_ms"]
+    for ev in events[1:]:
+        span = TraceSpan(stage=ev["stage"], seq=ctx.next_seq(),
+                         latency_ms=ev["latency_ms"], output=ev["output"])
+        if ev["stage"] == "rewrite_sql":
+            for usage in usages:
+                span.record_llm(usage)
+        ctx.spans.append(span)
 
 
 # ---------------------------------------------------------------- 编排
@@ -332,27 +413,73 @@ async def chat_events(
                     "citations": citations,
                 },
             )
-            # 命中也走 token 事件:前端只有一条渲染路径(与失败兜底同一个理由)
-            yield ChatEvent("token", {"text": content})
-            await _persist(
-                ctx, content=content, status=status, question=question, citations=citations
-            )
-            yield ChatEvent(
-                "done",
-                {
-                    "message_id": str(ctx.message_id),
-                    "conversation_id": str(conv_id),
-                    "status": status,
-                    "usage": ctx.total_usage.as_dict(),
-                    "cost_usd": str(ctx.total_cost),
-                    "latency_ms": ctx.total_latency_ms,
-                    "citations": citations,
-                    "verified": True,
-                    "trace": spans_as_dicts(ctx.spans),
-                    "error": None,
-                },
-            )
+            async for ev in _finish(ctx, conv_id=conv_id, question=question,
+                                    content=content, citations=citations, verified=True):
+                yield ev
             return
+
+        # ---- stage: retrieve_text2sql(S3)
+        # 只在 Agent 绑了 text2sql 库、且库里有已发布意图时才跑。**没绑就一个事件都不发** ——
+        # 只绑了精准问答的 Agent,它的事件流与 S1 时代逐字相同,轨迹面板上不会多出空阶段。
+        async with SessionLocal() as session:
+            t2s_kb_ids = await t2s.agent_text2sql_kb_ids(session, agent_id)
+            t2s_ctx = await t2s.load_runtime(session, t2s_kb_ids) if t2s_kb_ids else None
+
+        if t2s_ctx is not None:
+            data: dict | None = None
+            yield ChatEvent("stage_start", {"stage": STAGE_TEXT2SQL})
+            base = len(ctx.spans)
+            try:
+                async with traced(
+                    ctx, STAGE_TEXT2SQL, input={"question": question}
+                ) as span:
+                    data, t2s_usages = await t2s.answer(question, t2s_ctx)
+                _t2s_spans(ctx, data, span, t2s_usages)
+            except Exception as exc:
+                # 与精准问答同一条纪律:检索/执行出错绝不能弄死一次问答,退化成"没命中"
+                log.warning("chat_text2sql_failed", agent_id=str(agent_id), error=str(exc))
+                yield ChatEvent("error", {"stage": STAGE_TEXT2SQL, "message": str(exc)})
+            for sd in spans_as_dicts(ctx.spans)[base:]:
+                if sd["stage"] != STAGE_TEXT2SQL:
+                    yield ChatEvent("stage_start", {"stage": sd["stage"]})
+                yield ChatEvent("stage_end", sd)
+
+            outcome = (data or {}).get("outcome")
+            if outcome == "execution_failed":
+                # ★ 永远算 bug,不是业务边界。记响一点,然后退回生成 ——
+                # 让生成模型接手一个"本该有准确数字"的问题不理想,但比整条问答挂掉好
+                log.error("chat_text2sql_execution_failed", agent_id=str(agent_id),
+                          intent=data.get("intent_id"), error=data.get("execution_error"))
+                yield ChatEvent("error", {"stage": "execute_sql",
+                                          "message": data.get("execution_error") or "unknown"})
+            elif outcome == "executed":
+                # ★ 结论那句话是代码从结果集算出来的,没过生成模型 —— 所以敢标 Verified
+                content = data["reply"] or ""
+                citations = t2s.citations(data, t2s_ctx)
+                parts.append(content)
+                yield ChatEvent(
+                    "verified",
+                    {
+                        "source": "text2sql",
+                        "score": citations[0]["extra"]["score"] if citations else None,
+                        "matched_question": data.get("intent_summary"),
+                        "citations": citations,
+                    },
+                )
+                async for ev in _finish(ctx, conv_id=conv_id, question=question,
+                                        content=content, citations=citations, verified=True):
+                    yield ev
+                return
+            elif outcome == "refused_out_of_template":
+                # 问对了域、超出了已验收模板。**不交给生成模型** ——
+                # 那只会换来一个听起来合理的编数,而这是问数链路最不能出的错
+                content = data["reply"] or t2s.OUT_OF_TEMPLATE_REPLY
+                parts.append(content)
+                async for ev in _finish(ctx, conv_id=conv_id, question=question,
+                                        content=content, citations=[], verified=False):
+                    yield ev
+                return
+            # refused_non_data:检索层零 LLM 就判掉了,本来就该由别的链路接手 → 往下走生成
 
         yield ChatEvent("stage_start", {"stage": "generate"})
         try:

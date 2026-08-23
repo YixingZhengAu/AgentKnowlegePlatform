@@ -32,7 +32,10 @@ JOB_STATUSES = (
     "failed",
     "cancelled",
 )
-ITEM_TYPES = ("qa_pair", "chunk", "table_meta", "metric", "term")
+# S3 只有一种候选:意图。SQL 模板与参数区不进审核台(审的是"能不能跑出对的数"),
+# 表/列 description 也不进(审的时候必须同屏看到采样值与枚举字典)—— 两者泛型审核台都答不了,
+# 各有自己的界面。理由与 v0.1 的 table_meta / metric / term 三种 payload 的废弃说明见 DB-DESIGN §8。
+ITEM_TYPES = ("qa_pair", "chunk", "sql_intent")
 REVIEW_STATUSES = ("pending", "approved", "rejected", "modified")
 # 心跳超时判定僵尸任务的阈值(秒),执行器与启动清理共用
 JOB_HEARTBEAT_TIMEOUT_SEC = 60
