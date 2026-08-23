@@ -24,10 +24,10 @@ export function DataState<T>({
 }) {
   if (state.loading && !state.data) {
     return (
-      <div className="flex flex-col gap-2 p-6">
-        <Skeleton className="h-9 w-full" />
-        <Skeleton className="h-9 w-full" />
-        <Skeleton className="h-9 w-2/3" />
+      <div className="flex flex-col gap-2.5 p-6">
+        <Skeleton className="h-[42px] w-full" />
+        <Skeleton className="h-[42px] w-full" />
+        <Skeleton className="h-[42px] w-2/3" />
       </div>
     )
   }

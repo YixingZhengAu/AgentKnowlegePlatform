@@ -15,10 +15,10 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-      <Icon className="text-muted-foreground size-8" strokeWidth={1.5} />
-      <div className="font-display text-[16px] font-semibold">{title}</div>
+      <Icon className="text-ghost size-7" strokeWidth={1.5} />
+      <div className="font-display text-[15px] font-bold tracking-[-0.01em]">{title}</div>
       {description && (
-        <p className="text-muted-foreground max-w-[420px] text-[12px]">{description}</p>
+        <p className="text-faint max-w-[420px] text-[12.5px] leading-[1.6]">{description}</p>
       )}
       {action}
     </div>

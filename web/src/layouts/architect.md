@@ -4,12 +4,13 @@
 
 ```
 <div flex h-screen>
-  <nav 220px bg-primary>      侧栏:激活项左侧 3px 黄竖条 + bg-white/8
-  <div flex-1 flex-col>
-    <header 56px bg-card>     顶栏:页面标题 + (有右栏时)显示/隐藏按钮
+  <nav 224px bg-nav>          侧栏:浅底 + 右边框;顶级项 h38/10px 圆角,激活 = bg-nav-active + navy 600
+  <div flex-1 flex-col>       子项 h32/9px 圆角,激活 = 白卡 + shadow-xs(见 UI-STYLE §3)
+    <header 64px>             顶栏:页面标题 + (有右栏时)34px 描边 pill 显示/隐藏按钮
     <div flex flex-1>
-      <main flex-1 overflow-y-auto p-6>  <Outlet/>
-      <aside 360px bg-card>              右侧插槽(仅当页面塞了内容且未折叠)
+      <main flex-1 overflow-y-auto px-7 pt-6 pb-7>  <Outlet/>
+      <aside 320px>                               右侧插槽(仅当页面塞了内容且未折叠)
+                                                  标题行 64px,与顶栏齐平
 ```
 
 ## 右侧面板插槽的实现
@@ -22,7 +23,7 @@ ESM 的环不报编译错,只在运行时炸 `Cannot access 'DOMAINS' before ini
 
 `RightPanelContext` 只暴露一个 `setPanel`;页面用 `useRightPanel(title, node, deps)`:
 effect 里 set,卸载 return 里清空。**没有内容时整个 `<aside>` 不渲染** ——
-列表页不该白让出 360px,而对话页一进去就该看到"轨迹会出现在这里"。
+列表页不该白让出 320px,而对话页一进去就该看到"轨迹会出现在这里"。
 
 `useMemo(() => ({setPanel}), [])` 固定 context 值,避免布局重渲染把所有页面拖着重跑 effect。
 
