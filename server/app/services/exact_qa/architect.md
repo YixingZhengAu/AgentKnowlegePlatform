@@ -27,6 +27,27 @@ M2 判重(阈值 0.70)、M3 跨条冲突(0.75)、M4 命中护栏(看差集)。
 「416×416」以 0.827 命中「320×320」那条(把错答案标成 Verified Answer)。
 所以三处共用一份实现,改一处就得改全部,单测钉在 `tests/test_exact_qa_matching.py`。
 
+## parser.py:块类型只认"内容集合",陌生类型不许打死整篇解析
+
+`content_list` 是 **MinerU 的输出**,不是我们的入参 —— 所以 `ContentBlock.type` 是 `str`,
+**不做枚举收窄**。判断集中在 `app/schemas/exact_qa.py` 的两个集合:
+
+- `CONTENT_BLOCK_TYPES` = text / table / image / chart / equation
+  —— `build_paged_md()` 里每种都有对应分支,只有它们会进 markdown
+- `NOISE_BLOCK_TYPES` = aside_text / page_number / header / footer / discarded(已知页边噪声)
+- `is_noise` 判的是"**不在内容集合里**",所以 MinerU 新冒出来的类型自动按噪声丢掉,不抛异常;
+  `is_unknown_type`(不在上面两个集合里)只用来留痕
+
+留痕有两处,缺一不可 —— 丢块是静默失败,没有痕迹就等于内容悄悄少了:
+`ingest.step_parse` 打 `log.warning("mineru_unknown_block_types")` 并把类型写进 step log;
+`parser.dropped_by_type()` 按类型计数进 `ParseStats.dropped_by_type`,store 步的 message
+与文档 `meta.parse_stats` 都带上(如 `dropped 23 noise: footerx5, headerx13, page_numberx5`)。
+
+**为什么这么写**:原来 `type` 是 `Literal[...]`,枚举取自沙箱那份 arXiv 论文的 7 种类型。
+真实公司政策 PDF 有页眉页脚,`header` 不在枚举里 → `model_validate` 抛 ValidationError →
+一个页眉块把整篇文档打成 `parse failed`(2026-08-23 实测,详见 `documents/S1-PLAN.md` §9.1)。
+回归钉在 `tests/test_exact_qa_parser.py`。
+
 ## llm.py:结构化输出为什么要过 Provider
 
 沙箱用 openai SDK 的 `responses.parse(text_format=Model)` 一行拿对象;

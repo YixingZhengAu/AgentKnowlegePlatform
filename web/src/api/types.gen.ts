@@ -1265,10 +1265,18 @@ export interface components {
             block_count: number;
             /**
              * Noise Dropped
-             * @description 过滤掉的 aside_text/page_number 数
+             * @description 过滤掉的非内容块总数
              * @default 0
              */
             noise_dropped: number;
+            /**
+             * Dropped By Type
+             * @description 过滤掉的块按类型计数,如 {'header': 13, 'page_number': 5}
+             * @default {}
+             */
+            dropped_by_type: {
+                [key: string]: number;
+            };
             /**
              * Table Count
              * @default 0

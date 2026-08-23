@@ -14,7 +14,7 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -38,8 +38,18 @@ IMAGES_SUBDIR = "images"
 #: 页标记注释格式:markdown 里每页开头插一行,page_idx 从 0 起(与 MinerU 一致)
 PAGE_MARKER_FMT = "<!-- page: {page_idx} -->"
 
-#: content_list 里必须过滤掉的页边噪声类型(MinerU 自己的 md 已丢弃,我们自己拼要对齐)
-NOISE_BLOCK_TYPES = frozenset({"aside_text", "page_number", "discarded"})
+#: 会被拼进 markdown 的**内容**块类型(build_paged_md 里每一种都有对应分支)
+CONTENT_BLOCK_TYPES = frozenset({"text", "table", "image", "chart", "equation"})
+
+#: content_list 里已知要过滤掉的页边噪声类型(MinerU 自己的 md 已丢弃,我们自己拼要对齐)
+#: header/footer 是页眉页脚(实测:公司名、文档编号 | Internal use only),与页码同类
+NOISE_BLOCK_TYPES = frozenset(
+    {"aside_text", "page_number", "header", "footer", "discarded"}
+)
+
+#: 已知类型 = 内容 + 噪声。不在这里面的类型**不报错**,按噪声丢掉并计入 stats.dropped_by_type
+#: —— MinerU 升级随时可能冒出新类型,不能让一个陌生块把整篇文档的解析打死(见 §踩坑)
+KNOWN_BLOCK_TYPES = CONTENT_BLOCK_TYPES | NOISE_BLOCK_TYPES
 
 #: 图片出口(契约点 M1.5):**改写在后端出口做,入库一律存相对路径**
 FILE_SERVICE_URL_FMT = "/api/files/parses/{document_id}/images/{name}"
@@ -60,15 +70,21 @@ BBox1000 = Annotated[list[int], Field(min_length=4, max_length=4)]
 还原成 PDF point:x_pt = x / 1000 * page_width_pt(页尺寸取 ParseResult.pages)。
 """
 
-BlockType = Literal[
-    "text",         # 正文/标题,标题带 text_level(1=一级)
-    "table",        # table_body 是 HTML,另有 caption/footnote
-    "image",        # 切图 + image_caption
-    "chart",        # 图表切图;pipeline 模式下 content 恒为空字符串
-    "equation",     # 行间公式,text 是 LaTeX
-    "aside_text",   # 页边噪声(如 arXiv 竖排水印)
-    "page_number",  # 页码噪声
-]
+#: 实测见过的类型(3.4.5 / backend=pipeline):
+#:   text        正文/标题,标题带 text_level(1=一级)
+#:   table       table_body 是 HTML,另有 caption/footnote
+#:   image       切图 + image_caption
+#:   chart       图表切图;pipeline 模式下 content 恒为空字符串
+#:   equation    行间公式,text 是 LaTeX
+#:   aside_text  页边噪声(如 arXiv 竖排水印)
+#:   page_number 页码噪声
+#:   header      页眉噪声
+#:   footer      页脚噪声
+#:
+#: **故意不写成 Literal**:这份 content_list 是 MinerU 的输出,不是我们的入参,
+#: 枚举收窄只会让没见过的类型把整篇解析打成 parse failed(实测 header 就是这么炸的)。
+#: 类型的语义判断集中在 CONTENT_BLOCK_TYPES / NOISE_BLOCK_TYPES 两个集合。
+BlockType = str
 
 
 class ContentBlock(BaseModel):
@@ -97,7 +113,13 @@ class ContentBlock(BaseModel):
 
     @property
     def is_noise(self) -> bool:
-        return self.type in NOISE_BLOCK_TYPES
+        """非内容块一律算噪声 —— 已知的页眉页脚页码,以及任何没见过的新类型。"""
+        return self.type not in CONTENT_BLOCK_TYPES
+
+    @property
+    def is_unknown_type(self) -> bool:
+        """MinerU 冒出的新类型:不报错,但要能在日志与 stats 里看见。"""
+        return self.type not in KNOWN_BLOCK_TYPES
 
 
 class PageInfo(BaseModel):
@@ -117,7 +139,10 @@ class ParseStats(BaseModel):
 
     page_count: int = 0
     block_count: int = 0
-    noise_dropped: int = Field(default=0, description="过滤掉的 aside_text/page_number 数")
+    noise_dropped: int = Field(default=0, description="过滤掉的非内容块总数")
+    dropped_by_type: dict[str, int] = Field(
+        default={}, description="过滤掉的块按类型计数,如 {'header': 13, 'page_number': 5}"
+    )
     table_count: int = 0
     image_count: int = Field(default=0, description="image + chart")
     equation_count: int = 0

@@ -12,6 +12,7 @@ httpx 同步 → 异步(Job 跑在事件循环里)、落盘目录 → FILE_STORA
 
 import base64
 import json
+from collections import Counter
 from pathlib import Path
 
 import httpx
@@ -157,6 +158,16 @@ def build_paged_md(blocks: list[ContentBlock]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def dropped_by_type(raw: list[ContentBlock], kept: list[ContentBlock]) -> dict[str, int]:
+    """被丢掉的块按类型计数(页眉页脚页码,以及 MinerU 新冒出来的陌生类型)。
+
+    只有总数的话,"这篇少了 23 块"没法判断是正常页边噪声还是我们漏认了新类型。
+    """
+    kept_ids = {id(b) for b in kept}
+    counter = Counter(b.type for b in raw if id(b) not in kept_ids)
+    return dict(sorted(counter.items()))
+
+
 def make_stats(
     raw: list[ContentBlock], kept: list[ContentBlock], pages: int, elapsed_ms: int
 ) -> ParseStats:
@@ -164,6 +175,7 @@ def make_stats(
         page_count=pages,
         block_count=len(kept),
         noise_dropped=len(raw) - len(kept),
+        dropped_by_type=dropped_by_type(raw, kept),
         table_count=sum(1 for b in kept if b.type == "table"),
         image_count=sum(1 for b in kept if b.type in ("image", "chart")),
         equation_count=sum(1 for b in kept if b.type == "equation"),

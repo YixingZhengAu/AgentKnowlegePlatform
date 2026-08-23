@@ -12,6 +12,7 @@
 | `test_exact_qa_retriever.py` | 命中分档边界(0.55/0.40 闭区间、最低正例 0.613、护栏只降级不升级) |
 | `test_exact_qa_extractor.py` | quote 逐字定位与前缀修复、五种硬约束丢弃、页码以块为准 |
 | `test_exact_qa_similar.py` | 相似问两道过滤(与标准问相同 / 跨条冲突 / 已接受改写也进问题面) |
+| `test_exact_qa_parser.py` | ★ 块类型宽容度回归:header/footer 不许打死整篇解析 + 拼 md 只渲染内容块 + 丢弃按类型计数(S1-PLAN §9.1) |
 
 跑:`cd server && uv run pytest`(全部离线,不打真实 API、不连 DB)。
 真实调用的验证在 `scripts/smoke_*`。

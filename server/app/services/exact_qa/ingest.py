@@ -115,7 +115,17 @@ class QaParseJob(_DocumentJob):
         content_list = parser.as_json(raw.get("content_list")) or []
         blocks = [ContentBlock.model_validate(b) for b in content_list]
         ctx.scratch["blocks_raw"] = blocks
-        return f"MinerU returned {len(blocks)} blocks"
+
+        # 陌生类型不报错(会被当噪声丢掉),但必须留痕:否则内容悄悄少了没人知道
+        unknown = sorted({b.type for b in blocks if b.is_unknown_type})
+        if unknown:
+            log.warning(
+                "mineru_unknown_block_types",
+                document_id=str(ctx.scratch["document_id"]),
+                types=unknown,
+            )
+        suffix = f" ({len(unknown)} unknown types: {', '.join(unknown)})" if unknown else ""
+        return f"MinerU returned {len(blocks)} blocks{suffix}"
 
     async def step_store(self, ctx: JobRunContext) -> str:
         document_id = ctx.scratch["document_id"]
@@ -159,9 +169,11 @@ class QaParseJob(_DocumentJob):
             },
         )
         ctx.scratch["stats"] = stats
+        by_type = ", ".join(f"{t}x{n}" for t, n in (stats.get("dropped_by_type") or {}).items())
+        dropped = f"dropped {stats['noise_dropped']} noise" + (f": {by_type}" if by_type else "")
         return (
             f"{stats['page_count']} pages / {stats['block_count']} blocks "
-            f"(dropped {stats['noise_dropped']} noise), {len(images)} images"
+            f"({dropped}), {len(images)} images"
         )
 
 

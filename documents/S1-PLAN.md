@@ -152,7 +152,13 @@ tmp/
   ```
   - content_list 实测 type:`text`(带 `text_level` 表标题层级)、`table`(`table_body` HTML)、
     `image`、**`chart`**(pipeline 下 `content` 恒空)、`equation`(LaTeX)、
-    **`aside_text` / `page_number`**(页边噪声,md 里已丢弃,自己用 content_list 时必须过滤)。
+    **`aside_text` / `page_number` / `header` / `footer`**(页边噪声,md 里已丢弃,
+    自己用 content_list 时必须过滤)。
+  - ⚠ **这份 type 清单不可当成封闭枚举**(2026-08-23 踩坑,见 §9):`ContentBlock.type`
+    原来写成 Literal,实测公司政策 PDF 吐出 `header`/`footer` 不在枚举里,
+    pydantic 直接 ValidationError —— 一个陌生块把整篇文档打成 parse failed。
+    现在 `type: str`,语义判断交给 `CONTENT_BLOCK_TYPES` / `NOISE_BLOCK_TYPES` 两个集合,
+    集合外的类型按噪声丢掉并计入 `ParseStats.dropped_by_type`。
   - **bbox 坐标系**:content_list 的 bbox 是**每轴各自归一化到 0–1000** 的整数(原点左上,页面尺寸无关);
     middle.json 的 bbox 是 PDF point,配同页 `page_size`。origin_ref 存前者。
 - **解析质量实测**(sample-paper-3p):布局/阅读顺序/双栏切分**全对**;正文、标题层级、断词合并**优**;
@@ -586,9 +592,11 @@ Step 8  ✅ 已完成 —— 端到端 + 回归 + 边缘:
    - ⚠ 与 DB-DESIGN §5 现写的示例 `{"source_id","page","quote"}` 不一致(字段名与是否带
      bbox),**归档时按本节改 DB-DESIGN**。
 3b. **带页标记 markdown(Step 1 定稿)**:由 parse 层用 content_list 生成 `paged.md`——
-   每页开头插 `<!-- page: N -->`(N 从 0 起,常量 `PAGE_MARKER_FMT`),过滤
-   `aside_text`/`page_number`/`discarded`(常量 `NOISE_BLOCK_TYPES`),作为**校对与抽取的
-   统一文本载体**。校对页展示/编辑的就是它;M2 优先读 `reviewed.md`,不存在则退回 `paged.md`。
+   每页开头插 `<!-- page: N -->`(N 从 0 起,常量 `PAGE_MARKER_FMT`),**只保留内容块**
+   (常量 `CONTENT_BLOCK_TYPES` = text/table/image/chart/equation),其余一律丢掉 ——
+   已知的页边噪声(`NOISE_BLOCK_TYPES` = aside_text/page_number/header/footer/discarded)
+   与任何没见过的新类型都走这条路(2026-08-23 修,见 §9)。作为**校对与抽取的统一文本载体**;
+   校对页展示/编辑的就是它,M2 优先读 `reviewed.md`,不存在则退回 `paged.md`。
 4. **文档状态**:`documents.parse_status` 现有 4 态(pending/parsing/parsed/failed)缺"待校对/抽取中/待采纳"。方案:文档级只管解析态,后续状态由关联 Job 状态推导;或扩展 CHECK 枚举。
 5. **Job 状态机语义**:DB-DESIGN 的 `review →(用户点发布)publishing → published` 是"批量发布"语义;我们改为**逐条采纳即发布**,则 qa_extract Job 的 review 态表示"采纳进行中",全部裁决完毕置 published(仅作终态统计,`publish_records` 记漏斗数字)。归档时更新 DB-DESIGN 该节描述。
 6. **exact_qa 检索阈值与命中关(Step 5 实测定稿)**:进 config + `.env.example` 三个配置项——
@@ -596,3 +604,46 @@ Step 8  ✅ 已完成 —— 端到端 + 回归 + 边缘:
    `EXACT_QA_HIT_GATE=true`(命中前用 light 模型复核一次)。
    ⚠ 计划早期臆测的 0.90 与实测不符:`text-embedding-3-small` 上真实问法与标准问的余弦
    多在 0.61–0.91,0.90 会把绝大多数正例挡在门外(实测 0.90 只剩 2/14)。
+
+## 9. 上线后踩坑与修复记录
+
+### 9.1 `ContentBlock.type` 用 Literal 收窄 → 一个陌生块打死整篇文档(2026-08-23 修)
+
+**现象**:手动测 `data/company-it-policy.pdf`,文档列表显示 `Parse failed`,错误是
+`ValidationError: 1 validation error for ContentBlock / type / Input should be 'text', 'table',
+'image', 'chart', 'equation', 'aside_text' or 'page_number' [input_value='header']`。
+
+**根因**:`ContentBlock.type` 写成 `Literal[...]`,枚举取自沙箱阶段那份 arXiv 论文实测到的
+7 种类型。真实的公司政策 PDF 有页眉页脚,MinerU 吐出 `header` / `footer` 两种类型不在枚举里,
+`ContentBlock.model_validate` 抛异常 —— 而这一步是在 `step_parse` 里对**整个 content_list**
+逐块校验,所以一个页眉块 = 整篇文档解析失败。方向错了:content_list 是 **MinerU 的输出**,
+不是我们的入参,对它做枚举收窄没有任何收益(不会有人手写 content_list),只有风险
+(MinerU 升级、换 backend、换文档类型都可能冒出新类型)。同一个坑当时还留了个证据:
+`NOISE_BLOCK_TYPES` 里的 `discarded` 从来就不在那个 Literal 里。
+
+**修法**(`server/app/schemas/exact_qa.py` + `services/exact_qa/{parser,ingest}.py`):
+
+- `type: str`,不再枚举;类型的语义判断改由两个集合表达 ——
+  `CONTENT_BLOCK_TYPES`(text/table/image/chart/equation,拼 md 时每种都有分支)与
+  `NOISE_BLOCK_TYPES`(aside_text/page_number/**header**/**footer**/discarded)
+- `is_noise` 反过来判:**不在内容集合里的一律算噪声** —— 陌生类型自动走丢弃路径,不再抛异常
+- 陌生类型不能悄悄丢:新增 `is_unknown_type`,`step_parse` 里 `log.warning`
+  (`mineru_unknown_block_types`)并写进该步的 step log;
+  `ParseStats` 新增 `dropped_by_type`(如 `{"header": 13, "footer": 5, "page_number": 5}`),
+  store 步的 message 一并报出来 —— 只有总数的话,"这篇少了 23 块"分不清是正常页眉还是漏认新类型
+- 回归单测 `server/tests/test_exact_qa_parser.py`(5 个用例):页眉页脚页码能过校验且算噪声、
+  陌生类型宽容但被标记、内容类型不被丢、拼 md 只渲染内容块、`dropped_by_type` 按类型计数
+
+**实测**(两份公司政策 PDF,MinerU 3.4.5 / backend=pipeline):
+`company-it-policy.pdf` 64 块 → 保留 41(丢 header×13 / page_number×5 / footer×5),5 页 6 表 1 图;
+`company-travel-policy.pdf` 63 块 → 保留 40(同样的 23 块噪声),2 图。
+校对页的 markdown 里不再出现 "Clenergy Australia Pty Ltd"(页眉)、"Page 1 of 5"(页码)、
+"CLE-IT-POL-011 | Internal use only"(页脚)。全链路复测见 §9.2。
+
+### 9.2 修复后的全链路复测(playwright,2026-08-23)
+
+清库(`make db-reset`)+ 清 `storage/` 后从零走一遍:上传 `company-it-policy.pdf` → 解析
+(11.3s,41 块)→ 校对页对照 PDF 检查 5 页文本 → Confirm & extract(74s,55 raw → 28 kept)→
+similar(122 → 111)→ 审核台 Accept & publish → Chat 问 "How must Restricted data be stored?"
+→ 气泡带 **Verified Answer** + 引用 `[1] 相似度 1.000 p5`,执行轨迹**只有 `retrieve_exact_qa`
+一个阶段**(无 `generate`,证明零改写)。控制台 0 error。

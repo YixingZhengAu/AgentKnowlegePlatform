@@ -21,7 +21,8 @@
 契约(字段名)在 `app/schemas/exact_qa.py`,本目录不另定数据形状。
 
 **离线单测**(S1 唯一必须写单测的地方,因为改错了不报错只是静默给错答案):
-`server/tests/test_exact_qa_{matching,extractor,similar,retriever}.py`。
+`server/tests/test_exact_qa_{matching,extractor,similar,retriever,parser}.py`
+(`parser` 那份是 2026-08-23 的回归:MinerU 冒出的块类型不许再打死整篇解析,见 S1-PLAN §9.1)。
 联网通路用 `server/scripts/smoke_exact_qa.py`(三个 LLM 调用点)与
 `server/scripts/smoke_exact_qa_store.py`(存储层 + **pgvector 分数与手算余弦对数**)、
 `server/scripts/smoke_s1_api.sh`(HTTP 全链路 13 步)。
