@@ -4,7 +4,7 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `ui/` | shadcn 风格原子件(button/card/badge/table/input/skeleton),见 `ui/claude.md` |
+| `ui/` | shadcn 风格原子件(button/card/badge/table/input/textarea/kbd/segmented/skeleton),见 `ui/claude.md` |
 | `DataState.tsx` | 列表页三态外壳:loading 骨架 / 错误+Retry / 空状态 |
 | `EmptyState.tsx` | 空状态:线性图标 + 一句话 + 最多一个动作,不放插画 |
 | `KbTypeTag.tsx` | 三类知识识别标(色点 + 英文标签),全站统一 |
@@ -17,6 +17,5 @@
 | `StagingReview.tsx` | **泛型审核台**:筛选/排序/单条/批量/键盘流/发布;**动作层可由各域替换**(S1 的采纳即发布) |
 | `Citations.tsx` | 答案下面的引用条(命中面 + 相似度 + 页码,可展开看原文摘录) |
 | `staging/` | 各类知识的渲染器(item_type → 卡片 + 编辑器),见 `staging/claude.md` |
-| `ui/textarea.tsx` | 多行输入(审核台的答案框) |
 
 详见 `architect.md`。

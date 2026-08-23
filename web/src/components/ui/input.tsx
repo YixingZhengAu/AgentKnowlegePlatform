@@ -2,12 +2,12 @@ import type { ComponentProps } from 'react'
 
 import { cn } from '@/lib/utils'
 
-/** 36px 高、6px 圆角,聚焦 navy 边框 + 2px 外圈(UI-STYLE §3)。 */
+/** 填充式输入:静息是 `subtle` 填充块 + 透明边,聚焦才变白底 + ring 边 + 4px 外圈(UI-STYLE §3)。 */
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return (
     <input
       className={cn(
-        'bg-card focus:border-primary disabled:bg-muted disabled:text-muted-foreground h-9 w-full rounded-[var(--radius)] border px-3 text-[14px] transition-colors outline-none focus:ring-2 focus:ring-[var(--primary-soft)] disabled:cursor-not-allowed',
+        'bg-subtle focus:bg-card focus:border-ring disabled:text-fainter h-9 w-full rounded-[var(--radius)] border border-transparent px-4 text-[14px] transition-all duration-150 outline-none focus:shadow-[var(--shadow-focus)] focus-visible:outline-none disabled:cursor-not-allowed',
         className,
       )}
       {...props}
