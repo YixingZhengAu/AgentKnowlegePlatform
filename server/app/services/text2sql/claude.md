@@ -16,6 +16,7 @@
 | `template.py` | ★ B4:SQL 模板生成 + 9 条确定性静态校验 + 真库试执行 + 报错回灌自修 ≤2 轮 |
 | `params.py` | B5:AST 拆三区参数骨架(纯代码)+ AI 预填 business_name/hint + 校验回灌 ≤2 轮 |
 | `rewrite.py` | ★ B6:改写计划 prompt + **确定性应用器**(校验 → sqlglot AST 重建 SQL)+ 全链路 `rewrite()`;计划里的 `infeasible_reason` 是拒答文案的唯一出处 |
+| `sqltext.py` | 「SQL 长什么样」的唯一出处:AST → 多行排版(`pretty=True`)。落库前与展示前都过它,**只加空白不动语义**,解析失败原样返回 |
 | `executor.py` | 执行闸:单条 SELECT / 表列白名单 / 强制 LIMIT / 读超时。**最后一道关,不是唯一一道** |
 | `questions.py` | B7:相似问法生成(必须喂真实取值表)+ 文本层跨意图冲突过滤 |
 | `retrieve.py` | ★ B7:双门槛判定 + **空路由**(null route)+ 索引装载 + 留一法审计 |

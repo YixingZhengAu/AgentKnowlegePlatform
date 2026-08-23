@@ -19,7 +19,7 @@ import re
 import sqlglot
 from sqlglot import exp
 
-from app.services.text2sql import executor
+from app.services.text2sql import executor, sqltext
 from app.services.text2sql.bizdb import BizConn
 from app.services.text2sql.params import _col_meta, _where_leaves
 from app.services.text2sql.template import TODAY
@@ -348,7 +348,7 @@ def apply_plan(package: dict, plan: dict, layer: dict) -> dict:
         else:
             tree.set("order", None)
 
-    return {"ok": True, "sql": tree.sql(dialect="mysql"),
+    return {"ok": True, "sql": sqltext.render(tree),
             "violations": [], "adjustments": adjustments}
 
 

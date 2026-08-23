@@ -225,7 +225,7 @@
 | one_liner | text | NOT NULL | 一句话摘要(带 `Query:`/`Stats:` 治理前缀)。**进索引前会剥掉前缀** —— 前缀是内部治理标签,用户问句里绝不会出现 |
 | brief | text | NOT NULL | 说明书体详述(给模板生成与人审看)。**刻意不进检索索引**:B7 消融实测它对"问句 vs 问句"匹配零增益,却制造 3 条意图间自洽性冲突 |
 | tables | jsonb | DEFAULT '[]' | string[],涉及的物理表 |
-| sql | text | | 已验收的模板 SQL(带默认参数值,可直接执行) |
+| sql | text | | 已验收的模板 SQL(带默认参数值,可直接执行)。**存的是多行排版后的文本** —— 它是要给人读、给人编辑、给人验收的治理资产,一行几百字符没法审;排版只加空白不动语义,唯一出处 `services/text2sql/sqltext.py` |
 | params | jsonb | DEFAULT '{}' | 参数区三段结构,见 §4.8 |
 | status | text | CHECK IN ('draft','published','disabled') DEFAULT 'draft' | published 才进检索索引 |
 | prefill_rounds | int | DEFAULT 0 | 参数区 AI 预填用了几轮(含回灌自修),质量留痕 |

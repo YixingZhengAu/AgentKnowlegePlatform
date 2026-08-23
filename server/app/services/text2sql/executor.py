@@ -23,7 +23,7 @@ import sqlglot
 from sqlglot import exp
 
 from app.config import settings
-from app.services.text2sql import bizdb
+from app.services.text2sql import bizdb, sqltext
 from app.services.text2sql.bizdb import BizConn
 
 #: 模板万一无 LIMIT 时补上的值(模板静态校验要求必须有 LIMIT,正常不会触发)
@@ -69,7 +69,9 @@ def gate_and_execute(conn: BizConn, sql: str, layer: dict, *, preview: int = 5) 
         tree.set("limit", exp.Limit(expression=exp.Literal.number(FALLBACK_LIMIT)))
     elif int(limit.expression.this) > max_rows():
         limit.set("expression", exp.Literal.number(max_rows()))
-    final = tree.sql(dialect="mysql")
+    # 多行排版:这条 SQL 会原样进引用卡给用户看(`runtime.py::citations` 的 snippet),
+    # 排版只加空白,执行的和展示的仍是逐字同一份
+    final = sqltext.render(tree)
 
     t0 = time.perf_counter()
     cols, rows = bizdb.query(conn, final, timeout=timeout_sec())

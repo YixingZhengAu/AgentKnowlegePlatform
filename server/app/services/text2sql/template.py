@@ -21,7 +21,7 @@ import json
 import sqlglot
 from sqlglot import exp
 
-from app.services.text2sql import bizdb
+from app.services.text2sql import bizdb, sqltext
 from app.services.text2sql.bizdb import BizConn
 from app.services.text2sql.intents import _layer_subset
 from app.services.text2sql.llm import complete
@@ -358,7 +358,8 @@ async def generate_template(conn: BizConn, layer: dict, intent: dict) -> dict:
     for round_no in range(MAX_REPAIR_ROUNDS + 1):
         data = await complete(messages, tier="main", max_tokens=3000,
                               json_schema=TEMPLATE_SCHEMA, tag=f"template-{intent['id']}")
-        sql = data["sql"].strip().rstrip(";")
+        # 先排版再校验/试执行:落库的就是这份多行文本,校验的对象必须和它逐字相同
+        sql = sqltext.format_sql(data["sql"].strip().rstrip(";"))
         problems = static_problems(sql, intent, layer)
         cols: list[str] = []
         rows: list[tuple] = []

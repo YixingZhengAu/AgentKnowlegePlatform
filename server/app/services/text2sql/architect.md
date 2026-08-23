@@ -58,6 +58,7 @@
 | 改写器的权力边界 | `rewrite.py` 的 `REWRITE_SYSTEM`(prompt)**与** `apply_plan()`(硬约束) | 评测集,尤其越界那 4 题 |
 | 应用器的裁剪/联动规则 | `rewrite.py` 的 `apply_plan()`,**同步改 `APPLY_RULES`** | `make smoke-s3` |
 | 执行闸(白名单/LIMIT/超时) | `executor.py`;数值在 `.env` 的 `TEXT2SQL_*` | `make smoke-s3` |
+| **SQL 长什么样**(缩进/换行/大小写) | `sqltext.py`(唯一出处);三个调用点:`template.py` 生成后落库前、`executor.py` 的 `sql_executed`、`rewrite.py::apply_plan` 的输出 | `make smoke-s3`(排版只加空白,静态校验/参数区拆解/执行闸都不该受影响) |
 | 命中阈值 / 边距阈值 | `retrieve.py` 的 `HIT_THRESHOLD` / `MARGIN_THRESHOLD` | **先读 §4**,再跑 `smoke_s3_index` |
 | 空路由负例面 | `non_data_faces` 表(前端可编,fixture 在 `scripts/fixtures/s3/`) | 保存即重建面 + `smoke_s3_index` |
 | 相似问法 | `intent_questions` 表 + `questions.py` 的 prompt | 保存即重建面 + `smoke_s3_index` |

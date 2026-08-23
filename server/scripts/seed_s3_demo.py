@@ -41,7 +41,7 @@ from app.models import (
     SqlIntent,
     TableMeta,
 )
-from app.services.text2sql import bizdb, indexer, introspect, semantic
+from app.services.text2sql import bizdb, indexer, introspect, semantic, sqltext
 
 FIXTURES = Path(__file__).parent / "fixtures" / "s3"
 DATASOURCE_NAME = "Clenergy Sales (MySQL demo)"
@@ -116,7 +116,9 @@ async def _intents(session, kb: KnowledgeBase, ds: Datasource) -> dict:
         intent.one_liner = meta["one_liner"]
         intent.brief = meta["brief"]
         intent.tables = list(meta["tables"])
-        intent.sql = pkg["sql"]
+        # fixture 里存的是 B4 评审定稿的原文(一行);排版留给代码做,
+        # 免得评审过的产物文件被格式化改动搅进 diff(出处 `sqltext.py`)
+        intent.sql = sqltext.format_sql(pkg["sql"])
         intent.params = pkg["params"]
         intent.prefill_rounds = pkg.get("prefill_rounds", 0)
         intent.human_edited = bool(pkg.get("human_edited"))
