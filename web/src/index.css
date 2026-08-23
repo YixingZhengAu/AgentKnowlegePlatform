@@ -153,6 +153,9 @@
     --info: var(--brand-blue);
     --info-soft: var(--brand-navy-soft);
 
+    /* 全站唯一一处渐变:任务进度卡(UI-STYLE §3) */
+    --gradient-progress: linear-gradient(135deg, var(--brand-grad-from), var(--brand-grad-to));
+
     /* 三类知识的固定识别色,全站一致(路由徽标 / KB 卡片 / 引用标记同一套) */
     --kb-exact-qa: var(--brand-yellow);
     --kb-document: var(--brand-blue-dot);
