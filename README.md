@@ -3,7 +3,7 @@
 A demo system for tiered enterprise knowledge governance with agent-routed Q&A. Three knowledge types are tiered by error tolerance: **exact Q&A pairs** (zero rewriting), **document knowledge** (RAG + mandatory citations), and **analytics Q&A** (semantic layer + Text2SQL).
 
 - Requirements & architecture: [documents/PRD.md](documents/PRD.md)
-- Stage plans: [S0](documents/S0-PLAN.md) (foundation) · [S1](documents/S1-PLAN.md) (exact Q&A, done) · [S3](documents/S3-PLAN.md) (analytics Q&A, done — [requirements](documents/S3-PRD.md), [Text2SQL research notes](documents/S3-TEXT2SQL-RESEARCH.md))
+- Stage plans: [S0](documents/S0-PLAN.md) (foundation) · [S1](documents/S1-PLAN.md) (exact Q&A, done) · [S3](documents/S3-PLAN.md) (analytics Q&A, done — [requirements](documents/S3-PRD.md), [Text2SQL research notes](documents/S3-TEXT2SQL-RESEARCH.md), [lab review records B1-B8](documents/s3-lab-reviews/))
 - Single source of truth for the schema: [documents/DB-DESIGN.md](documents/DB-DESIGN.md)
 - Single source of truth for frontend style: [documents/UI-STYLE.md](documents/UI-STYLE.md)
 
@@ -136,7 +136,7 @@ bootstrap.sh     environment setup: toolchain check + .env + deps + db + migrate
 docker/          container config: Postgres init, the demo business MySQL (schema + generated seed), the MinerU image
 server/          FastAPI backend (managed by uv), see server/claude.md
 web/             React + Vite frontend, see web/claude.md
-documents/       PRD / stage plans / database design / UI guidelines
+documents/       PRD / stage plans / database design / UI guidelines / S3 lab review records
 ```
 
 ## The two databases

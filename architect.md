@@ -24,7 +24,8 @@
 | 要改的东西 | 唯一出处 | 纪律 |
 | --- | --- | --- |
 | 需求、模块边界、锁定决策 D1–D5 | `documents/PRD.md` | 改需求先改这里 |
-| 当前阶段的步骤与验收 | `documents/S0-PLAN.md` | 每个 Step 完成后回填自测证据 |
+| 当前阶段的步骤与验收 | `documents/S0-PLAN.md`(S0)、`S1-PLAN.md`(S1)、`S3-PLAN.md`(S3,最新) | 每个 Step 完成后回填自测证据 |
+| S3 实验床的原始评审证据(历史,非现行规格) | `documents/s3-lab-reviews/`(B1–B8 九份报告) | 只读存档;现行结论看 `S3-PLAN.md` |
 | 表结构、字段定义 | `documents/DB-DESIGN.md` | **文档先于 migration**;两者不一致以文档为准 |
 | 颜色、字体、组件样式 | `documents/UI-STYLE.md` | hex 只允许出现在 token 定义处 |
 | 某个知识域的代码往哪写、并行开发纪律 | `documents/DOMAIN-DEV-GUIDE.md` | 域开发者开工前必读;冲突地图在它的 §5 |

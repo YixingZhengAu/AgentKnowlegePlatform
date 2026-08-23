@@ -520,7 +520,7 @@ Phase E  联调验收:DoD 走查 + 文档同步               (E1–E2)
 >
 > **本域文档**:`services/text2sql/{claude,architect}.md`、`web/src/domains/text2sql/{claude,architect}.md`、`server/scripts/claude.md`、`app/api/architect.md` 在 C/D 各 stage 收尾时已同步;本次补 `components/{claude,architect}.md` 里审核台那条修复(**保存不是裁决**),并把三处指向开发机实验床的引用改写成"实验床不入库,评审过的产物在 `server/scripts/fixtures/s3/`"。
 >
-> **tmp 清理**:`tmp/S3-PLAN.md` / `tmp/S3-PRD.md` / `tmp/S3-TEXT2SQL-RESEARCH.md` 三份文档迁进 `documents/`(`tmp/` 是 gitignore 的,不迁就等于不交付);仓库根上两张走查时漏下的截图删掉;`.playwright-mcp/` 自测产物清空。**`tmp/s3-dev/`(44 MB 实验床)留在开发机上没有删** —— 它本来就不在 git 里,评审过的产物已经沉淀进 `server/scripts/fixtures/s3/`,而 B1–B8 的原始 LLM 输入输出留着还能回查;要彻底清掉是一条 `rm -rf` 的事,交给需求方决定。
+> **tmp 清理**:`tmp/S3-PLAN.md` / `tmp/S3-PRD.md` / `tmp/S3-TEXT2SQL-RESEARCH.md` 三份文档迁进 `documents/`(`tmp/` 是 gitignore 的,不迁就等于不交付);仓库根上两张走查时漏下的截图删掉;`.playwright-mcp/` 自测产物清空。**`tmp/s3-dev/`(44 MB 实验床)当时留在开发机上没有删** —— 它本来就不在 git 里,评审过的产物已经沉淀进 `server/scripts/fixtures/s3/`,而 B1–B8 的原始 LLM 输入输出留着还能回查;要彻底清掉是一条 `rm -rf` 的事,交给需求方决定。**已于 2026-08-24 按需求方决定清掉**:B1–B8 的 9 份评审报告(312 KB,一次性真调 LLM 的证据,不可复现)捞进 `documents/s3-lab-reviews/` 入库,其余 44 MB(独立 venv、embedding 缓存、llm_log、中间 JSON)全删;`tmp/` 至此只剩需求方自己放的一张图。
 >
 > **§7 提交前自查清单**:改动落在本域两个文件夹 + `components/StagingReview.tsx`(共享层,原因见 E1 的那处修复,已在 `components/architect.md` 记账)✅;`make types` 跑过、前端无手写 API 类型 ✅;`uv run pytest` 84 passed、`npx tsc -b && npm run lint` 全绿 ✅;界面文案全英文、无裸 hex ✅;没有自己生成 migration ✅;两个 `claude.md`/`architect.md` 已同步 ✅。
 
