@@ -15,6 +15,7 @@
 | `documents/` | 需求与设计文档(无代码) | 见下方第 2 节 |
 | `server/` | FastAPI 后端全部代码,uv 管理 | `server/claude.md` |
 | `web/` | React + Vite 前端(三栏工作台) | `web/claude.md` |
+| `data/` | 测试用示例 PDF(文档 RAG 的原料)+ 生成脚本 | `data/claude.md` |
 | `docker/` | Postgres init 脚本(建业务库与只读账号)+ MinerU 解析镜像 | `docker/claude.md` |
 | 根目录 | `bootstrap.sh` / `Makefile` / `docker-compose.yml` / `.env.example` / `README.md` | 见下方第 3 节 |
 
