@@ -22,7 +22,7 @@ export function Citations({ items }: { items: MessageCitation[] }) {
   if (items.length === 0) return null
 
   return (
-    <div className="mt-3 flex flex-col gap-1.5 border-t pt-2">
+    <div className="mt-3.5 flex flex-col gap-1 border-t border-[var(--border)] pt-2.5">
       {items.map((c) => {
         const kb = CITATION_KB[c.citation_type] ?? c.citation_type
         const extra = c.extra ?? {}
@@ -36,39 +36,41 @@ export function Citations({ items }: { items: MessageCitation[] }) {
                 e.stopPropagation()
                 setOpenSeq(open ? null : c.seq)
               }}
-              className="flex w-full items-center gap-2 text-left"
+              className="hover:bg-hover -mx-2 flex w-full items-center gap-2 rounded-[var(--radius-nav)] px-2 py-1.5 text-left transition-colors duration-150"
             >
-              <span className={cn('size-2 shrink-0 rounded-full', KB_TYPE_DOT[kb] ?? 'bg-muted')} />
-              <span className="text-muted-foreground font-mono text-[11px]">[{c.seq}]</span>
-              <span className="min-w-0 flex-1 truncate text-[12px]">
+              <span
+                className={cn('size-[7px] shrink-0 rounded-full', KB_TYPE_DOT[kb] ?? 'bg-muted')}
+              />
+              <span className="text-fainter font-mono text-[11px]">[{c.seq}]</span>
+              <span className="min-w-0 flex-1 truncate text-[12.5px]">
                 {extra.matched_question ?? KB_TYPE_LABEL[kb] ?? c.citation_type}
               </span>
               {extra.score != null && (
-                <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
+                <span className="text-faint shrink-0 font-mono text-[11px]">
                   {extra.score.toFixed(3)}
                 </span>
               )}
               {extra.page_idx != null && (
-                <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
+                <span className="text-faint shrink-0 font-mono text-[11px]">
                   p{extra.page_idx + 1}
                 </span>
               )}
               <ChevronDown
                 className={cn(
-                  'text-muted-foreground size-3.5 shrink-0 transition-transform',
+                  'text-ghost size-3.5 shrink-0 transition-transform duration-150',
                   !open && '-rotate-90',
                 )}
               />
             </button>
             {open && (
-              <div className="bg-subtle mt-1 rounded-[var(--radius)] px-3 py-2">
-                <div className="text-muted-foreground mb-1 font-mono text-[10px] tracking-wide uppercase">
+              <div className="bg-subtle mt-1 rounded-[var(--radius)] px-4 py-3">
+                <div className="text-fainter mb-1.5 font-mono text-[10.5px] tracking-[0.06em] uppercase">
                   {extra.is_standard_question ? 'standard question' : 'similar question'}
                   {extra.page_idx != null && ` · page ${extra.page_idx + 1}`}
                 </div>
                 {/* snippet 是原文逐字摘录(采纳时校验过能在解析文本里定位到) */}
-                <p className="flex gap-2 text-[12px] leading-relaxed">
-                  <Quote className="text-muted-foreground mt-0.5 size-3 shrink-0" />
+                <p className="flex gap-2 text-[12.5px] leading-[1.65]">
+                  <Quote className="text-ghost mt-1 size-3 shrink-0" />
                   {c.snippet || '—'}
                 </p>
               </div>

@@ -1,4 +1,4 @@
-/** 消息流与气泡(UI-STYLE §3:用户 navy 底白字右对齐,助手白卡片左对齐)。
+/** 消息流与气泡(UI-STYLE §4:用户 navy 底白字右对齐,助手浅填充块左对齐)。
  *
  * 助手消息的元信息(耗时 / token / 状态)直接挂在气泡底下 ——
  * 演示时不需要点开右侧面板就能看到"这次花了多少"。
@@ -36,11 +36,11 @@ export function ChatMessages({
 
   return (
     /* justify-end + min-h-full:消息少的时候贴着输入框,不在大片空白顶上飘着 */
-    <div className="flex min-h-full flex-col justify-end gap-4 px-6 py-5">
+    <div className="flex min-h-full flex-col justify-end gap-5 px-7 py-6">
       {turns.map((turn) =>
         turn.role === 'user' ? (
           <div key={turn.id} className="flex justify-end">
-            <div className="bg-primary text-primary-foreground max-w-[75%] rounded-[var(--radius-card)] px-4 py-2.5 text-[14px] whitespace-pre-wrap">
+            <div className="bg-primary text-primary-foreground max-w-[75%] rounded-[var(--radius-panel)] px-[18px] py-3 text-[14px] leading-[1.6] whitespace-pre-wrap">
               {turn.content}
             </div>
           </div>
@@ -60,22 +60,23 @@ export function ChatMessages({
               }
             }}
             className={cn(
-              'bg-card max-w-[85%] rounded-[var(--radius-card)] border px-4 py-3 text-left shadow-[var(--shadow-card)] transition-colors',
-              selectedId === turn.id && 'border-primary',
+              'bg-subtle max-w-[85%] rounded-[var(--radius-panel)] border border-transparent px-[18px] py-4 text-left transition-all duration-150',
+              selectedId === turn.id &&
+                'bg-selected border-[var(--selected-border)] shadow-[var(--shadow-row)]',
               // 命中的答案左侧一道强调色边:扫一眼消息流就知道哪几句是"库里的原话"
               turn.verified && 'border-l-accent border-l-[3px]',
             )}
           >
             {turn.verified && (
-              <Badge tone="accent" className="mb-2 font-bold">
-                <BadgeCheck className="size-3.5" />
+              <Badge tone="accent" className="mb-2.5">
+                <BadgeCheck className="size-3.5" strokeWidth={1.75} />
                 Verified Answer
               </Badge>
             )}
-            <div className="text-[14px] whitespace-pre-wrap">
+            <div className="text-[14px] leading-[1.7] whitespace-pre-wrap">
               {/* 气泡为空的两种情况都要说明白:还在等第一个 token / 第一个 token 之前就停了 */}
               {turn.content === '' ? (
-                <span className="text-muted-foreground font-mono text-[12px]">
+                <span className="text-faint font-mono text-[12px]">
                   {turn.status === 'streaming'
                     ? 'thinking…'
                     : 'Stopped before the first token arrived.'}
@@ -91,14 +92,14 @@ export function ChatMessages({
               <Citations items={turn.citations} />
             )}
             {turn.error && (
-              <div className="text-destructive mt-2 flex items-start gap-1.5 font-mono text-[11px]">
+              <div className="text-destructive mt-2.5 flex items-start gap-1.5 font-mono text-[11px]">
                 <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                 {turn.error}
               </div>
             )}
             {/* 计量只显示真有值的那几项:中断的消息没有 usage,不该摆一排破折号 */}
             {turn.status !== 'streaming' && (
-              <div className="text-muted-foreground mt-2 flex flex-wrap gap-3 font-mono text-[11px]">
+              <div className="text-fainter mt-3 flex flex-wrap gap-3.5 font-mono text-[11px]">
                 {turn.latency_ms != null && <span>{fmtMs(turn.latency_ms)}</span>}
                 {turn.usage?.total_tokens ? <span>{fmtTokens(turn.usage)} tok</span> : null}
                 {turn.usage?.cost_usd ? <span>{fmtUsd(turn.usage.cost_usd as string)}</span> : null}

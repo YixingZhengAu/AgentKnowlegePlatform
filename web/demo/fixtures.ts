@@ -154,6 +154,36 @@ export const FIXTURES: Record<string, unknown> = {
         },
         latency_ms: 2417,
         created_at: '2026-08-20T04:41:12.000000Z',
+        // 命中精准问答:答案是人工采纳过的原话,引用要说清"匹配到哪一句、多像、原文在第几页"
+        verified: true,
+        citations: [
+          {
+            seq: 1,
+            citation_type: 'exact_qa',
+            ref_id: 'f1000000-0001-4a10-9f01-eeee00000001',
+            snippet:
+              'The PV-ezRack SolarRoof carries a 15 year structural warranty when it is installed to the published torque and span tables.',
+            extra: {
+              score: 0.941,
+              matched_question: 'What is the warranty period for the PV-ezRack SolarRoof?',
+              is_standard_question: true,
+              page_idx: 2,
+            },
+          },
+          {
+            seq: 2,
+            citation_type: 'exact_qa',
+            ref_id: 'f1000000-0002-4a10-9f01-eeee00000002',
+            snippet:
+              'Anodised aluminium components are covered for corrosion for the same period; stainless fasteners are covered for 10 years.',
+            extra: {
+              score: 0.883,
+              matched_question: 'How long are the fasteners covered for?',
+              is_standard_question: false,
+              page_idx: 2,
+            },
+          },
+        ],
       },
     ],
     total: 2,
