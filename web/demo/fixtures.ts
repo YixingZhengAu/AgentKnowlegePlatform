@@ -299,3 +299,96 @@ FIXTURES[`/api/jobs/${DEMO_JOB_ID}`] = {
   finished_at: '2026-08-20T05:10:08.000000Z',
   created_at: '2026-08-20T05:10:00.000000Z',
 }
+
+// ---- 精准 QA 域:文档列表 / 校对页 / 已发布问答库 ----
+// 预览是只读的:上传、保存校对、确认抽取都没有后端可写(main.tsx 的兜底会返回 404 错误体),
+// 这里只提供把这两页画出来所需的最小数据,让静态预览与 UI 走查能覆盖到它们。
+export const DEMO_DOC_ID = 'a1000000-0001-4a10-9f01-cccc00000001'
+
+const DEMO_DOC = {
+  id: DEMO_DOC_ID,
+  kb_id: JOB_BASE.kb_id,
+  name: 'PV-ezRack SolarRoof installation manual.pdf',
+  file_type: 'application/pdf',
+  size_bytes: 2_418_664,
+  parse_status: 'ok',
+  parse_error: null,
+  stage: 'review_text',
+  parse_job_id: DEMO_JOB_ID,
+  extract_job_id: null,
+  parse_stats: { pages: 3, images: 2, tables: 1, chars: 4820 },
+  funnel: { candidates: 20, pending: 20, accepted: 0, rejected: 0 },
+  created_at: '2026-08-20T05:09:40.000000Z',
+  updated_at: '2026-08-20T05:10:08.000000Z',
+}
+
+FIXTURES['/api/exact-qa/documents'] = {
+  items: [
+    DEMO_DOC,
+    {
+      ...DEMO_DOC,
+      id: 'a1000000-0002-4a10-9f01-cccc00000001',
+      name: 'Ground mount PV-ezRack datasheet.pdf',
+      size_bytes: 861_204,
+      stage: 'done',
+      parse_stats: { pages: 2, images: 1, tables: 2, chars: 2140 },
+      funnel: { candidates: 12, pending: 0, accepted: 11, rejected: 1 },
+    },
+  ],
+  total: 2,
+}
+
+FIXTURES[`/api/exact-qa/documents/${DEMO_DOC_ID}`] = DEMO_DOC
+
+FIXTURES[`/api/exact-qa/documents/${DEMO_DOC_ID}/review-text`] = {
+  document_id: DEMO_DOC_ID,
+  source: 'paged.md',
+  reviewed: false,
+  images: [],
+  pages: [
+    { page_idx: 1, width_pt: 595, height_pt: 842 },
+    { page_idx: 2, width_pt: 595, height_pt: 842 },
+    { page_idx: 3, width_pt: 595, height_pt: 842 },
+  ],
+  text: [
+    '<!-- page: 1 -->',
+    '# PV-ezRack SolarRoof — installation manual',
+    '',
+    'This manual covers the rail, clamp and hook range for tile, metal and flat roofs.',
+    'Install to the published torque and span tables; deviations void the structural warranty.',
+    '',
+    '<!-- page: 2 -->',
+    '## Warranty',
+    '',
+    'The structural warranty is 15 years from the date of installation. Anodised aluminium',
+    'components carry the same corrosion cover; stainless fasteners are covered for 10 years.',
+    '',
+    '| Component | Warranty | Notes |',
+    '| --- | --- | --- |',
+    '| Rail | 15 years | Structural |',
+    '| Clamp | 15 years | Structural |',
+    '| Fastener | 10 years | Corrosion only |',
+    '',
+    '<!-- page: 3 -->',
+    '## Torque table',
+    '',
+    'Tighten all M8 clamp bolts to 12 Nm. Tighten M10 hook bolts to 20 Nm.',
+    'Re-check torque after the first 12 months in coastal installations.',
+  ].join('\n'),
+}
+
+FIXTURES['/api/exact-qa/items'] = {
+  items: TOPICS.map(([topic], i) => ({
+    id: `a2000000-${String(i + 1).padStart(4, '0')}-4a10-9f01-cccc00000001`,
+    kb_id: JOB_BASE.kb_id,
+    standard_question: `What is the ${topic} for model HC-${215 + i}?`,
+    keywords: [topic.split(' ')[0], `HC-${215 + i}`],
+    similar_count: 2,
+    status: 'enabled',
+    index_faces: 3,
+    source_staging_id: null,
+    created_at: '2026-08-20T05:12:00.000000Z',
+    updated_at: '2026-08-20T05:12:00.000000Z',
+  })),
+  total: TOPICS.length,
+}

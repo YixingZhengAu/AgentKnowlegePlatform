@@ -5,9 +5,10 @@
 | 文件 | 说明 |
 | --- | --- |
 | `main.tsx` | 预览版入口:HashRouter + `fetch` 换成读 fixtures + **假 SSE 流** + **审核台内存库(可写)** + 预览角标 |
-| `fixtures.ts` | 固定响应(只读接口抓的真返回;会话/消息/trace/审核任务/staging 是手写演示数据;kbs/jobs 列表随页面删除) |
+| `fixtures.ts` | 固定响应(只读接口抓的真返回;会话/消息/trace/审核任务/staging/精准 QA 文档是手写演示数据;kbs/jobs 列表随页面删除) |
 | `index.html` | 预览版 HTML 入口 |
 | `inline.mjs` | 把构建产物拼成单文件 `dist-demo/preview.html` |
 
 跑法:`make demo`(= `vite build --config vite.config.demo.ts` + `node demo/inline.mjs`)。
-**这个目录不参与正式构建**;`src/` 一行都不为它改。详见 `architect.md`。
+**这个目录不参与正式构建**;`src/` 一行都不为它改。
+预览页同时是 UI 走查的渲染对象(`scripts/ui_inventory.mjs` / `ui_shot.mjs`)。详见 `architect.md`。
