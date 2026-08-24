@@ -21,3 +21,9 @@ storage/
 
 # 一次性沙箱 / 临时产物(阶段收尾必须清空,不入库)
 tmp/
+
+# 部署侧配置(AWS 供给参数 / 站点地址 / 访问密码),不入库
+deploy/*.env
+deploy/known_hosts
+deploy/stack.env
+!deploy/deploy.env.example

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 面试演示项目:企业知识 Agent 系统(Enterprise Knowledge Agent)(精准问答对 / 文档 RAG / 智能问数 + Agent 路由问答)。
-需求见 `documents/PRD.md`,阶段计划见 `documents/S0-PLAN.md`、`documents/S1-PLAN.md`(S1 已完成),表结构唯一出处 `documents/DB-DESIGN.md`,前端风格唯一出处 `documents/UI-STYLE.md`,**开发某类 knowledge ingestion 前必读 `documents/DOMAIN-DEV-GUIDE.md`**(代码落点与并行开发纪律,防止冲突)。语言纪律见下节。
+需求见 `documents/PRD.md`,阶段计划见 `documents/S0-PLAN.md`、`documents/S1-PLAN.md`(S1 已完成),表结构唯一出处 `documents/DB-DESIGN.md`,前端风格唯一出处 `documents/UI-STYLE.md`,临时公网部署唯一出处 `documents/DEPLOY.md`,**开发某类 knowledge ingestion 前必读 `documents/DOMAIN-DEV-GUIDE.md`**(代码落点与并行开发纪律,防止冲突)。语言纪律见下节。
 
 ## 语言纪律:对外英文,对内中文
 
@@ -46,6 +46,7 @@
 - `web/` 前端(`src/{api,components,layouts,pages,lib}` + `scripts/` 前端冒烟)
 - `server/scripts/` 冒烟/工具脚本(在 server 下跑:`uv run python -m scripts.seed_minimal`)
 - `docker/` 容器初始化脚本(Postgres init:建业务库与只读账号)
+- `deploy/` 临时公网部署资产(EC2 装机 / 发布脚本 / Caddy + systemd 模板;步骤见 `documents/DEPLOY.md`)
 
 ## 代码索引机制:每个文件夹的 claude.md + architect.md
 

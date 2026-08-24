@@ -17,6 +17,7 @@
 | `web/` | React + Vite 前端(三栏工作台) | `web/claude.md` |
 | `data/` | 测试用示例 PDF(文档 RAG 的原料),纯素材无代码 | 直接看目录里的 PDF |
 | `docker/` | Postgres init(扩展)+ 演示业务 MySQL(建表灌数)+ MinerU 解析镜像 | `docker/claude.md` |
+| `deploy/` | 临时公网部署资产(装机 / 发布 / Caddy / systemd),给面试官看的那套 | `deploy/claude.md` |
 | 根目录 | `bootstrap.sh` / `Makefile` / `docker-compose.yml` / `.env.example` / `README.md` | 见下方第 3 节 |
 
 ## 2. 文档的唯一出处(改之前先确认改的是哪份)
@@ -30,6 +31,7 @@
 | 颜色、字体、组件样式 | `documents/UI-STYLE.md` | hex 只允许出现在 token 定义处 |
 | 某个知识域的代码往哪写、并行开发纪律 | `documents/DOMAIN-DEV-GUIDE.md` | 域开发者开工前必读;冲突地图在它的 §5 |
 | 环境约定、依赖管理、索引机制 | `CLAUDE.md` | 精干优先,详细内容放各目录 architect.md |
+| 临时公网部署(AWS / HTTPS / 密码门 / 运维) | `documents/DEPLOY.md` | 部署资产在 `deploy/`;应用级初始化仍归 `bootstrap.sh` |
 
 ## 3. 常改的东西在哪(按"我要改 X"索引)
 
@@ -68,6 +70,7 @@
 | 改 How It Works 的图 / 折叠区 / 字阶 | `web/src/pages/how-it-works/{figures.tsx,Section.tsx}`;字阶规范在 UI-STYLE §2「演示页字阶」 |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
 | 新机器从零装环境 / 改装机步骤 | 根目录 `bootstrap.sh`(工具链检查 → .env → 依赖 → 库 → 迁移 → seed → 自检);**新增外部依赖或初始化步骤必须同步进它** |
+| 部署到公网 / 改部署方式 | `deploy/`(本地 `aws_up.sh` 开机器 / `remote_deploy.sh` 五阶段 / `aws_down.sh` 拆;服务器侧 `provision.sh` + `release.sh`);步骤与运维手册在 `documents/DEPLOY.md` |
 | 改颜色 / 字体 / 圆角 | `documents/UI-STYLE.md` → `web/src/index.css` 的品牌层(**全仓唯一 hex 出处**) |
 | 加一个知识域(前后端各一处落点) | 前端 `web/src/domains/<域>/` + `domains/index.ts` 加一行;后端 `server/app/services/<域>/` + `services/__init__.py` 加一行 |
 | 改某个域的摄取页面 | `web/src/domains/<域>/`(页面、渲染器、module.ts 都在域内,不动共享文件) |

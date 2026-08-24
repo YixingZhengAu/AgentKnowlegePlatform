@@ -6,6 +6,7 @@ A demo system for tiered enterprise knowledge governance with agent-routed Q&A. 
 - Stage plans: [S0](documents/S0-PLAN.md) (foundation) · [S1](documents/S1-PLAN.md) (exact Q&A, done) · [S3](documents/S3-PLAN.md) (analytics Q&A, done — [requirements](documents/S3-PRD.md), [Text2SQL research notes](documents/S3-TEXT2SQL-RESEARCH.md), [lab review records B1-B8](documents/s3-lab-reviews/))
 - Single source of truth for the schema: [documents/DB-DESIGN.md](documents/DB-DESIGN.md)
 - Single source of truth for frontend style: [documents/UI-STYLE.md](documents/UI-STYLE.md)
+- In-app design walkthrough: `/how-it-works` — a presentation-style page explaining why the system is designed this way (curation-first, human-approved knowledge, RAG as fallback)
 
 > The UI and all Q&A interactions are English-only (the platform targets Australian users). Internal design documents and code comments are written in Chinese.
 
@@ -133,11 +134,32 @@ make types      openapi.json -> web/src/api/types.gen.ts (the frontend must neve
 
 ```
 bootstrap.sh     environment setup: toolchain check + .env + deps + db + migrate + seed + self-check
+deploy/          temporary public deployment on a single EC2 box (provision + release scripts, Caddy and systemd templates)
 docker/          container config: Postgres init, the demo business MySQL (schema + generated seed), the MinerU image
 server/          FastAPI backend (managed by uv), see server/claude.md
 web/             React + Vite frontend, see web/claude.md
 documents/       PRD / stage plans / database design / UI guidelines / S3 lab review records
 ```
+
+## Public deployment (temporary demo box)
+
+One EC2 instance runs everything: Caddy in front (automatic HTTPS, one site-wide Basic Auth gate,
+same-origin reverse proxy), uvicorn behind it under systemd, and the three containers from
+`docker-compose.yml`. Assets live in `deploy/`; the step-by-step guide, including the AWS console
+actions and the small ops runbook, is in [documents/DEPLOY.md](documents/DEPLOY.md).
+
+```bash
+# on the server, once
+cd deploy && ./provision.sh          # Docker + compose, Node 22, uv, Caddy, swap
+cd .. && ./bootstrap.sh --with-mineru && make seed-s3
+# every release (idempotent)
+cd deploy && cp deploy.env.example deploy.env && vi deploy.env
+./release.sh                         # build the frontend, install the unit + Caddyfile, start, self-check
+```
+
+The site is password-gated on purpose: this system has no login (`default_user` is hard-coded through
+S5), so the reverse proxy is what keeps strangers from spending your OpenAI budget or deleting
+published knowledge. Set a usage limit on the key, and rotate it when the demo is over.
 
 ## The two databases
 

@@ -1,0 +1,24 @@
+# 后端常驻:uvicorn 单 worker(BackgroundTasks 是进程内的,多 worker 会让任务派发与
+# 启动时的"僵尸任务收尸"逻辑失去单一归属)。release.sh 渲染后装到 /etc/systemd/system/。
+[Unit]
+Description=Enterprise Knowledge Agent API
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=exec
+User=__RUN_USER__
+WorkingDirectory=__REPO_ROOT__/server
+Environment=PATH=/home/__RUN_USER__/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/__RUN_USER__/.local/bin/uv run uvicorn app.main:app \
+	--host 127.0.0.1 --port __API_PORT__ --workers 1 \
+	--proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=3
+# 日志进 journal:journalctl -u knowledge-agent-api -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

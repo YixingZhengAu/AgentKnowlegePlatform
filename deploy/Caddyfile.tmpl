@@ -1,0 +1,33 @@
+# Caddy 站点配置模板 —— release.sh 用 deploy.env 的值渲染成 /etc/caddy/Caddyfile。
+# 三件事:自动 HTTPS、可选的全站密码门、同源反代(前端静态 + /api 转后端)。
+#
+# 同源是刻意的:前端一律用相对路径,于是线上没有 CORS、没有预检、SSE 不受跨域影响。
+# 站点块按**主机名**匹配:直接扫公网 IP 的请求匹配不到任何站点,拿不到页面也拿不到证书 ——
+# 不设密码门时,这就是"不被陌生人发现"的那一层(配一个随机不可猜的主机名)。
+
+__SITE_ADDRESS__ {
+	encode zstd gzip
+__AUTH_BLOCK__
+	# 后端:REST + SSE。flush_interval -1 关掉缓冲,否则流式回复会攒成一坨才吐出来
+	@api path /api/* /healthz /docs /docs/* /openapi.json /redoc
+	handle @api {
+		reverse_proxy 127.0.0.1:__API_PORT__ {
+			flush_interval -1
+			transport http {
+				# 上传 PDF 与长问答都可能超过默认读超时
+				read_timeout 300s
+			}
+		}
+	}
+
+	# 前端:Vite 构建产物 + SPA 兜底(react-router 的深链刷新不能 404)
+	handle {
+		root * __WEB_ROOT__
+		try_files {path} /index.html
+		file_server
+	}
+
+	# 访问日志走 journal(`journalctl -u caddy -f`)。刻意不写文件:
+	# 官方 caddy.service 对文件系统有沙箱限制,往 /var/log/caddy 写会直接 permission denied
+	# 起不来(实测踩过),而演示环境本来也不需要另存一份。
+}

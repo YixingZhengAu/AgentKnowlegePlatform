@@ -1,0 +1,7 @@
+
+	# 全站密码门(deploy.env 填了 BASIC_AUTH_PASSWORD 才有这段)。
+	# 系统没有登录态,这道门挡住所有人(含 /api 与 /docs)。
+	# 指令名从 Caddy 2.8 起叫 basic_auth,更老的版本叫 basicauth(provision.sh 装的是新版)
+	basic_auth {
+		__BASIC_AUTH_USER__ __BASIC_AUTH_HASH__
+	}
