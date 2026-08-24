@@ -17,7 +17,7 @@ from app.providers import ChatMessage, get_llm
 
 SYSTEM: ChatMessage = {
     "role": "system",
-    "content": "You are a concise assistant for Clenergy, an Australian solar mounting company.",
+    "content": "You are a concise assistant for an Australian solar mounting company.",
 }
 
 ROUTE_SCHEMA = {

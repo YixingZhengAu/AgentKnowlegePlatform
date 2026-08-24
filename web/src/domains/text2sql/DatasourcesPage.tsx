@@ -376,7 +376,7 @@ function NewDatasourceCard({
           <Field label="Name" hint="Shown in the datasource list.">
             <Input
               value={name}
-              placeholder="Clenergy Sales (MySQL)"
+              placeholder="Company Sales (MySQL)"
               onChange={(e) => setName(e.target.value)}
             />
           </Field>

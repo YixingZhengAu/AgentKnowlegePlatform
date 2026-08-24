@@ -12,7 +12,7 @@ from app.services.exact_qa.parser import build_paged_md, dropped_by_type, make_s
 #: 实测形态:公司名页眉、"CLE-IT-POL-011 | Internal use only" 页脚、"Page 1 of 5" 页码
 MARGIN_BLOCKS = [
     ContentBlock(
-        type="header", page_idx=0, bbox=[82, 23, 297, 39], text="Clenergy Australia Pty Ltd"
+        type="header", page_idx=0, bbox=[82, 23, 297, 39], text="Example Australia Pty Ltd"
     ),
     ContentBlock(
         type="footer",

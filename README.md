@@ -1,4 +1,4 @@
-# Clenergy Enterprise Knowledge Agent
+# Enterprise Knowledge Agent
 
 A demo system for tiered enterprise knowledge governance with agent-routed Q&A. Three knowledge types are tiered by error tolerance: **exact Q&A pairs** (zero rewriting), **document knowledge** (RAG + mandatory citations), and **analytics Q&A** (semantic layer + Text2SQL).
 
@@ -144,7 +144,7 @@ documents/       PRD / stage plans / database design / UI guidelines / S3 lab re
 | Database | Engine | Purpose | Account |
 | --- | --- | --- | --- |
 | `agent_system` | Postgres 16 + pgvector, port 5432 | every business table of this system (knowledge, ingestion, sessions, traces, evaluation) | `postgres` |
-| `clenergy_biz` | MySQL 8.4, port 3307 | the demo business database, target of analytics Q&A | `biz_reader` (SELECT only, on a separate instance that has no access to the system database) |
+| `demo_biz` | MySQL 8.4, port 3307 | the demo business database, target of analytics Q&A | `biz_reader` (SELECT only, on a separate instance that has no access to the system database) |
 
 The business database is a **separate MySQL instance on purpose**: the pitch is "connect the
 customer's existing database", and customer databases are mostly MySQL. It also keeps schema

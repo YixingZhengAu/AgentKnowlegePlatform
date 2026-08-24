@@ -1,7 +1,7 @@
 """数据库引擎与会话。
 
 系统库(agent_system)用 SQLAlchemy async engine;
-演示业务库(clenergy_biz)只在 S3 问数时按需连接,用只读账号,不共用这个引擎。
+演示业务库(demo_biz)只在 S3 问数时按需连接,用只读账号,不共用这个引擎。
 """
 
 from collections.abc import AsyncGenerator

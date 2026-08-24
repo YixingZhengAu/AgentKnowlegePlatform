@@ -25,7 +25,7 @@
 | --- | --- |
 | `sample-paper-3p.pdf` | `smoke_s1_api.sh` 的上传输入(YOLOv3 论文前 3 页:图/表/公式齐全) |
 | `qa_with_similar.json` | `smoke_exact_qa_store.py` 的候选集(36 条 / 180 个索引面),免得每次先花钱跑抽取 |
-| `clenergy-handbook.{html,pdf}` | 手动演示用的 Clenergy 业务手册(虚构内容,html 是可再生成的源) |
+| `company-handbook.{html,pdf}` | 手动演示用的虚构业务手册(无真实公司名,html 是可再生成的源) |
 | `s3/` | S3 的**已评审治理资产**(语义层 / 7 个意图的模板与参数区 / 相似问法 / 空路由负例面 / 评测集 / 已存改写计划);`seed_s3_demo.py` 与 `smoke_s3_e2e.py` 读它。**不是测试数据**,见该目录 README |
 
 详见 `architect.md`。

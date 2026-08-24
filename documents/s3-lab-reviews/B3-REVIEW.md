@@ -172,7 +172,7 @@ Rules:
 
 | 字段 | 内容 | 来源 |
 |---|---|---|
-| `business_context` | 一句话业务背景(Clenergy 光伏支架、澳洲、AUD) | 代码常量,对应产品里数据源配置的背景说明 |
+| `business_context` | 一句话业务背景(光伏支架、澳洲、AUD) | 代码常量,对应产品里数据源配置的背景说明 |
 | `selected_tables` | **所选表的语义层子集**:每表 description + 每列 name/display_name/description/type/枚举逐值含义,外加仅涉所选表的表间关系 | B2 定稿 `semantic_layer.json` |
 | `how_many_intents` | 要生成几条 | CLI `--n` |
 | `avoid_duplicating_these_existing_intents` | 已有候选的 one-liner 清单(首批为 null) | 追加批去重用 |
@@ -181,12 +181,12 @@ Rules:
 
 ```json
 {
- "business_context": "Clenergy is an Australian manufacturer of solar PV mounting systems. This database covers its sales side: products (mounting kits, inverters, energy-management gear, accessories), customers, sales reps, orders with line items, and warehouse inventory with a stock-movement ledger. Amounts are in AUD.",
+ "business_context": "The company is an Australian manufacturer of solar PV mounting systems. This database covers its sales side: products (mounting kits, inverters, energy-management gear, accessories), customers, sales reps, orders with line items, and warehouse inventory with a stock-movement ledger. Amounts are in AUD.",
  "selected_tables": {
   "tables": [
    {
     "name": "customers",
-    "description": "Each row represents a customer account in Australia that Clenergy sells to or through. The table stores customer identity, location (state), sales channel, industry segment, and the date the account was created. It links to orders so sales can be attributed to the correct customer.",
+    "description": "Each row represents a customer account in Australia that the company sells to or through. The table stores customer identity, location (state), sales channel, industry segment, and the date the account was created. It links to orders so sales can be attributed to the correct customer.",
     "columns": [
      {
       "name": "id",
@@ -233,12 +233,12 @@ Rules:
      {
       "name": "channel_type",
       "display_name": "Channel Type",
-      "description": "Sales channel relationship for this customer account. Indicates whether Clenergy sells to this account directly or via distribution.",
+      "description": "Sales channel relationship for this customer account. Indicates whether the company sells to this account directly or via distribution.",
       "type": "varchar(16)",
       "enum_values": [
        {
         "value": "direct",
-        "meaning": "Clenergy sells directly to this customer (end account)."
+        "meaning": "The company sells directly to this customer (end account)."
        },
        {
         "value": "distributor",

@@ -1,10 +1,10 @@
 {
-  "database": "clenergy_biz",
+  "database": "demo_biz",
   "generated_at": "2026-08-23T16:09:51",
   "tables": [
     {
       "name": "customers",
-      "description": "Each row represents a customer account in Australia that Clenergy sells to or through. The table stores customer identity, location (state), sales channel, industry segment, and the date the account was created. It links to orders so sales can be attributed to the correct customer.",
+      "description": "Each row represents a customer account in Australia that the company sells to or through. The table stores customer identity, location (state), sales channel, industry segment, and the date the account was created. It links to orders so sales can be attributed to the correct customer.",
       "mode": "fill",
       "columns": [
         {
@@ -58,11 +58,11 @@
         {
           "name": "channel_type",
           "display_name": "Channel Type",
-          "description": "Sales channel relationship for this customer account. Indicates whether Clenergy sells to this account directly or via distribution.",
+          "description": "Sales channel relationship for this customer account. Indicates whether the company sells to this account directly or via distribution.",
           "enum_values": [
             {
               "value": "direct",
-              "meaning": "Clenergy sells directly to this customer (end account)."
+              "meaning": "The company sells directly to this customer (end account)."
             },
             {
               "value": "distributor",
@@ -116,7 +116,7 @@
     },
     {
       "name": "inventory",
-      "description": "Current inventory by product and warehouse. Each row represents the latest stock position for one product at one Clenergy warehouse location, including on-hand and reserved quantities.",
+      "description": "Current inventory by product and warehouse. Each row represents the latest stock position for one product at one company warehouse location, including on-hand and reserved quantities.",
       "mode": "fill",
       "columns": [
         {
@@ -251,7 +251,7 @@
     },
     {
       "name": "orders",
-      "description": "One row represents a single customer sales order placed with Clenergy. The table tracks who the customer and sales rep are, the order date and status, and the total order value in AUD; detailed products are stored in order_items.",
+      "description": "One row represents a single customer sales order placed with the company. The table tracks who the customer and sales rep are, the order date and status, and the total order value in AUD; detailed products are stored in order_items.",
       "mode": "fill",
       "columns": [
         {
@@ -342,7 +342,7 @@
     },
     {
       "name": "products",
-      "description": "One row represents a distinct product that Clenergy sells, including hardware and software such as mounting accessories, inverters, battery cabinets, and EMS licenses. The table stores identifiers, classification (series/category), list price in AUD (ex GST), launch date, and whether the product is active.",
+      "description": "One row represents a distinct product that the company sells, including hardware and software such as mounting accessories, inverters, battery cabinets, and EMS licenses. The table stores identifiers, classification (series/category), list price in AUD (ex GST), launch date, and whether the product is active.",
       "mode": "fill",
       "columns": [
         {
@@ -460,7 +460,7 @@
     },
     {
       "name": "sales_reps",
-      "description": "One row represents a sales representative employed by Clenergy in Australia. The table records each rep’s name, base state, team type, hire date, and active status, and is referenced by orders via sales_rep_id.",
+      "description": "One row represents a sales representative employed by the company in Australia. The table records each rep’s name, base state, team type, hire date, and active status, and is referenced by orders via sales_rep_id.",
       "mode": "fill",
       "columns": [
         {

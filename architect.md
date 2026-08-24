@@ -119,7 +119,7 @@
 | 库 | 实例 | 用途 | 账号 | 谁连 |
 | --- | --- | --- | --- | --- |
 | `agent_system` | `agent_system_pg`(PG16+pgvector,5432) | 本系统全部业务表 | `postgres` | `server/app/db.py` 的 engine |
-| `clenergy_biz` | `agent_system_bizdb`(**MySQL 8.4,3307**) | 演示业务库,问数的查询目标 | `biz_reader`(只读) | `services/text2sql/bizdb.py`,**不共用上面的 engine** |
+| `demo_biz` | `agent_system_bizdb`(**MySQL 8.4,3307**) | 演示业务库,问数的查询目标 | `biz_reader`(只读) | `services/text2sql/bizdb.py`,**不共用上面的 engine** |
 
 业务库在 S3 开工时从"同一台 PG 里的另一个 database"改成**独立的 MySQL 容器**
 (理由见 `docker/architect.md`:客户库以 MySQL 为多、逼真的 introspection 路径、
@@ -127,7 +127,7 @@
 
 **各自有哪些表**:`agent_system` 是 DB-DESIGN 里的那些表(§1–§7 分七个域,S3 新增 `datasources` /
 `table_meta` / `column_meta` / `relations` / `sql_intents` / `intent_questions` / `non_data_faces` /
-`intent_vectors`,废弃 `metrics` / `terms` / `rules` / `sql_examples`);`clenergy_biz` 是七张
+`intent_vectors`,废弃 `metrics` / `terms` / `rules` / `sql_examples`);`demo_biz` 是七张
 业务表 `products / customers / sales_reps / orders / order_items / inventory / stock_movements`
 (**没有 `regions`** —— 州是 customers/sales_reps 上的字段;建表与灌数的唯一出处是 `docker/mysql/`)。
 **系统表的结构改动一律先改 DB-DESIGN**;业务库的结构不属于本系统的表结构,它模拟的是客户的库。
@@ -168,7 +168,7 @@ curl localhost:8000/api/traces/<message_id>
 **S1(精准 QA)已闭环**:后端(`services/exact_qa/` 的两个 Job + publisher +
 `retrieve_exact_qa` stage + 12 个域接口 + 文件出口)+ 前端四个页面
 (`domains/exact-qa/` 的上传/文档列表、校对页、审核台动作层、对话页 Verified 标注)。
-Step 8 用一份 4 页 Clenergy 业务手册从浏览器走完全程:上传 → 校对(修掉 7 处 MinerU 瑕疵)
+Step 8 用一份 4 页虚构业务手册从浏览器走完全程:上传 → 校对(修掉 7 处 MinerU 瑕疵)
 → 抽取 23 条候选 → 采纳 8 条 → 对话命中并原样返回标准答案,刷新后标注仍在。
 计划与实施记录见 `documents/S1-PLAN.md`;S0 的见 `documents/S0-PLAN.md`。
 

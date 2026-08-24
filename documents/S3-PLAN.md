@@ -25,7 +25,7 @@ Phase E  联调验收:DoD 走查 + 文档同步               (E1–E2)
 
 ## Phase A 地基
 
-### A1 演示业务库 `clenergy_biz`(MySQL)
+### A1 演示业务库 `demo_biz`(MySQL)
 
 **做什么**
 - docker-compose 增加 `mysql:8` 服务(独立于既有 PG,端口 3307 避让),init 脚本建库 + 建只读账号 `biz_reader`;
@@ -65,7 +65,7 @@ Phase E  联调验收:DoD 走查 + 文档同步               (E1–E2)
 - 外键关系抓取(演示库建表时故意留 1–2 个没建 FK 的逻辑关联,用「列名启发 + 后续人工补」兜住,验证真实场景);
 - 输出统一的 `SchemaSnapshot` JSON —— 这是后面所有 prompt 的唯一供料格式,格式在此定死。
 
-**自测**:对 `clenergy_biz` 跑一遍,断言:6 表齐全;`orders.status` 被识别为枚举且取值完整;每列有采样值;FK 关系 ≥ 4 条。
+**自测**:对 `demo_biz` 跑一遍,断言:6 表齐全;`orders.status` 被识别为枚举且取值完整;每列有采样值;FK 关系 ≥ 4 条。
 **通过标准**:snapshot JSON 人眼可读、信息完整,格式评审后冻结。
 
 > ✅ **代码与自测完成(2026-08-23,含 stock_movements)**:`run_b1_snapshot.py` 8 项断言全 PASS(七表齐全 / orders.status 与 movement_type 枚举取值与实况一致 / 47 列全有采样 / 关系 6 条 = FK 4 + 列名启发 2,两条故意无 FK 的逻辑关联被兜住 / 35 列无注释确认 B2 输入前提)。枚举识别均为真分类维度,无误判。**待人工评审冻结格式**:`s3-dev/out/schema_snapshot.json` + `s3-dev/out/B1-REVIEW.md`。
@@ -215,7 +215,7 @@ Phase E  联调验收:DoD 走查 + 文档同步               (E1–E2)
 > 业务库必须 mysql+pymysql),新增 `TEXT2SQL_QUERY_TIMEOUT_SEC` / `TEXT2SQL_MAX_ROWS`
 > 两项(默认值就是 B6 实测定稿的 15s / 500 行)。
 > **顺带修掉一处文档谎言**:`docker/postgres/init/01-init.sql` 原来在 PG 里建
-> `clenergy_biz` 与 `biz_reader` —— 那是 U6 的旧决定,现在业务库是独立 MySQL 实例,
+> `demo_biz` 与 `biz_reader` —— 那是 U6 的旧决定,现在业务库是独立 MySQL 实例,
 > 所以把那段删掉,并在 `docker/architect.md` 写清改动理由(客户库以 MySQL 为多、
 > 逼真的 introspection 路径、**物理隔离比 GRANT 更硬**:问数账号根本连不到系统库)。
 > `tmp/s3-dev/db/` 整个删掉换成一张 `DB-MOVED.md` 指路表 —— 留着第二份 compose 会有
@@ -397,7 +397,7 @@ Phase E  联调验收:DoD 走查 + 文档同步               (E1–E2)
 
 > ✅ **已完成(2026-08-23)**:`domains/text2sql/` 下 `IngestPage.tsx`(路由壳)+ `DatasourcesPage.tsx` + `Toggle.tsx` + `schema.ts`;共享文件一行没动。
 >
-> **浏览器走查(playwright,1440 与 1280 两个宽度)**:Add datasource → 填 `biz_reader@127.0.0.1:3307/clenergy_biz` 但口令写错 → Test connection 显示 `MySQL error 1045: Access denied for user 'biz_reader'@…`(**可读,原样来自后端**)→ 改对口令 → `Connected · mysql://biz_reader@127.0.0.1:3307/clenergy_biz · server 8.4.11 · 7 tables` → Save → 列表出现新行、`not synced` → Sync schema → `<JobProgress>` 走完两步(introspect 2.09 s「7 tables, 47 columns, 13 enum-like columns, 6 joins」/ persist 32 ms)→ **列表那一行自己变成 `7 tables · 7 on · 0 described` + 时间戳 + 按钮变 Re-sync**(有 Job 在跑才轮询,进度卡关掉就停)。收尾两步删除走过一遍,库里回到 1 个数据源、索引面仍是 75 条。
+> **浏览器走查(playwright,1440 与 1280 两个宽度)**:Add datasource → 填 `biz_reader@127.0.0.1:3307/demo_biz` 但口令写错 → Test connection 显示 `MySQL error 1045: Access denied for user 'biz_reader'@…`(**可读,原样来自后端**)→ 改对口令 → `Connected · mysql://biz_reader@127.0.0.1:3307/demo_biz · server 8.4.11 · 7 tables` → Save → 列表出现新行、`not synced` → Sync schema → `<JobProgress>` 走完两步(introspect 2.09 s「7 tables, 47 columns, 13 enum-like columns, 6 joins」/ persist 32 ms)→ **列表那一行自己变成 `7 tables · 7 on · 0 described` + 时间戳 + 按钮变 Re-sync**(有 Job 在跑才轮询,进度卡关掉就停)。收尾两步删除走过一遍,库里回到 1 个数据源、索引面仍是 75 条。
 >
 > **闸的那条单独验过**:另起一个未勾选只读的临时数据源 → Sync schema 被拒,toast 原样显示后端那句 `This datasource is not confirmed read-only…`;点 Confirm 后那一格变 `confirmed`、动作可用;删掉,库里仍只有 1 个数据源、索引面 75 条。
 >
@@ -479,7 +479,7 @@ Phase E  联调验收:DoD 走查 + 文档同步               (E1–E2)
 
 > ✅ **E1 完成(2026-08-23)**:七条 DoD 在浏览器(1440)按顺序走完,**没有清库** —— 走查用的是一条新建的临时数据源 `DoD walkthrough (temp)` 加一条从零治理出来的新意图,治理产物本来就按数据源隔离(`semantic.load_layer()` 只收本数据源的表列),所以"干净"这件事不需要靠删掉 B 阶段人工评审过的演示资产来换。走完复原(见末尾"留下了什么")。
 >
-> **① 接库同步**:表单填 `biz_reader@127.0.0.1:3307/clenergy_biz` → **Test connection**(`Connected · mysql 8.4.11 · 7 tables`,且列表仍是"1 connected" —— 测连不落库)→ Save → Sync schema:`introspect 2.19 s(7 表 / 47 列 / 13 个枚举样列 / 6 条 join)→ persist 33 ms`,治理进度显示 `7 tables · 7 on · 0 described`。
+> **① 接库同步**:表单填 `biz_reader@127.0.0.1:3307/demo_biz` → **Test connection**(`Connected · mysql 8.4.11 · 7 tables`,且列表仍是"1 connected" —— 测连不落库)→ Save → Sync schema:`introspect 2.19 s(7 表 / 47 列 / 13 个枚举样列 / 6 条 join)→ persist 33 ms`,治理进度显示 `7 tables · 7 on · 0 described`。
 >
 > **② Schema 治理**:对 `orders` 点 **Describe table**(Fill Gaps 模式)→ 一次回填表描述 + 7 列的 display_name 与 description(约 20 s,卡片打上 `unsaved`);抽查两处:库里本来有 DDL 注释的 `order_no` **逐字保住**了(fill 模式的语义),无注释的列由采样值推断合理。人工改两处(`id` 的 display name 改成 `Order ID (internal)`;`order_no` 的描述改写成 `... format SO-YYYY-NNNNN, unique per order.`)→ Save table → `7/7 described`,接口回读确认两处改动落库。
 >

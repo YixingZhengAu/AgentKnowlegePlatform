@@ -69,7 +69,7 @@ export function AppLayout() {
   // 分组展开态:落在任何域路由上时默认展开
   const [ingestOpen, setIngestOpen] = useState(() => pathname.startsWith('/ingest'))
 
-  const title = TITLES.find((t) => pathname.startsWith(t.prefix))?.title ?? 'Clenergy Agent'
+  const title = TITLES.find((t) => pathname.startsWith(t.prefix))?.title ?? 'Enterprise Knowledge Agent'
 
   return (
     <RightPanelContext.Provider value={ctx}>
@@ -79,7 +79,7 @@ export function AppLayout() {
           <div className="flex h-16 items-center gap-2.5 px-[22px]">
             <span className="bg-accent size-2.5 rounded-full" />
             <span className="font-display text-primary text-[13.5px] font-bold tracking-[0.12em]">
-              CLENERGY
+              KNOWLEDGE
             </span>
           </div>
           <div className="flex flex-col gap-[3px] px-3.5 pt-2.5">

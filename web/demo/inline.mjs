@@ -28,7 +28,7 @@ const jsText = readFileSync(join(ASSETS, js), 'utf8')
     [...ch].map((c) => '\\u' + c.codePointAt(0).toString(16).padStart(4, '0')).join(''),
   )
 
-const html = `<title>Clenergy Knowledge Agent</title>
+const html = `<title>Enterprise Knowledge Agent</title>
 <style>
 ${cssText}
 </style>

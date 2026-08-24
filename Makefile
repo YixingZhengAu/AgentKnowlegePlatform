@@ -1,4 +1,4 @@
-# Clenergy 企业知识 Agent 系统 —— 开发命令入口
+# 企业知识 Agent 系统 —— 开发命令入口
 # 详细说明见 README.md
 
 .PHONY: help bootstrap db db-stop db-wait migrate seed db-reset bizdb bizdb-wait bizdb-verify bizdb-reset bizdb-seed-gen seed-s3 mysql mineru mineru-stop api web dev types install psql smoke smoke-s1 smoke-s3 smoke-s3-api smoke-s3-chat smoke-sse test lint demo
@@ -71,7 +71,7 @@ bizdb-verify:  ## 业务库自检:27 项断言(行数/对账/日期覆盖/库存
 	cd server && uv run python -m scripts.verify_bizdb
 
 mysql:  ## 进业务库 mysql(只读账号)
-	docker exec -it $(BIZ_CONTAINER) mysql -ubiz_reader -pbiz_reader clenergy_biz
+	docker exec -it $(BIZ_CONTAINER) mysql -ubiz_reader -pbiz_reader demo_biz
 
 bizdb-reset:  ## 删业务库数据卷重建(init 脚本只在首次创建时执行,改了 SQL 必须走这条)
 	@vol=$$(docker inspect $(BIZ_CONTAINER) --format '{{range .Mounts}}{{if eq .Destination "/var/lib/mysql"}}{{.Name}}{{end}}{{end}}' 2>/dev/null); \

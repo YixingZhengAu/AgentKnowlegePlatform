@@ -1,4 +1,4 @@
-"""生成 clenergy_biz 的种子数据 → init/03-seed.sql。
+"""生成 demo_biz 的种子数据 → init/03-seed.sql。
 
 纯 stdlib、固定随机种子,任何机器上重跑产出逐字节一致。
 数据设计要点(对应 S3-PLAN A1 的自测项):
@@ -89,7 +89,7 @@ def esc(s: str) -> str:
 
 
 def main() -> None:
-    lines: list[str] = ["USE clenergy_biz;", "SET NAMES utf8mb4;"]
+    lines: list[str] = ["USE demo_biz;", "SET NAMES utf8mb4;"]
 
     def emit(table: str, cols: list[str], rows: list[str], chunk: int = 200) -> None:
         for i in range(0, len(rows), chunk):

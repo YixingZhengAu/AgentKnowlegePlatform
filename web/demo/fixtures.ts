@@ -22,7 +22,7 @@ export const FIXTURES: Record<string, unknown> = {
     items: [
       {
         id: 'b726d168-53ed-4752-b204-a4b1fe0572f3',
-        name: 'Clenergy Assistant',
+        name: 'Company Assistant',
         description: 'Default demo agent bound to all three knowledge bases.',
         router_mode: 'rule_llm',
         status: 'active',
@@ -35,14 +35,14 @@ export const FIXTURES: Record<string, unknown> = {
 
   '/api/agents/b726d168-53ed-4752-b204-a4b1fe0572f3': {
     id: 'b726d168-53ed-4752-b204-a4b1fe0572f3',
-    name: 'Clenergy Assistant',
+    name: 'Company Assistant',
     description: 'Default demo agent bound to all three knowledge bases.',
     router_mode: 'rule_llm',
     status: 'active',
     created_at: '2026-08-21T06:32:44.817342Z',
     updated_at: '2026-08-21T06:32:44.817342Z',
     system_prompt:
-      'You are the Clenergy enterprise knowledge assistant. Answer staff and partner questions about Clenergy products, documentation and sales data.\nRules:\n- Answer only from the knowledge provided to you. Never invent specifications, prices, warranty terms or figures.\n- If the knowledge does not cover the question, say so plainly and suggest who to ask.\n- Keep answers concise and factual. Use Australian English.',
+      'You are the enterprise knowledge assistant. Answer staff and partner questions about company products, documentation and sales data.\nRules:\n- Answer only from the knowledge provided to you. Never invent specifications, prices, warranty terms or figures.\n- If the knowledge does not cover the question, say so plainly and suggest who to ask.\n- Keep answers concise and factual. Use Australian English.',
     fallback_reply:
       "I don't have this in the knowledge base yet, so I can't answer it reliably. Please check with the product team, and this question will be logged for follow-up.",
     model_cfg: {},
@@ -204,7 +204,7 @@ export const FIXTURES: Record<string, unknown> = {
             {
               role: 'system',
               content:
-                'You are the Clenergy enterprise knowledge assistant. Answer staff and partner questions about Clenergy products, documentation and sales data.',
+                'You are the enterprise knowledge assistant. Answer staff and partner questions about company products, documentation and sales data.',
             },
             { role: 'user', content: 'What is the warranty period for the PV-ezRack SolarRoof?' },
           ],

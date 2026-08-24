@@ -651,7 +651,7 @@ calendar month and store, excluding voided payments; users vary the date range.
 
 ```json
 {
- "business_context": "Clenergy is an Australian manufacturer of solar PV mounting systems. This database covers its sales side: products (mounting kits, inverters, energy-management gear, accessories), customers, sales reps, orders with line items, and warehouse inventory with a stock-movement ledger. Amounts are in AUD.",
+ "business_context": "The company is an Australian manufacturer of solar PV mounting systems. This database covers its sales side: products (mounting kits, inverters, energy-management gear, accessories), customers, sales reps, orders with line items, and warehouse inventory with a stock-movement ledger. Amounts are in AUD.",
  "intent": {
   "id": "i07",
   "type": "stats",
@@ -663,7 +663,7 @@ calendar month and store, excluding voided payments; users vary the date range.
   "tables": [
    {
     "name": "orders",
-    "description": "One row represents a single customer sales order placed with Clenergy. The table tracks who the customer and sales rep are, the order date and status, and the total order value in AUD; detailed products are stored in order_items.",
+    "description": "One row represents a single customer sales order placed with the company. The table tracks who the customer and sales rep are, the order date and status, and the total order value in AUD; detailed products are stored in order_items.",
     "columns": [
      {
       "name": "id",

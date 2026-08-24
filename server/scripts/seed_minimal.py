@@ -42,10 +42,10 @@ KBS: list[dict[str, str]] = [
     },
 ]
 
-DEFAULT_AGENT_NAME = "Clenergy Assistant"
+DEFAULT_AGENT_NAME = "Company Assistant"
 DEFAULT_SYSTEM_PROMPT = (
-    "You are the Clenergy enterprise knowledge assistant. Answer staff and partner questions "
-    "about Clenergy products, documentation and sales data.\n"
+    "You are the enterprise knowledge assistant. Answer staff and partner questions "
+    "about company products, documentation and sales data.\n"
     "Rules:\n"
     "- Answer only from the knowledge provided to you. Never invent specifications, prices, "
     "warranty terms or figures.\n"

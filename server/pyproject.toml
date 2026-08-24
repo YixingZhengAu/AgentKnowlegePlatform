@@ -1,7 +1,7 @@
 [project]
 name = "agent-system-server"
 version = "0.1.0"
-description = "Clenergy 企业知识 Agent 系统 · 后端"
+description = "企业知识 Agent 系统 · 后端"
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.19.1",

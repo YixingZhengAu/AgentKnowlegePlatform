@@ -161,7 +161,7 @@
 | --- | --- | --- | --- |
 | id | uuid | PK | |
 | datasource_id | uuid | FK→datasources ON DELETE CASCADE | |
-| schema_name | text | NOT NULL | MySQL 下就是 database 名(`clenergy_biz`);PG 下是 schema |
+| schema_name | text | NOT NULL | MySQL 下就是 database 名(`demo_biz`);PG 下是 schema |
 | table_name | text | NOT NULL | |
 | display_name | text | | 业务名(英文,平台面向澳洲用户) |
 | description | text | | 给 LLM 的表用途说明,**AI 预填 + 人工确认**(B2) |

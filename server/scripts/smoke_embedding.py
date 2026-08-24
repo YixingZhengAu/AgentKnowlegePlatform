@@ -16,8 +16,8 @@ from app.core.errors import AppError
 from app.providers import get_embedder
 
 TEXTS = [
-    "What is the warranty period for Clenergy mounting rails?",
-    "How long is the warranty on Clenergy rails?",  # 与第一句同义
+    "What is the warranty period for the mounting rails?",
+    "How long is the warranty on the rails?",  # 与第一句同义
     "Our Melbourne warehouse shipped 1,240 units in July.",  # 无关
 ]
 

@@ -93,7 +93,7 @@ class TableMeta(UUIDMixin, TimestampMixin, Base):
     )
 
     datasource_id: Mapped[uuid.UUID] = _datasource_fk()
-    # MySQL 下就是 database 名(clenergy_biz);PG 下是 schema
+    # MySQL 下就是 database 名(demo_biz);PG 下是 schema
     schema_name: Mapped[str] = mapped_column(Text, nullable=False)
     table_name: Mapped[str] = mapped_column(Text, nullable=False)
     display_name: Mapped[str | None] = mapped_column(Text)

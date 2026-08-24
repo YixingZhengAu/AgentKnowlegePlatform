@@ -1,4 +1,4 @@
-USE clenergy_biz;
+USE demo_biz;
 SET NAMES utf8mb4;
 INSERT INTO products (sku, name, series, category, unit_price, launch_date, is_active) VALUES
 ('HC-50', 'PowerCab HC-50 Battery Cabinet 50kWh', 'HC', 'battery_cabinet', 42000.00, '2023-02-01', 1),

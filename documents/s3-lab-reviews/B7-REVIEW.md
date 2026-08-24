@@ -305,7 +305,7 @@ B8 跑到 `What's the warranty period on the HC-300 battery cabinet?` 时,检索
 
 | 判 | 问题 | top1 | 分数 | 边距 | 判定 | 命中的面 |
 | --- | --- | --- | --- | --- | --- | --- |
-| ✅ | What is Clenergy's warranty policy for residential inverters? | __non_data__ | 0.416 | 0.088 | null_route | `Does the HC series come with an extended warranty option?` |
+| ✅ | What is the warranty policy for residential inverters? | __non_data__ | 0.416 | 0.088 | null_route | `Does the HC series come with an extended warranty option?` |
 | ✅ | Where can I find the installation manual for the 50kW inverter? | __non_data__ | 0.537 | 0.130 | null_route | `What is the operating temperature range of the INV-250K inve…` |
 | ✅ | Summarise the AS/NZS 5033 compliance requirements for rooftop arrays. | __non_data__ | 0.340 | 0.023 | null_route | `Which certifications does the PowerCab cabinet hold for the …` |
 | ✅ | What does error code E014 mean on the inverter display? | __non_data__ | 0.690 | 0.351 | null_route | `What does a flashing red LED on the inverter mean?` |

@@ -1,4 +1,4 @@
-"""业务库自检:对演示业务库 clenergy_biz 逐项断言(S3-PLAN A1 的通过标准,C2 迁到正式路径)。
+"""业务库自检:对演示业务库 demo_biz 逐项断言(S3-PLAN A1 的通过标准,C2 迁到正式路径)。
 
 跑法:`make bizdb-verify`(= `cd server && uv run python -m scripts.verify_bizdb`)。
 全绿输出 "BIZDB VERIFY: ALL PASS";任一项 FAIL 退出码非 0(bootstrap.sh 会因此中断)。

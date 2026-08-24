@@ -33,7 +33,7 @@
 | U3 | Docker | 已装 Docker 28.4(开工时启动 Docker Desktop 即可) |
 | U4 | Python / Node | 实测 **Python 3.13.5 + Node 24 + uv 0.8.19**,按此开发 |
 | U5 | Rerank | **S0/S2 先用 PassthroughReranker 透传**,S2 跑通 RAG 后按实测效果决定是否引入真实 Rerank |
-| U6 | 演示业务库位置 | **同一 Postgres 实例、单独 database `clenergy_biz`**,问数用只读账号连接 |
+| U6 | 演示业务库位置 | **同一 Postgres 实例、单独 database `demo_biz`**,问数用只读账号连接 |
 | U7 | 界面语言 | **英文单语**(平台面向澳洲用户):前端文案、Agent 交互、演示知识内容全英文;无 i18n。对外可见的 README 与 git commit message 同样全英文;开发文档/注释仍中文(D5) |
 
 ---
@@ -69,7 +69,7 @@ Step 9  收尾验收              →  跑一遍 DoD 清单、写 README、打 t
 ```
 agent-system/
 ├── docker-compose.yml        # postgres(pgvector) 一个服务
-├── docker/postgres/init/     # 首次建卷时执行:建 clenergy_biz + 只读账号 biz_reader
+├── docker/postgres/init/     # 首次建卷时执行:建 demo_biz + 只读账号 biz_reader
 ├── Makefile                  # make dev / make db / make types / make seed
 ├── .env.example              # 所有需要的环境变量模板(不含真实 key)
 ├── README.md
@@ -99,7 +99,7 @@ agent-system/
 └── documents/                # PRD、本计划、后续设计文档(已建)
 ```
 
-2. `docker-compose.yml`:`pgvector/pgvector:pg16` 镜像,挂本地卷,暴露 5432;init 脚本建两个 database:`agent_system`(系统库)与 `clenergy_biz`(演示业务库,U6)+ 一个只读账号 `biz_reader`(问数专用)。
+2. `docker-compose.yml`:`pgvector/pgvector:pg16` 镜像,挂本地卷,暴露 5432;init 脚本建两个 database:`agent_system`(系统库)与 `demo_biz`(演示业务库,U6)+ 一个只读账号 `biz_reader`(问数专用)。
 3. `Makefile` 五个命令:`make db`(起库)、`make dev`(前后端一起起)、`make types`(openapi → TS 类型)、`make migrate`(跑迁移)、`make db-reset`(删库重建+migrate+seed,改表零成本的底气)。
 4. `.env.example` 列出全部环境变量:`DATABASE_URL / LLM_PROVIDER / LLM_API_KEY / LLM_MODEL_MAIN / LLM_MODEL_LIGHT / EMBEDDING_PROVIDER / EMBEDDING_API_KEY / EMBEDDING_MODEL / EMBEDDING_DIM / FILE_STORAGE_DIR`。
 
@@ -117,7 +117,7 @@ agent-system/
 - 每个代码目录已按 CLAUDE.md 的索引机制补 `claude.md` + `architect.md`
 
 **自测证据**:`make db` 起库成功;`pg_extension` 见 `vector 0.8.6` + `pgcrypto`;`\l` 见
-`agent_system` 与 `clenergy_biz` 两个库;`biz_reader` 能连业务库、建表被拒(权限不足)、
+`agent_system` 与 `demo_biz` 两个库;`biz_reader` 能连业务库、建表被拒(权限不足)、
 连系统库被拒(无 CONNECT 权限)。
 
 ---
@@ -360,7 +360,7 @@ event: done          data: {"message_id": "...", "citations": []}
 
 **做什么**
 
-1. Vite + React + TS + Tailwind + shadcn/ui 脚手架;ESLint + Prettier。**视觉规范以 `UI-STYLE.md`(同目录)为唯一出处**:Clenergy 官网风(navy #00205B 主色 + 黄 #FFCB02 识别色),token 先行,组件禁裸色值。(S0 当时是 navy 深侧栏 + 灰底白卡;后来整站改版成浅色导航 + 白底填充块,规格以 UI-STYLE.md 现行版本为准。)
+1. Vite + React + TS + Tailwind + shadcn/ui 脚手架;ESLint + Prettier。**视觉规范以 `UI-STYLE.md`(同目录)为唯一出处**:企业风(navy #00205B 主色 + 黄 #FFCB02 识别色),token 先行,组件禁裸色值。(S0 当时是 navy 深侧栏 + 灰底白卡;后来整站改版成浅色导航 + 白底填充块,规格以 UI-STYLE.md 现行版本为准。)
 2. **三栏布局骨架**(对话工作台的形状现在定):左侧导航(对话 / 知识库 / Agent / 设置四个入口)、中间内容区、右侧可折叠面板(执行轨迹的位置)。
 3. API 层:
    - `make types`:openapi.json → `types.gen.ts`(openapi-typescript),这条链路 S0 就跑通并写进 Makefile;
@@ -370,7 +370,7 @@ event: done          data: {"message_id": "...", "citations": []}
 
 **产出**:`make dev` 一条命令起前后端,页面能看到 seed 的 3 个 KB 和 1 个 agent。
 
-**需要你做的**:无。语言已定(U7:英文单语),UI 风格已定(Clenergy 官网风,详见 `UI-STYLE.md`)。
+**需要你做的**:无。语言已定(U7:英文单语),UI 风格已定(企业风,详见 `UI-STYLE.md`)。
 
 **验收**:改一个后端字段名 → `make types` → 前端编译报错(证明契约链路生效)。
 
@@ -415,7 +415,7 @@ event: done          data: {"message_id": "...", "citations": []}
 - **`make dev`**:一条命令起 8000 + 5173;`/healthz` 200、经代理的 `/api/kbs` 200
 - **页面实测**(headless Chrome dump DOM 逐项断言,不是"看着像对"):
   `/kbs` 3 个 KB(含三色识别点 `bg-kb-exact-qa`/`document`/`text2sql`)、
-  `/agents` 见 Clenergy Assistant + `rule_llm`、`/settings` 见 `dim=1536`/`env=dev`、
+  `/agents` 见 Company Assistant + `rule_llm`、`/settings` 见 `dim=1536`/`env=dev`、
   `/chat` 右侧轨迹面板占位到齐、`/styleguide` 色值从 CSS 变量读回(`#00205b` 等)
 - **SSE 客户端**(`make smoke-sse`,跑的是产线代码 `src/api/sse.ts`):
   直连 8000 与**穿 Vite 代理**各跑一次都通过 —— 事件顺序

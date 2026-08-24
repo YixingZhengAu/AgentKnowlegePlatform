@@ -1,19 +1,19 @@
 # B2 语义层评审报告
 
-- 库:`clenergy_biz`,生成于 2026-08-23T16:09:51
+- 库:`demo_biz`,生成于 2026-08-23T16:09:51
 - **审核要点**:不看数据的人能否凭 description 正确理解字段;枚举逐值解释是否符合业务;
   原注释列(fill 模式下逐字保留)与 AI 生成列(**加粗标出**)是否风格一致。
 
 ## `customers`(mode=fill)
 
-**表描述**:Each row represents a customer account in Australia that Clenergy sells to or through. The table stores customer identity, location (state), sales channel, industry segment, and the date the account was created. It links to orders so sales can be attributed to the correct customer.
+**表描述**:Each row represents a customer account in Australia that the company sells to or through. The table stores customer identity, location (state), sales channel, industry segment, and the date the account was created. It links to orders so sales can be attributed to the correct customer.
 
 | 列 | 类型 | 采样 | 原注释 | display_name | description |
 |---|---|---|---|---|---|
 | `id` | int unsigned | 1, 2, 3 | — | Customer ID | **System-generated unique identifier for the customer account. Referenced by orders.customer_id to link each order to this customer.** |
 | `name` | varchar(128) | Bluegum Beverages Pty Ltd, Bluegum Business Park Pty Ltd, Bluegum Dairy Co-op Pty Ltd | — | Customer Name | **Legal or trading name of the customer, as stored in the CRM/ERP. Text up to 128 characters.** |
 | `state` | varchar(3) | NSW, QLD, SA | Australian state: NSW / VIC / QLD / SA / WA | State | Australian state: NSW / VIC / QLD / SA / WA |
-| `channel_type` | varchar(16) | direct, distributor | — | Channel Type | **Sales channel relationship for this customer account. Indicates whether Clenergy sells to this account directly or via distribution.** |
+| `channel_type` | varchar(16) | direct, distributor | — | Channel Type | **Sales channel relationship for this customer account. Indicates whether the company sells to this account directly or via distribution.** |
 | `industry` | varchar(32) | agriculture, commercial_complex, factory | — | Industry | **Primary industry segment for the customer account. Used for segmentation and reporting.** |
 | `created_at` | date | 2023-01-04, 2023-01-29, 2023-02-09 | — | Created Date | **Date the customer record was created/onboarded (YYYY‑MM‑DD, day-level). Useful for cohorting and account age analysis.** |
 
@@ -26,7 +26,7 @@
   - `VIC` — Victoria.
   - `WA` — Western Australia.
 - `channel_type`:
-  - `direct` — Clenergy sells directly to this customer (end account).
+  - `direct` — The company sells directly to this customer (end account).
   - `distributor` — The customer is a distributor/reseller purchasing for onward sale.
 - `industry`:
   - `agriculture` — Farms and agricultural producers or agribusiness operations.
@@ -37,7 +37,7 @@
 
 ## `inventory`(mode=fill)
 
-**表描述**:Current inventory by product and warehouse. Each row represents the latest stock position for one product at one Clenergy warehouse location, including on-hand and reserved quantities.
+**表描述**:Current inventory by product and warehouse. Each row represents the latest stock position for one product at one company warehouse location, including on-hand and reserved quantities.
 
 | 列 | 类型 | 采样 | 原注释 | display_name | description |
 |---|---|---|---|---|---|
@@ -70,7 +70,7 @@
 
 ## `orders`(mode=fill)
 
-**表描述**:One row represents a single customer sales order placed with Clenergy. The table tracks who the customer and sales rep are, the order date and status, and the total order value in AUD; detailed products are stored in order_items.
+**表描述**:One row represents a single customer sales order placed with the company. The table tracks who the customer and sales rep are, the order date and status, and the total order value in AUD; detailed products are stored in order_items.
 
 | 列 | 类型 | 采样 | 原注释 | display_name | description |
 |---|---|---|---|---|---|
@@ -93,7 +93,7 @@
 
 ## `products`(mode=fill)
 
-**表描述**:One row represents a distinct product that Clenergy sells, including hardware and software such as mounting accessories, inverters, battery cabinets, and EMS licenses. The table stores identifiers, classification (series/category), list price in AUD (ex GST), launch date, and whether the product is active.
+**表描述**:One row represents a distinct product that the company sells, including hardware and software such as mounting accessories, inverters, battery cabinets, and EMS licenses. The table stores identifiers, classification (series/category), list price in AUD (ex GST), launch date, and whether the product is active.
 
 | 列 | 类型 | 采样 | 原注释 | display_name | description |
 |---|---|---|---|---|---|
@@ -123,7 +123,7 @@
 
 ## `sales_reps`(mode=fill)
 
-**表描述**:One row represents a sales representative employed by Clenergy in Australia. The table records each rep’s name, base state, team type, hire date, and active status, and is referenced by orders via sales_rep_id.
+**表描述**:One row represents a sales representative employed by the company in Australia. The table records each rep’s name, base state, team type, hire date, and active status, and is referenced by orders via sales_rep_id.
 
 | 列 | 类型 | 采样 | 原注释 | display_name | description |
 |---|---|---|---|---|---|

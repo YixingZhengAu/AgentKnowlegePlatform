@@ -35,7 +35,7 @@ log = get_logger(__name__)
 
 # 数据源级业务上下文:产品里对应"数据源配置"里用户填的一句话背景,喂给所有生成 prompt。
 BUSINESS_CONTEXT = (
-    "Clenergy is an Australian manufacturer of solar PV mounting systems. "
+    "The company is an Australian manufacturer of solar PV mounting systems. "
     "This database covers its sales side: products (mounting kits, inverters, "
     "energy-management gear, accessories), customers, sales reps, orders with "
     "line items, and warehouse inventory with a stock-movement ledger. "

@@ -1,9 +1,9 @@
--- clenergy_biz 六表 DDL。
+-- demo_biz 六表 DDL。
 -- 设计意图(对应 S3-PLAN A1/B1):
 --   * 列注释故意只覆盖一部分 —— B2 的 description 生成必须能从列名/采样值推断,不能依赖注释齐全
 --   * orders.sales_rep_id 与 inventory.product_id 故意不建 FK —— 验证 B1 对"无外键的逻辑关联"的兜底
 --   * 低基数维度(state/status/...)用 VARCHAR 而非 ENUM —— 逼 B1 走"distinct 采样"识别枚举,更接近真实客户库
-USE clenergy_biz;
+USE demo_biz;
 
 CREATE TABLE products (
   id            INT UNSIGNED     NOT NULL AUTO_INCREMENT PRIMARY KEY,

@@ -5,7 +5,7 @@
 | 库 | 实例 | 用途 | 账号 |
 | --- | --- | --- | --- |
 | `agent_system` | `agent_system_pg`(PG 16 + pgvector,5432) | 本系统全部业务表 | `postgres` |
-| `clenergy_biz` | `agent_system_bizdb`(MySQL 8.4,**3307**) | 演示业务库,智能问数的查询目标 | `biz_reader`(只读) |
+| `demo_biz` | `agent_system_bizdb`(MySQL 8.4,**3307**) | 演示业务库,智能问数的查询目标 | `biz_reader`(只读) |
 
 **U6 决策在 S3 开工时被修正**:原本是"一个 PG 实例两个 database",现在业务库独立成 MySQL 容器。
 三个理由,按重要性排:
@@ -18,14 +18,14 @@
 
 ## biz_reader 的权限边界
 
-`mysql/init/01-users.sql` 只做一件事:`GRANT SELECT ON clenergy_biz.*`。没有 INSERT/UPDATE/
+`mysql/init/01-users.sql` 只做一件事:`GRANT SELECT ON demo_biz.*`。没有 INSERT/UPDATE/
 DELETE/CREATE,也没有别的库的任何权限。运行时还有第二道闸(单条 SELECT、表列白名单、
 强制 LIMIT、读超时),在 `server/app/services/text2sql/executor.py`;
 数据库权限是最后一道,不是唯一一道。
 
 自检(`make bizdb-verify` 里的最后一项就是它):
 ```bash
-docker exec agent_system_bizdb mysql -ubiz_reader -pbiz_reader clenergy_biz \
+docker exec agent_system_bizdb mysql -ubiz_reader -pbiz_reader demo_biz \
   -e "INSERT INTO products (sku,name,series,category,unit_price,launch_date) VALUES ('x','x','x','x',1,'2024-01-01');"
 # 应报 ERROR 1142 (INSERT command denied)
 ```

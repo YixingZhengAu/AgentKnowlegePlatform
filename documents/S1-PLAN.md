@@ -29,7 +29,7 @@ S1 交付精准问答的完整闭环:**上传 PDF → MinerU 解析 → 人工�
 | 第 2 页 | **Figure 2**(bounding box 示意图)+ **Table 1**(Darknet-53 网络结构表)+ 数学公式 |
 | 第 3 页 | **Table 2**(backbone 对比表)+ **Table 3**(COCO 结果表,大表) |
 
-**开发纪律:M1–M5 所有模块的开发与调优一律以这份 PDF 为输入**,产物(解析 md、候选 QA json 等)沉淀在 `tmp/s1-dev/out/` 供下游模块直接取用。到端到端阶段(Step 8)再换 Clenergy 真实业务文档演示。抽取效果的直观自检问题如:"What backbone does YOLOv3 use?"、"How many convolutional layers does Darknet-53 have?"。
+**开发纪律:M1–M5 所有模块的开发与调优一律以这份 PDF 为输入**,产物(解析 md、候选 QA json 等)沉淀在 `tmp/s1-dev/out/` 供下游模块直接取用。到端到端阶段(Step 8)再换虚构的业务手册演示。抽取效果的直观自检问题如:"What backbone does YOLOv3 use?"、"How many convolutional layers does Darknet-53 have?"。
 
 ---
 
@@ -467,11 +467,11 @@ Step 7  ✅ 已完成 —— 前端(每个页面做完立刻用 playwright-mcp �
         ▼
 Step 8  ✅ 已完成 —— 端到端 + 回归 + 边缘:
 
-  8a  ✅ 换 Clenergy 业务文档走全程。**PRD §2.0 说 Clenergy 是虚构公司、演示数据全为假数据**,
+  8a  ✅ 换虚构业务手册走全程。**PRD §2.0 说演示公司与数据全为虚构**,
       所以"真实业务文档"= 按 PRD 的产品线(HC 储能柜 / INV 逆变器 / EMS)自己写一份形态真实的
       4 页英文手册:质保期与容量保持率、延保定价、免责条款、渠道折扣档、分州交付周期、
       认证与合规、对外可用话术 —— 正是精准 QA 该管的"答错就是错误承诺"那类内容。
-      源文件 `clenergy-handbook.html` → headless Chrome 打印成 `clenergy-handbook.pdf`
+      源文件 `company-handbook.html` → headless Chrome 打印成 `company-handbook.pdf`
       (4 页 / 7 表 / 142 KB)。清理沙箱时这两个文件搬进 `server/scripts/fixtures/`(手动演示的上传素材);
       演示数据要不要预置进库归 S5(§9.2 的演示包装)决定。
       实跑:解析 12s(4p 41 块 7 表)→ 校对修掉 **7 处 MinerU 瑕疵** → 抽取 **23 条候选**
@@ -637,7 +637,7 @@ Step 8  ✅ 已完成 —— 端到端 + 回归 + 边缘:
 **实测**(两份公司政策 PDF,MinerU 3.4.5 / backend=pipeline):
 `company-it-policy.pdf` 64 块 → 保留 41(丢 header×13 / page_number×5 / footer×5),5 页 6 表 1 图;
 `company-travel-policy.pdf` 63 块 → 保留 40(同样的 23 块噪声),2 图。
-校对页的 markdown 里不再出现 "Clenergy Australia Pty Ltd"(页眉)、"Page 1 of 5"(页码)、
+校对页的 markdown 里不再出现公司抬头(页眉)、"Page 1 of 5"(页码)、
 "CLE-IT-POL-011 | Internal use only"(页脚)。全链路复测见 §9.2。
 
 ### 9.2 修复后的全链路复测(playwright,2026-08-23)

@@ -13,7 +13,7 @@
 
 - `engine`:`pool_pre_ping=True`(容器重启后不会拿到死连接)、pool_size=10
 - `get_session()`:FastAPI 依赖,异常自动 rollback
-- 演示业务库(clenergy_biz)**不共用这个引擎**,S3 用只读账号按需连
+- 演示业务库(demo_biz)**不共用这个引擎**,S3 用只读账号按需连
 
 ## main.py
 

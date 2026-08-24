@@ -44,7 +44,7 @@ from app.models import (
 from app.services.text2sql import bizdb, indexer, introspect, semantic, sqltext
 
 FIXTURES = Path(__file__).parent / "fixtures" / "s3"
-DATASOURCE_NAME = "Clenergy Sales (MySQL demo)"
+DATASOURCE_NAME = "Company Sales (MySQL demo)"
 
 
 def _load(name: str) -> dict | list:

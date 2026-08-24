@@ -55,7 +55,7 @@ async def lifespan(_: FastAPI):
 def create_app() -> FastAPI:
     setup_logging()
     app = FastAPI(
-        title="Clenergy Knowledge Agent API",
+        title="Enterprise Knowledge Agent API",
         description="企业知识分层治理 + Agent 路由问答",
         version="0.1.0",
         lifespan=lifespan,

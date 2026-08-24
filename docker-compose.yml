@@ -1,6 +1,6 @@
 # 三个服务:
 #   postgres   —— 带 pgvector 的 Postgres 16(本系统全部业务表)
-#   biz-mysql  —— 演示业务库 clenergy_biz(S3 智能问数的查询目标),只读账号 biz_reader
+#   biz-mysql  —— 演示业务库 demo_biz(S3 智能问数的查询目标),只读账号 biz_reader
 #   mineru-api —— PDF 解析常驻服务(S1 用;那 4.9GB 依赖树永不进 server 镜像)
 # `make db` 起 postgres + biz-mysql(问数是核心演示能力,不该要额外一条命令);
 # 解析服务用 `make mineru` 单独起(它要 build 镜像 + 下 1GB 权重)。
@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: bizdb_root
-      MYSQL_DATABASE: clenergy_biz
+      MYSQL_DATABASE: demo_biz
     ports:
       - "3307:3306"
     volumes:

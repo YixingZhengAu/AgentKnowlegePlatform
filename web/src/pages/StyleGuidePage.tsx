@@ -124,7 +124,7 @@ export function StyleGuidePage() {
     <div className="flex max-w-[900px] flex-col gap-6">
       <Section
         title="Brand palette"
-        description="Raw values taken from clenergy.com.au. This is the only layer that holds literal colours."
+        description="Raw brand values. This is the only layer that holds literal colours."
       >
         <Swatches names={BRAND} />
       </Section>

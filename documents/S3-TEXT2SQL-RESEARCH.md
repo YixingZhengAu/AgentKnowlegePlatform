@@ -92,7 +92,7 @@ B4 是**离线一次性生成 + 人工评审定稿**,不是运行时生成。因
 
 ```
 输入 = {
-  business_context: BUSINESS_CONTEXT,          # B2 已有常量(Clenergy 澳洲光伏支架、销售侧、AUD)
+  business_context: BUSINESS_CONTEXT,          # B2 已有常量(澳洲光伏支架公司、销售侧、AUD)
   intent: {id, type, one_liner, brief},        # adopted_intents.json 原文;brief 即口径依据
   schema_subset: {                             # semantic_layer.json 按 intent.tables 裁剪
     tables: [{name, description,

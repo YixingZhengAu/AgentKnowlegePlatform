@@ -1,6 +1,6 @@
 # 前端风格规范(UI-STYLE)
 
-**基准**:Clenergy 官网(https://www.clenergy.com.au/)的品牌色 + 2026-08 的界面改版原型
+**基准**:企业级 SaaS 品牌色(navy + 黄)+ 2026-08 的界面改版原型
 (原型解包后的可读源码:`tmp/04-prototype-source.html`,改版计划 `tmp/UI-REDESIGN-PLAN.md`)。
 **约束力**:所有前端开发遵循本文档;shadcn/ui 主题变量、Tailwind token 以此为唯一来源。改风格先改这里。
 
@@ -130,7 +130,7 @@
 
 ### 三栏布局
 
-- **左侧导航:浅底 `#FBFCFE` + `#EEF0F4` 右边框**,宽 224px;logo 区 64px(黄点 + `CLENERGY`,
+- **左侧导航:浅底 `#FBFCFE` + `#EEF0F4` 右边框**,宽 224px;logo 区 64px(黄点 + `KNOWLEDGE`,
   Montserrat 700 13.5px `.12em`);导航项 38px / 圆角 10px / 13.5px;
   **激活项 = `#EDF2FB` 底 + navy 600,没有黄色竖条**;二级项 32px / 圆角 9px,
   激活 = 白底 + `xs` 阴影;底部 build stamp 用 mono 10.5px `#B4B9C4`

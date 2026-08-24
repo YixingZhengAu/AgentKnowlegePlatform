@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Clenergy 企业知识 Agent 系统 —— 一键装环境
+# 企业知识 Agent 系统 —— 一键装环境
 #
 # 干什么:把「新克隆的仓库」变成「能跑起来的系统」——检查工具链、生成 .env、装前后端依赖、
 #        起 Postgres(pgvector)与演示业务库 MySQL、建表、灌演示数据,最后自检一遍并打印下一步。
@@ -82,7 +82,7 @@ confirm() {  # confirm "问题" -> 0=yes;-y 时一律 yes;非交互终端一律 
 	[[ "$reply" =~ ^[Yy]$ ]]
 }
 
-printf '%s=== Clenergy Agent 系统 · 一键装环境 ===%s\n' "$C_STEP" "$C_RESET"
+printf '%s=== 企业知识 Agent 系统 · 一键装环境 ===%s\n' "$C_STEP" "$C_RESET"
 info "仓库:$REPO_ROOT"
 
 # ===== 1. 工具链 =====
@@ -212,7 +212,7 @@ ok "Postgres 就绪(localhost:5432);扩展 vector / pgcrypto 已装"
 
 # ===== 5. 演示业务库(S3 问数的查询目标)=====
 
-step "起演示业务库 MySQL 8.4(clenergy_biz,只读账号 biz_reader)"
+step "起演示业务库 MySQL 8.4(demo_biz,只读账号 biz_reader)"
 
 docker compose up -d biz-mysql
 info "等业务库就绪(首次启动要建表 + 灌 24 个月的演示数据)..."

@@ -33,7 +33,7 @@
 - 连接账号**必须只读**:保存时后端探测账号权限,发现有写权限则给出警告(演示环境警告即可,不硬阻断,但会记录在数据源状态上);运行时执行层再加第二道防线(见 §5.4)。
 - 保存成功后自动做一次 **schema 同步**:拉取该库全部表、字段、类型、注释、行数估计、每列采样值,写入语义层元数据表。之后可手动点 **Re-sync** 增量刷新。
 
-**配套演示数据**:项目自带一个 MySQL 演示业务库 `clenergy_biz`(docker-compose 起容器,bootstrap.sh 建库灌数),≥5 张表,围绕总 PRD §2.0 的 Clenergy 业务:
+**配套演示数据**:项目自带一个 MySQL 演示业务库 `demo_biz`(docker-compose 起容器,bootstrap.sh 建库灌数),≥5 张表,围绕总 PRD §2.0 的演示业务:
 
 | 表 | 内容 | 量级 |
 | --- | --- | --- |
@@ -170,7 +170,7 @@
 
 从浏览器完整走通以下故事,全程英文界面:
 
-1. 新建 MySQL 数据源连上 `clenergy_biz`,同步出 7 张表;
+1. 新建 MySQL 数据源连上 `demo_biz`,同步出 7 张表;
 2. Schema 治理页对 `orders` 点 AI generate all,秒级看到 description 逐个回填,人工改 2 处保存;
 3. 选 `orders + order_items + products` 生成意图,拿到 ≥8 条候选(Query:/Stats: 前缀清晰),采纳 4 条;
 4. 进入 "Stats: Monthly sales by state" 类意图,AI 生成 SQL 模板,Run 出真数据,微调 where 参数提示词,Save 发布;
@@ -182,7 +182,7 @@
 
 | # | 旧文档说法 | 本 PRD 决定 | 回改处 |
 | --- | --- | --- | --- |
-| C1 | `datasources.db_type` 只支持 postgres;演示业务库是 PG 里的 `clenergy_biz` | **MySQL**:业务库为独立 MySQL 容器,`db_type='mysql'`;docker-compose/bootstrap/.env 同步 | DB-DESIGN §4、architect.md §5、PRD §6 |
+| C1 | `datasources.db_type` 只支持 postgres;演示业务库是 PG 里的 `demo_biz` | **MySQL**:业务库为独立 MySQL 容器,`db_type='mysql'`;docker-compose/bootstrap/.env 同步 | DB-DESIGN §4、architect.md §5、PRD §6 |
 | C2 | 语义层核心 = metrics/terms/rules/sql_examples(指标口径 + few-shot) | 核心改为 **intents + templates + 参数定义**;metrics/terms/rules/sql_examples 四表本期不用(表留不留在 DB 重审时定) | DB-DESIGN §4、PRD §3.4 |
 | C3 | staging payload 定义了 `table_meta/metric/term` 三种 item_type | S3 治理不走 staging 审核台(见 §6),旧 payload 定义废弃 | DB-DESIGN §8 |
 | C4 | Text2SQL 执行链路 = 检索 schema 子集后**运行时自由生成 SQL** | 运行时**不生成 SQL**,只做模板受约束改写(§2 Step 5) | PRD §3.4 |
