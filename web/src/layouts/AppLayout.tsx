@@ -10,6 +10,7 @@
  */
 
 import {
+  BookOpen,
   Bot,
   ChevronDown,
   ListChecks,
@@ -26,6 +27,7 @@ import { RightPanelContext, type PanelSlot } from '@/layouts/rightPanel'
 import { cn } from '@/lib/utils'
 
 const NAV_MAIN = [
+  { to: '/how-it-works', label: 'How It Works', icon: BookOpen },
   { to: '/chat', label: 'Chat', icon: MessagesSquare },
   { to: '/agents', label: 'Agents', icon: Bot },
 ]
@@ -34,6 +36,7 @@ const NAV_FOOT = [{ to: '/settings', label: 'Settings', icon: Settings }]
 
 /** 路由 -> 顶栏标题(前端不从后端拿页面标题) */
 const TITLES: { prefix: string; title: string }[] = [
+  { prefix: '/how-it-works', title: 'How It Works' },
   { prefix: '/chat', title: 'Chat' },
   { prefix: '/agents', title: 'Agents' },
   // 审核台直链 /jobs/{id}/review(任务列表页已删,见 S0-PLAN §5)
@@ -69,7 +72,8 @@ export function AppLayout() {
   // 分组展开态:落在任何域路由上时默认展开
   const [ingestOpen, setIngestOpen] = useState(() => pathname.startsWith('/ingest'))
 
-  const title = TITLES.find((t) => pathname.startsWith(t.prefix))?.title ?? 'Enterprise Knowledge Agent'
+  const title =
+    TITLES.find((t) => pathname.startsWith(t.prefix))?.title ?? 'Enterprise Knowledge Agent'
 
   return (
     <RightPanelContext.Provider value={ctx}>

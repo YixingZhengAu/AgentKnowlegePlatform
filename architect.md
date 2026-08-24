@@ -64,6 +64,8 @@
 | 改容器/系统库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
 | 改演示业务库的表或数据 | `docker/mysql/init/02-schema.sql` / `gen_seed.py`(改生成器后 `make bizdb-seed-gen`),**改完必须 `make bizdb-reset`** |
 | 改问数的执行闸(超时/行上限) | `.env` 的 `TEXT2SQL_*` 两项;闸的实现在 `server/app/services/text2sql/executor.py` |
+| 改 How It Works 说明页的文案(主张/痛点/子页关键词) | `web/src/pages/how-it-works/content.ts`(文案唯一出处,组件不写死句子) |
+| 改 How It Works 的图 / 折叠区 / 字阶 | `web/src/pages/how-it-works/{figures.tsx,Section.tsx}`;字阶规范在 UI-STYLE §2「演示页字阶」 |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
 | 新机器从零装环境 / 改装机步骤 | 根目录 `bootstrap.sh`(工具链检查 → .env → 依赖 → 库 → 迁移 → seed → 自检);**新增外部依赖或初始化步骤必须同步进它** |
 | 改颜色 / 字体 / 圆角 | `documents/UI-STYLE.md` → `web/src/index.css` 的品牌层(**全仓唯一 hex 出处**) |
@@ -147,6 +149,7 @@ Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型
   意图详情页 `/ingest/text2sql/intents/:id` 的模板验收,D1–D4;问数命中在 `/chat` 里
   显示成结果表格 + 可展开的最终 SQL,D5),
   `/ingest/document` 仍是空白壳(待该域开发),
+  `/how-it-works` 是面试投屏用的说明页(设计思想讲稿,总页 + 三个层的子页,零后端依赖),
   `/jobs/{id}/review` 是审核台(直链进入;筛选/改/批量/键盘流/发布),`/styleguide` 是 UI 验收对照页
   (`/kbs`、`/jobs` 页面已删,重定向回 `/chat`;接口与表保留)
 - curl 也能直接流式聊天并查 trace:

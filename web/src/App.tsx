@@ -6,6 +6,7 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { AgentDetailPage } from '@/pages/AgentDetailPage'
 import { AgentListPage } from '@/pages/AgentListPage'
 import { ChatPage } from '@/pages/ChatPage'
+import { LayerPage, OverviewPage } from '@/pages/how-it-works'
 import { ReviewPage } from '@/pages/ReviewPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { StyleGuidePage } from '@/pages/StyleGuidePage'
@@ -26,6 +27,9 @@ export default function App() {
             <Route key={d.key} path={`${d.path}/*`} element={<d.IngestPage />} />
           ))}
           <Route path="/jobs/:jobId/review" element={<ReviewPage />} />
+          {/* 项目说明页(投屏讲稿):总页 + 三个知识层的子页,零后端依赖 */}
+          <Route path="/how-it-works" element={<OverviewPage />} />
+          <Route path="/how-it-works/:layer" element={<LayerPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           {/* 隐藏路由:UI 验收对照页,不进侧栏 */}
           <Route path="/styleguide" element={<StyleGuidePage />} />
