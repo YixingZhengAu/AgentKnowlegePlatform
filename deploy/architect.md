@@ -26,7 +26,7 @@
 公网暴露的风险(别人花你的 OpenAI key、删知识库)必须在应用之外挡掉。挡在反代层的好处是
 应用代码零改动 —— 演示环境的约束不污染仓库。两档:
 `deploy.env` 填了 `BASIC_AUTH_PASSWORD` 就拼进 `Caddyfile.auth.snippet`(全站密码门);
-留空则只靠**主机名收窄** —— 站点块按 `demo-<随机>.<IP>.nip.io` 匹配,扫 IP 的请求匹配不到任何站点。
+留空则只靠**主机名收窄** —— 站点块按主机名匹配,扫 IP 的请求匹配不到任何站点。强度取决于名字好不好猜:现在用的是可读名字 `company-knowledge-agent.<IP>.nip.io`,比随机 6 位弱一档,取舍写在 `documents/DEPLOY.md` §4。
 后者是遮挡不是认证,代价与配套见 `documents/DEPLOY.md` §4。
 
 **arm64**。`docker/mineru/Dockerfile` 是为 Apple Silicon 写的 arm64 CPU 镜像,

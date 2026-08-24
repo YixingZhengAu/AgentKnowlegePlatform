@@ -35,7 +35,7 @@ cp deploy.env.example deploy.env && vi deploy.env   # 只有四项要填,见 §1
 | --- | --- |
 | `AWS_PROFILE` | 用 `~/.aws` 里哪个 profile(脚本只用它读 EC2,不需要新建 IAM) |
 | `AWS_REGION` | `ap-southeast-2`(悉尼;面试官在澳洲) |
-| `SITE_DOMAIN` | **可留空**。留空 = `demo-<随机6位>.<公网IP>.nip.io`;填了域名的话 A 记录要你自己去 DNS 服务商加 |
+| `SITE_DOMAIN` | **可留空**。留空 = `demo-<随机6位>.<公网IP>.nip.io`;也可以填一个可读的 `<名字>.<横线IP>.nip.io`(现在用的是 `company-knowledge-agent.<IP>.nip.io`,链接体面些,代价见 §4);填自有域名的话 A 记录要你自己去 DNS 服务商加 |
 | `BASIC_AUTH_PASSWORD` | **可留空**。填了 = 全站密码门;留空 = 不装门,见 §4 |
 | `OPENAI_API_KEY` | **可留空** = 复用本机 `.env` 里那把 |
 | `INSTANCE_TYPE` / `WITH_MINERU` | 默认 `t4g.large` + 起 MinerU;不需要线上解析新 PDF 就改 `t4g.medium` + `false` |
@@ -78,11 +78,15 @@ cp deploy.env.example deploy.env && vi deploy.env   # 只有四项要填,见 §1
 公网裸奔意味着任何人都能用你的 OpenAI key 提问、删知识库、删已发布的问答。
 
 `BASIC_AUTH_PASSWORD` 留空(为了让面试官零摩擦点进来)时,挡在前面的是**主机名收窄**:
-Caddyfile 的站点块按主机名匹配,`SITE_ADDRESS` 是 `demo-<随机6位>.<IP>.nip.io`,
-于是**直接扫公网 IP 的请求匹配不到任何站点**,既拿不到页面也拿不到证书。
-链接只在你和面试官手里,不可枚举。
+Caddyfile 的站点块按主机名匹配,于是**直接扫公网 IP 的请求匹配不到任何站点**,
+既拿不到页面也拿不到证书 —— 必须知道那个主机名才进得来。
 
-这不是认证,是遮挡。配套必须做的两条:
+**这一层强度取决于主机名好不好猜,而现在的名字是可读的**
+(`company-knowledge-agent.<IP>.nip.io`,为了链接体面)。随机 6 位那版是"不可枚举";
+可读名字这版是"得先猜中这个词",弱了一档。演示期间(几周、链接不公开)这个取舍可以接受,
+但它把下面两条从"建议"变成了"必须"。
+
+说到底这不是认证,是遮挡。配套必须做的两条:
 
 - OpenAI 后台给这把 key 设 **usage limit**(月度硬上限),演示结束 rotate 掉。
 - 链接别贴进简历、GitHub、公开页面 —— 一旦被索引,遮挡就没了。
@@ -133,19 +137,41 @@ docker exec agent_system_pg pg_restore -U postgres -d agent_system --clean --if-
 
 代价是线上"上传 PDF"这条路会失败(解析 job 连不上 MinerU)。
 
-## 6.5 这台机器上现在有什么演示数据(2026-08-24 部署实测)
+## 6.5 这台机器上现在有什么演示数据(2026-08-24 实测)
 
-- **智能问数(S3)**:`make seed-s3` 灌的 7 条已发布意图 / 75 条索引面。服务器上跑
-  `uv run python -m scripts.smoke_s3_e2e --check` = **20/20**,越界拒答硬闸门 7/7。
-- **精准问答(S1)**:`data/company-travel-policy.pdf` 走完整条真流水线
-  (上传 → MinerU 解析 5 页 40 块 → 确认 → LLM 抽出 25 条候选 → 采纳 10 条),
-  采纳即发布,对话里立刻命中并标 Verified。**seed 不含这些** —— 新开的机器要自己走一遍,
-  否则 `/ingest/exact-qa` 是空页面、对话也命中不了精准问答。
-- **文档 RAG(S2)**:该域还没开发,`/ingest/document` 是空白壳。面试时说明是阶段计划里的下一片。
+三条链路都有内容,`/chat` 的会话列表也不是空的。
 
-线上实测过的三条链路(都经公网地址):精准问答命中(`verified=true`,trace 只有
-`retrieve_exact_qa`、无生成阶段)、问数执行(`rewrite_sql` + `execute_sql`,返回真实数字与最终 SQL)、
-问数的模板外拒答(不落生成模型)。
+**智能问数(S3)** —— `make seed-s3` 灌的 **12 条已发布意图 / 120 条索引面**
+(摘要 12 + 相似问法 96 + 空路由负例 12)。其中 `i01`–`i18` 是 Phase B 逐段人审签过的 7 条,
+`i19`–`i23` 是 2026-08-24 为了填台账手写补的 5 条(按州拆收入 / 销售代表榜 / 各仓当前库存 /
+产品目录与标价 / 按渠道看单量与客单价),模板 SQL 逐条拿真库跑过。
+加完在服务器上复跑 `uv run python -m scripts.smoke_s3_e2e --all`(真调 gpt-5):
+**20/20**、越界拒答硬闸门 **7/7**、终态分布 `{executed: 13, refused_out_of_template: 4,
+refused_non_data: 3}`、踩线过的仍只有 E05 —— 与加意图之前逐项一致。
+**补意图时刻意避开评测集里那 4 条"必须拒答"的越界题**(按产品品类拆收入 / 利润率 /
+客户电话与信用额度 / 按品类过滤出库):给它们配模板就等于自己把硬闸门拆了。
+
+**精准问答(S1)** —— **68 条已发布问答对**,来自三份 PDF 各走一遍完整真流水线
+(上传 → MinerU 解析 → 确认 → LLM 抽取 → 人工采纳,采纳即发布):
+
+| 原料 | 解析 | 候选 → 采纳 |
+| --- | --- | --- |
+| `data/company-travel-policy.pdf` | 5 页 / 40 块 / 弃噪 23 | 25 → 25 |
+| `data/company-it-policy.pdf` | 5 页 / 45 块 | 21 → 21 |
+| `server/scripts/fixtures/company-handbook.pdf` | 4 页 / 41 块 / 7 表 | 22 → 22 |
+
+**`make seed` 不含这些** —— 新开的机器要自己走一遍流水线,否则 `/ingest/exact-qa` 是空页面、
+对话里也命中不了精准问答。驱动脚本没进仓库(一次性的),就是按 §6.5 这几步调公网 API。
+
+**对话(`/chat`)** —— **7 个会话 / 25 轮**,真调过链路留下的,不是插库造的:
+出差政策 4 轮、IT 与安全政策 4 轮、质保与商务条款 4 轮(以上走精准问答,`verified=true`、
+trace 里只有 `retrieve_exact_qa`、不过生成模型)、销售面 3 轮、库存面 3 轮、渠道与目录 3 轮
+(以上走问数,`rewrite_sql` + `execute_sql`)、最后一个是**治理边界**会话:
+按产品品类拆收入被拒 → 改问按州拆就跑通 → 问 HC-300 质保年限时精准问答没到阈值、
+老实说"知识里没有"→ 道别。**三条零引用的回答全是如实拒答,没有一条是编的** —— 这个会话
+比答对的那几个更值得在面试时打开。
+
+**文档 RAG(S2)** —— 该域还没开发,`/ingest/document` 是空白壳,面试时说明是阶段计划里的下一片。
 
 ## 6.6 部署时踩到的四个坑(已修在仓库里,别再踩)
 
