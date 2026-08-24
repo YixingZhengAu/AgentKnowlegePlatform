@@ -12,6 +12,9 @@
 #   -y, --yes       非交互:缺 uv 直接装,不再问任何确认(CI / 无人值守用)
 #   -h, --help      看这段说明
 #
+# 不管什么:公网部署(HTTPS / 反代 / 常驻 / 密码门)—— 那是 deploy/ 的事,见 documents/DEPLOY.md。
+#          本脚本只负责把机器变成"能跑",线上线下走同一条路径。
+#
 # 装不了的东西(需要系统级安装,脚本只检查并给出装法):Docker、Node 22+。
 # uv 缺失时可以由脚本装(官方 installer)。Python 3.13 不用手动装,uv sync 会自己拉。
 
@@ -31,7 +34,8 @@ fi
 STEP_NO=0
 TOTAL_STEPS=8
 WARN_COUNT=0
-WARN_LOG="$(mktemp -t bootstrap-warn)"
+# 模板必须带 XXXXXX:GNU mktemp 的 -t 不接受纯前缀(BSD 接受),写死前缀会让这个脚本只能在 macOS 上跑
+WARN_LOG="$(mktemp -t bootstrap-warn.XXXXXX)"
 
 step()  { STEP_NO=$((STEP_NO + 1)); printf '\n%s[%d/%d] %s%s\n' "$C_STEP" "$STEP_NO" "$TOTAL_STEPS" "$1" "$C_RESET"; }
 ok()    { printf '  %s✅%s %s\n' "$C_OK" "$C_RESET" "$1"; }

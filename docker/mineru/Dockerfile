@@ -13,7 +13,14 @@ ENV UV_SYSTEM_PYTHON=1 \
     PYTHONUNBUFFERED=1
 
 # 只装 pipeline 后端:torch(CPU)+ transformers + onnxruntime,不装 vllm/sglang/gradio
-# linux/arm64 上 PyPI 的 torch wheel 本身就是 CPU 版,无需 pytorch cpu 索引
+#
+# torch 必须显式走 pytorch 的 cpu 索引。**别信"arm64 上 PyPI 的 torch 就是 CPU 版"** ——
+# 现在 PyPI 的 linux-aarch64 torch wheel 会带一整套 nvidia cu13 依赖(libcufft 等),
+# 镜像多出好几个 GB,在 30GiB 的机器上直接 "no space left on device"(2026-08 在 t4g 上实测)。
+# 分两步装:先从 cpu 索引钉住 torch/torchvision,再装 mineru —— 那时依赖已满足,不会被换回 PyPI 版。
+RUN uv pip install --system --index-url https://download.pytorch.org/whl/cpu \
+        torch==2.13.0 torchvision==0.28.0
+
 # six:mineru 3.4.5 的 pipeline OCR 代码 import six 但没写进依赖(实测踩坑,必须补)
 RUN uv pip install --system "mineru[pipeline]==3.4.5" six
 
