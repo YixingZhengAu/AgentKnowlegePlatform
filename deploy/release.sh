@@ -128,4 +128,8 @@ case "$SITE_ADDRESS" in
 	:*) echo "打开 http://<公网IP>${SITE_ADDRESS}" ;;
 	*)  echo "打开 https://${SITE_ADDRESS}" ;;
 esac
-[[ -n "$BASIC_AUTH_PASSWORD" ]] && echo "用户名 ${BASIC_AUTH_USER},密码见 deploy.env"
+# 注意别用 `[[ ... ]] && echo`:没开密码门时它是最后一条命令,退出码 1 会被 set -e
+# 当成"发布失败"报出去(实测踩过)。
+if [[ -n "$BASIC_AUTH_PASSWORD" ]]; then
+	echo "用户名 ${BASIC_AUTH_USER},密码见 deploy.env"
+fi

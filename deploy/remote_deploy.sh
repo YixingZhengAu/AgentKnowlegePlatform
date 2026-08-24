@@ -38,18 +38,18 @@ stage_code() {
 	scp "${SSH_OPTS[@]}" -q "$tar" "$SSH_TARGET:/tmp/src.tar.gz"
 	rsh "tar -xzf /tmp/src.tar.gz -C $REPO_ROOT && rm /tmp/src.tar.gz && chmod +x $REPO_ROOT/bootstrap.sh"
 	inf "解到 $REPO_ROOT"
-	# deploy/ 本身还没进 git,单独打包送过去(排除本地的 *.env 与 known_hosts:密码与 IP 不随包走)。
+	# deploy/ 已在 git 里,上面那包就带了它;这里再单独送一次是为了能**不提交也发布**
+	# ——改部署脚本时改完就能试。排除本地 *.env 与 known_hosts:密码与 IP 不随包走。
 	# 用 tar over ssh 而不是 rsync -e:仓库路径里有空格,拼 -e 字符串会被拆词。
 	tar czf - --exclude '*.env' --exclude known_hosts -C "$HERE" . \
 		| rsh "mkdir -p $REPO_ROOT/deploy && tar xzf - -C $REPO_ROOT/deploy"
 	rsh "chmod +x $REPO_ROOT/deploy/*.sh"
 	inf "deploy/ 已同步"
-	# 少数文件用工作树版覆盖 HEAD 版:装机路径上的修复必须立刻生效,不能等提交。
+	# 少数文件可以用工作树版覆盖 HEAD 版:装机路径上的紧急修复不必等提交。
 	# **显式清单,不是"所有改动过的文件"** —— 后者会把别人未完成的功能一起带上线。
-	# 目前两个,都是这次部署实测踩出来的:
-	#   bootstrap.sh              mktemp -t 的 BSD/GNU 差异,不修则 Linux 上第一步就挂
-	#   docker/mineru/Dockerfile  arm64 torch 必须走 cpu 索引,不修则拉进 CUDA 库、撑爆磁盘
-	for f in bootstrap.sh docker/mineru/Dockerfile; do
+	# 空清单 = 纯 git HEAD 部署,这是常态(那两个装机修复已经提交,不再需要覆盖)。
+	WORKTREE_OVERRIDES=()   # 例:(bootstrap.sh docker/mineru/Dockerfile)
+	for f in ${WORKTREE_OVERRIDES[@]+"${WORKTREE_OVERRIDES[@]}"}; do
 		rsh "mkdir -p $REPO_ROOT/$(dirname "$f")"
 		scp "${SSH_OPTS[@]}" -q "$REPO_LOCAL/$f" "$SSH_TARGET:$REPO_ROOT/$f"
 		inf "覆盖 $f(工作树版)"
