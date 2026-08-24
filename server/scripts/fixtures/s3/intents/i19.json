@@ -1,0 +1,101 @@
+{
+  "intent": {
+    "intent_id": "i19",
+    "type": "stats",
+    "bucket": "category_stats",
+    "one_liner": "Stats: Revenue and order count by customer state",
+    "brief": "Breaks total booked revenue in AUD down by the customer's Australian state over a chosen period, excluding cancelled orders, and shows how many orders sit behind each state's number. Users typically vary the period and sometimes restrict it to one sales channel (direct or distributor). Only the customer's state is available as the breakdown dimension.",
+    "tables": [
+      "orders",
+      "customers"
+    ]
+  },
+  "sql": "SELECT c.state AS customer_state, SUM(o.total_amount) AS total_revenue_aud, COUNT(DISTINCT o.id) AS order_count FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.order_date >= '2026-01-01' AND o.status <> 'cancelled' AND c.channel_type IN ('direct', 'distributor') GROUP BY c.state ORDER BY total_revenue_aud DESC",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_order_date",
+        "kind": "filter",
+        "source": "orders.order_date",
+        "operator": ">=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2026-01-01",
+        "predicate_sql": "o.order_date >= '2026-01-01'",
+        "business_name": "Order date on/after",
+        "hint": "Filter mapping: the earliest order date to include. Map phrases like \"last 12 months\", \"since 2026-01-01\", \"year to date\", \"this year\", \"last quarter\", \"past 90 days\". Value format must be a single date YYYY-MM-DD. Resolve relative phrases to absolute dates anchored at 2026-08-23 (e.g. last 12 months -> 2025-08-23; year to date -> 2026-01-01; past 90 days -> 2026-05-25). Valid data window is 2024-09-01 to 2026-08-23; clamp to it. This is a >= lower bound only — no upper bound can be added by this template. DEFAULT: keep the default when the user gives no time frame. DISABLE: only if the user explicitly asks for all time / no date filter."
+      },
+      {
+        "param_id": "f_status",
+        "kind": "filter",
+        "source": "orders.status",
+        "operator": "!=",
+        "value_type": "enum",
+        "value_shape": "scalar",
+        "default_value": "cancelled",
+        "predicate_sql": "o.status <> 'cancelled'",
+        "business_name": "Exclude order status",
+        "hint": "This filter excludes exactly one order status via <>. Allowed values (use one verbatim, reject anything else): cancelled (voided), completed (fulfilled), paid (payment received), pending (awaiting processing), shipped (dispatched). Map \"exclude cancelled\" (the default), \"ignore voided orders\", \"exclude shipped\" etc. by setting the single value. DEFAULT: keep cancelled. DISABLE: only if the user explicitly wants every status counted, including cancelled. This template cannot be switched to an inclusion list (e.g. \"only completed\") — refuse that instead."
+      },
+      {
+        "param_id": "f_channel_type",
+        "kind": "filter",
+        "source": "customers.channel_type",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "direct",
+          "distributor"
+        ],
+        "predicate_sql": "c.channel_type IN ('direct', 'distributor')",
+        "business_name": "Sales channel",
+        "hint": "Restricts which sales channels are counted. Allowed values ONLY: direct (the company's own sales team sells to the end customer), distributor (sold through a reseller/channel partner). Map \"direct sales only\", \"just our distributors\", \"channel business\" to the matching subset. DEFAULT: keep both values, which counts every customer. DISABLE: not needed — keeping both values already means no restriction."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_customer_state",
+        "kind": "output",
+        "expr": "c.state",
+        "alias": "customer_state",
+        "source": "customers.state",
+        "business_name": "Customer state",
+        "hint": "Output: the Australian state of the customer account (NSW, QLD, SA, VIC, WA). This is the breakdown dimension — keep it unless the user asks for a single national total, in which case drop it together with the group by g_customer_state."
+      },
+      {
+        "param_id": "o_total_revenue_aud",
+        "kind": "output",
+        "expr": "SUM(o.total_amount)",
+        "alias": "total_revenue_aud",
+        "source": "orders.total_amount",
+        "business_name": "Total revenue (AUD)",
+        "hint": "Output: sum of order totals in AUD per state over the filtered period. This is the headline metric; keep it unless the user only wants order counts."
+      },
+      {
+        "param_id": "o_order_count",
+        "kind": "output",
+        "expr": "COUNT(DISTINCT o.id)",
+        "alias": "order_count",
+        "source": "orders.id",
+        "business_name": "Order count",
+        "hint": "Output: how many distinct orders make up the revenue figure for that state. Keep by default; drop if the user asks for revenue only."
+      }
+    ],
+    "groupbys": [
+      {
+        "param_id": "g_customer_state",
+        "kind": "groupby",
+        "expr": "c.state",
+        "source": "customers.state",
+        "linked_output": "customer_state",
+        "business_name": "Group by customer state",
+        "hint": "Dimension: groups the numbers by the customer's state. Dropping it collapses every state into one national row — do that only when the user explicitly asks for a single total, and drop the matching output as well."
+      }
+    ]
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-24T13:40:00",
+  "human_edited": true,
+  "finalized_at": "2026-08-24T13:40:00"
+}

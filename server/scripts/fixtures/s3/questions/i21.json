@@ -1,0 +1,16 @@
+{
+  "intent_id": "i21",
+  "summary": "Current stock on hand by warehouse",
+  "questions": [
+    "How much HC-300 do we have on hand right now?",
+    "Current stock of INV-110K across all warehouses.",
+    "What's available to promise for HC-215 in Sydney?",
+    "Stock position for the HC series in Melbourne and Brisbane.",
+    "How many units of EMS-PRO are on hand and how many are reserved?",
+    "Show me on hand, reserved and available units for INV-50K by warehouse.",
+    "Do we have any inverters in the Brisbane warehouse at the moment?",
+    "Current inventory levels for HC-300, and when was that last updated?"
+  ],
+  "generated_at": "2026-08-24T13:45:00",
+  "human_edited": true
+}

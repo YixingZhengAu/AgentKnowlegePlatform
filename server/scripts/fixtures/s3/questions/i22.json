@@ -1,0 +1,16 @@
+{
+  "intent_id": "i22",
+  "summary": "Product catalogue with list prices",
+  "questions": [
+    "What products do we sell and what are their list prices?",
+    "Show me the inverter range with prices.",
+    "List every HC series product with its list price and launch date.",
+    "What's the list price of the EMS software products?",
+    "Give me the current product catalogue, active products only.",
+    "Which accessories do we sell and what do they list for?",
+    "Price list for battery cabinets, ex GST.",
+    "Show me our product range by series with SKUs and prices."
+  ],
+  "generated_at": "2026-08-24T13:45:00",
+  "human_edited": true
+}

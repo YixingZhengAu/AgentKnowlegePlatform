@@ -63,7 +63,7 @@ cp deploy.env.example deploy.env && vi deploy.env   # 只有四项要填,见 §1
 | `code` | `git archive HEAD` 打包上传(**部署的是提交过的代码**)+ `deploy/` 目录单独同步 + 生成服务器的 `.env`(`APP_ENV=prod`,`SECRET_KEY` 服务器独立生成)+ 生成服务器的 `deploy.env` |
 | `provision` | `provision.sh`:Docker + compose、Node 22、uv、Caddy、2G swap |
 | `bootstrap` | `./bootstrap.sh -y --with-mineru`:依赖、两个库、迁移、seed、真调 LLM 的冒烟。**最慢的一步**(MinerU 要 build 镜像 + 下 1GB 权重) |
-| `seed` | `make seed-s3`:问数的演示知识与向量(索引面 75 条) |
+| `seed` | `make seed-s3`:问数的演示知识与向量 |
 | `release` | `release.sh`:前端生产构建 → `/srv/knowledge-agent/web` → 渲染装 systemd 单元与 Caddyfile → 起服务 → 自检 |
 
 `code` 阶段有一个例外:`bootstrap.sh` 用**本地版**覆盖 HEAD 版。装机路径上的修复必须立刻生效,

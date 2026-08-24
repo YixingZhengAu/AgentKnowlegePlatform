@@ -1,4 +1,4 @@
-"""灌入 S3 智能问数的演示知识:数据源 + 语义层 + 7 个已验证意图 + 索引面。
+"""灌入 S3 智能问数的演示知识:数据源 + 语义层 + 12 个已验证意图 + 索引面。
 
 用法:`uv run python -m scripts.seed_s3_demo`(幂等,重复跑不产生重复数据)
       `--rebuild-vectors` 只重建索引面(换过 embedding 型号/维度后用)
@@ -10,7 +10,7 @@
   生成能力本身在 `services/text2sql/{semantic,intents,template,params,questions}.py` 里,
   由三个 Job 与意图详情页驱动;这个脚本只负责把已认可的结果放回它该在的表。
 
-★ 唯一在这里真花钱的一步是 embedding(≈75 条面,一次批量调用):向量不能从
+★ 唯一在这里真花钱的一步是 embedding(≈120 条面,一次批量调用):向量不能从
   文件里"搬"过来 —— 它必须由当前 `.env` 里的 EMBEDDING_MODEL/DIM 现算,
   否则维度或型号一变,库里就是一堆静默错的向量。
 
@@ -19,7 +19,7 @@
   2. 建/更新数据源(连接串取 `.env` 的 BIZ_DATABASE_URL,Fernet 加密后落 `dsn_enc`);
   3. 真跑一次 introspection 落语义层骨架(**物理事实必须来自真库**,不能来自文件);
   4. 把 B2 评审过的描述与枚举含义盖到治理字段上;
-  5. 7 个意图(SQL + 参数区)落 `sql_intents`(published)+ 相似问法落 `intent_questions`;
+  5. 12 个意图(SQL + 参数区)落 `sql_intents`(published)+ 相似问法落 `intent_questions`;
   6. 12 条空路由负例面落 `non_data_faces`;
   7. 建索引面(`intent_vectors`)。
 """
@@ -97,7 +97,10 @@ async def _semantic_layer(session, ds: Datasource) -> dict:
 
 
 async def _intents(session, kb: KnowledgeBase, ds: Datasource) -> dict:
-    """7 个意图 + 它们的相似问法。已存在的按 code 覆盖(seed 是幂等的)。"""
+    """意图 + 它们的相似问法(数量以 `fixtures/s3/intents/` 里的文件为准)。
+
+    已存在的按 code 覆盖 —— seed 是幂等的,加一个意图就是往那个目录加一份 fixture。
+    """
     n_intents = n_questions = 0
     for path in sorted((FIXTURES / "intents").glob("*.json")):
         pkg = json.loads(path.read_text())

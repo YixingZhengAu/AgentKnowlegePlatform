@@ -1,0 +1,16 @@
+{
+  "intent_id": "i20",
+  "summary": "Sales rep leaderboard by booked revenue",
+  "questions": [
+    "Who are our top performing sales reps over the last 12 months?",
+    "Sales rep leaderboard by revenue for this year, top 10.",
+    "Rank the reps by how much they've booked since January 2026.",
+    "Best performing channel managers in the past 6 months.",
+    "Which of our own direct reps booked the most revenue year to date?",
+    "Top sales people by revenue and order count, last quarter.",
+    "Show me each rep's booked revenue for the last 90 days, highest first.",
+    "Rep performance ranking including their state and team, past 12 months."
+  ],
+  "generated_at": "2026-08-24T13:45:00",
+  "human_edited": true
+}

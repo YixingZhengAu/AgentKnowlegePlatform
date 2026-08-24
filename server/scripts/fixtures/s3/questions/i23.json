@@ -1,0 +1,16 @@
+{
+  "intent_id": "i23",
+  "summary": "Order volume and average order value by sales channel",
+  "questions": [
+    "Compare direct and distributor sales over the last 12 months.",
+    "What's the average order value by channel this year?",
+    "Direct versus channel business: orders, revenue and average order size.",
+    "How many orders came through distributors since January 2026, and what was the average?",
+    "Average order value for direct customers in NSW and VIC, past 6 months.",
+    "Which channel gives us the bigger orders?",
+    "Order counts and revenue split by sales channel for the last quarter.",
+    "Break down our business by channel type year to date."
+  ],
+  "generated_at": "2026-08-24T13:45:00",
+  "human_edited": true
+}

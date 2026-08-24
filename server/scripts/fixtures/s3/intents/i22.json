@@ -1,0 +1,124 @@
+{
+  "intent": {
+    "intent_id": "i22",
+    "type": "query",
+    "bucket": "single_table_query",
+    "one_liner": "Query: Product catalogue with list prices",
+    "brief": "Lists the products the company sells with their SKU, series, category, list price in AUD (ex GST) and launch date. Users narrow it by series or category and normally want only products still being sold. It is a catalogue view: it carries list prices, not what any customer actually paid.",
+    "tables": [
+      "products"
+    ]
+  },
+  "sql": "SELECT p.sku AS product_sku, p.name AS product_name, p.series AS product_series, p.category AS product_category, p.unit_price AS list_price_aud, p.launch_date AS launch_date FROM products p WHERE p.series IN ('ACC', 'EMS', 'HC', 'INV') AND p.category IN ('accessory', 'battery_cabinet', 'ems_software', 'inverter') AND p.is_active = 1 ORDER BY p.series, p.sku LIMIT 50",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_series",
+        "kind": "filter",
+        "source": "products.series",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "ACC",
+          "EMS",
+          "HC",
+          "INV"
+        ],
+        "predicate_sql": "p.series IN ('ACC', 'EMS', 'HC', 'INV')",
+        "business_name": "Product series",
+        "hint": "Restricts which product families are listed. Allowed values ONLY: HC (battery cabinets), INV (inverters), EMS (energy management software), ACC (accessories). Map \"the inverter range\", \"HC series\", \"our software products\" to the matching subset; reject anything outside the four. DEFAULT: keep all four. DISABLE: not needed."
+      },
+      {
+        "param_id": "f_category",
+        "kind": "filter",
+        "source": "products.category",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "accessory",
+          "battery_cabinet",
+          "ems_software",
+          "inverter"
+        ],
+        "predicate_sql": "p.category IN ('accessory', 'battery_cabinet', 'ems_software', 'inverter')",
+        "business_name": "Product category",
+        "hint": "Restricts the product category. Allowed values ONLY: battery_cabinet, inverter, ems_software, accessory. Overlaps heavily with the series filter — use whichever wording the user chose and leave the other at its default. DEFAULT: keep all four values. DISABLE: not needed."
+      },
+      {
+        "param_id": "f_is_active",
+        "kind": "filter",
+        "source": "products.is_active",
+        "operator": "=",
+        "value_type": "number",
+        "value_shape": "scalar",
+        "default_value": 1,
+        "predicate_sql": "p.is_active = 1",
+        "business_name": "Currently sold",
+        "hint": "Whether to list only products still being sold. Allowed values: 1 (active, still sold) and 0 (withdrawn). DEFAULT: keep 1 — a catalogue question almost always means the current range. Set it to 0 only if the user explicitly asks for discontinued products, and DISABLE the filter if they want both active and withdrawn products in one list."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_product_sku",
+        "kind": "output",
+        "expr": "p.sku",
+        "alias": "product_sku",
+        "source": "products.sku",
+        "business_name": "SKU",
+        "hint": "Output: the product code. Keep by default; drop only on an explicit narrower request."
+      },
+      {
+        "param_id": "o_product_name",
+        "kind": "output",
+        "expr": "p.name",
+        "alias": "product_name",
+        "source": "products.name",
+        "business_name": "Product name",
+        "hint": "Output: the product's commercial name. Keep by default."
+      },
+      {
+        "param_id": "o_product_series",
+        "kind": "output",
+        "expr": "p.series",
+        "alias": "product_series",
+        "source": "products.series",
+        "business_name": "Series",
+        "hint": "Output: HC / INV / EMS / ACC. Keep by default; safe to drop when the user asks for less."
+      },
+      {
+        "param_id": "o_product_category",
+        "kind": "output",
+        "expr": "p.category",
+        "alias": "product_category",
+        "source": "products.category",
+        "business_name": "Category",
+        "hint": "Output: the product category. Keep by default; safe to drop when the user asks for less."
+      },
+      {
+        "param_id": "o_list_price_aud",
+        "kind": "output",
+        "expr": "p.unit_price",
+        "alias": "list_price_aud",
+        "source": "products.unit_price",
+        "business_name": "List price (AUD, ex GST)",
+        "hint": "Output: the published list price in AUD excluding GST. Keep it whenever the user mentions price at all. Note this is the list price — it is NOT the discounted price on any particular order, and this template cannot report actual sell prices."
+      },
+      {
+        "param_id": "o_launch_date",
+        "kind": "output",
+        "expr": "p.launch_date",
+        "alias": "launch_date",
+        "source": "products.launch_date",
+        "business_name": "Launch date",
+        "hint": "Output: when the product was introduced. Keep by default; drop if the user wants a price list only. It cannot be filtered on in this template."
+      }
+    ],
+    "groupbys": []
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-24T13:40:00",
+  "human_edited": true,
+  "finalized_at": "2026-08-24T13:40:00"
+}

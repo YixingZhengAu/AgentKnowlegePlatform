@@ -1,0 +1,137 @@
+{
+  "intent": {
+    "intent_id": "i20",
+    "type": "stats",
+    "bucket": "ranking_stats",
+    "one_liner": "Stats: Sales rep leaderboard by booked revenue",
+    "brief": "Ranks sales representatives by the total booked revenue in AUD on the orders they own over a chosen period, excluding cancelled orders, and shows each rep's state and team alongside the number of orders. Users typically vary the period, how many reps to show, and sometimes restrict it to one team (own sales team vs distributor managers).",
+    "tables": [
+      "orders",
+      "sales_reps"
+    ]
+  },
+  "sql": "SELECT r.name AS sales_rep_name, r.state AS rep_state, r.team AS rep_team, SUM(o.total_amount) AS total_revenue_aud, COUNT(DISTINCT o.id) AS order_count FROM orders o JOIN sales_reps r ON o.sales_rep_id = r.id WHERE o.order_date >= '2025-08-23' AND o.status <> 'cancelled' AND r.team IN ('channel', 'direct') GROUP BY r.name, r.state, r.team ORDER BY total_revenue_aud DESC LIMIT 10",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_order_date",
+        "kind": "filter",
+        "source": "orders.order_date",
+        "operator": ">=",
+        "value_type": "date",
+        "value_shape": "scalar",
+        "default_value": "2025-08-23",
+        "predicate_sql": "o.order_date >= '2025-08-23'",
+        "business_name": "Order date on/after",
+        "hint": "Filter mapping: the earliest order date to include. Map phrases like \"last 12 months\", \"since 2026-01-01\", \"year to date\", \"this year\", \"last quarter\", \"past 90 days\". Value format must be a single date YYYY-MM-DD. Resolve relative phrases to absolute dates anchored at 2026-08-23 (e.g. last 12 months -> 2025-08-23; year to date -> 2026-01-01; past 90 days -> 2026-05-25). Valid data window is 2024-09-01 to 2026-08-23; clamp to it. This is a >= lower bound only — no upper bound can be added by this template. DEFAULT: keep the default when the user gives no time frame. DISABLE: only if the user explicitly asks for all time / no date filter."
+      },
+      {
+        "param_id": "f_status",
+        "kind": "filter",
+        "source": "orders.status",
+        "operator": "!=",
+        "value_type": "enum",
+        "value_shape": "scalar",
+        "default_value": "cancelled",
+        "predicate_sql": "o.status <> 'cancelled'",
+        "business_name": "Exclude order status",
+        "hint": "This filter excludes exactly one order status via <>. Allowed values (use one verbatim, reject anything else): cancelled (voided), completed (fulfilled), paid (payment received), pending (awaiting processing), shipped (dispatched). Map \"exclude cancelled\" (the default), \"ignore voided orders\", \"exclude shipped\" etc. by setting the single value. DEFAULT: keep cancelled. DISABLE: only if the user explicitly wants every status counted, including cancelled. This template cannot be switched to an inclusion list (e.g. \"only completed\") — refuse that instead."
+      },
+      {
+        "param_id": "f_team",
+        "kind": "filter",
+        "source": "sales_reps.team",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "channel",
+          "direct"
+        ],
+        "predicate_sql": "r.team IN ('channel', 'direct')",
+        "business_name": "Rep team",
+        "hint": "Restricts which sales team the ranked reps belong to. Allowed values ONLY: direct (member of the company's own sales team), channel (distributor/partner manager). Map \"our own reps\", \"channel managers only\", \"partner managers\" to the matching subset. DEFAULT: keep both values, ranking every rep. DISABLE: not needed — both values already means no restriction."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_sales_rep_name",
+        "kind": "output",
+        "expr": "r.name",
+        "alias": "sales_rep_name",
+        "source": "sales_reps.name",
+        "business_name": "Sales rep",
+        "hint": "Output: the rep's name — the thing being ranked. Keep it; dropping it makes the ranking meaningless, so if the user asks to hide names, refuse rather than drop."
+      },
+      {
+        "param_id": "o_rep_state",
+        "kind": "output",
+        "expr": "r.state",
+        "alias": "rep_state",
+        "source": "sales_reps.state",
+        "business_name": "Rep state",
+        "hint": "Output: the state the rep is based in (NSW, QLD, SA, VIC, WA). Keep by default; drop if the user wants a narrower table, and drop group by g_rep_state with it. Note this is the rep's own state, not the customer's — it cannot be used to filter by region."
+      },
+      {
+        "param_id": "o_rep_team",
+        "kind": "output",
+        "expr": "r.team",
+        "alias": "rep_team",
+        "source": "sales_reps.team",
+        "business_name": "Rep team",
+        "hint": "Output: direct (own sales team) or channel (distributor manager). Keep by default; drop together with group by g_rep_team if the user wants fewer columns."
+      },
+      {
+        "param_id": "o_total_revenue_aud",
+        "kind": "output",
+        "expr": "SUM(o.total_amount)",
+        "alias": "total_revenue_aud",
+        "source": "orders.total_amount",
+        "business_name": "Total revenue (AUD)",
+        "hint": "Output: sum of order totals in AUD per rep over the filtered period. This is the ranking metric and must be kept."
+      },
+      {
+        "param_id": "o_order_count",
+        "kind": "output",
+        "expr": "COUNT(DISTINCT o.id)",
+        "alias": "order_count",
+        "source": "orders.id",
+        "business_name": "Order count",
+        "hint": "Output: how many orders the rep booked in the period. Keep by default; safe to drop."
+      }
+    ],
+    "groupbys": [
+      {
+        "param_id": "g_sales_rep_name",
+        "kind": "groupby",
+        "expr": "r.name",
+        "source": "sales_reps.name",
+        "linked_output": "sales_rep_name",
+        "business_name": "Group by rep name",
+        "hint": "Dimension: one row per rep. This is what makes it a leaderboard — do not drop it."
+      },
+      {
+        "param_id": "g_rep_state",
+        "kind": "groupby",
+        "expr": "r.state",
+        "source": "sales_reps.state",
+        "linked_output": "rep_state",
+        "business_name": "Group by rep state",
+        "hint": "Dimension: carried so the rep's state can be shown next to the number. Drop it together with the rep_state output when the user wants fewer columns."
+      },
+      {
+        "param_id": "g_rep_team",
+        "kind": "groupby",
+        "expr": "r.team",
+        "source": "sales_reps.team",
+        "linked_output": "rep_team",
+        "business_name": "Group by rep team",
+        "hint": "Dimension: carried so the team can be shown next to the number. Drop it together with the rep_team output when the user wants fewer columns."
+      }
+    ]
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-24T13:40:00",
+  "human_edited": true,
+  "finalized_at": "2026-08-24T13:40:00"
+}

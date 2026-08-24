@@ -1,0 +1,133 @@
+{
+  "intent": {
+    "intent_id": "i21",
+    "type": "query",
+    "bucket": "multi_table_query",
+    "one_liner": "Query: Current stock on hand by warehouse",
+    "brief": "Shows the current stock position — on hand, reserved and available units — for a product at each of the three warehouses, together with when that position was last updated. Users pick a product either by exact SKU or by product series, and can narrow it to one warehouse. This is the latest snapshot only; it carries no history.",
+    "tables": [
+      "inventory",
+      "products"
+    ]
+  },
+  "sql": "SELECT p.sku AS product_sku, p.name AS product_name, i.warehouse AS warehouse_name, i.on_hand_qty AS on_hand_units, i.reserved_qty AS reserved_units, (i.on_hand_qty - i.reserved_qty) AS available_units, i.updated_at AS stock_updated_at FROM inventory i JOIN products p ON i.product_id = p.id WHERE p.sku = 'HC-300' AND p.series IN ('ACC', 'EMS', 'HC', 'INV') AND i.warehouse IN ('Brisbane', 'Melbourne', 'Sydney') ORDER BY p.sku, i.warehouse LIMIT 50",
+  "params": {
+    "filters": [
+      {
+        "param_id": "f_sku",
+        "kind": "filter",
+        "source": "products.sku",
+        "operator": "=",
+        "value_type": "string",
+        "value_shape": "scalar",
+        "default_value": "HC-300",
+        "predicate_sql": "p.sku = 'HC-300'",
+        "business_name": "Product SKU",
+        "hint": "Exact-match filter on the product SKU (examples in this catalogue: HC-215, HC-300, INV-50K, INV-110K, EMS-PRO, ACC-RACK). Set it to the SKU the user names, verbatim and uppercase. This is an exact match — a partial code or a product name will not match, so if the user names a product without giving a SKU, use the series filter instead and DISABLE this one. DEFAULT: keep HC-300 when no product is named. DISABLE: whenever the user asks about a whole series or about all products rather than one SKU."
+      },
+      {
+        "param_id": "f_series",
+        "kind": "filter",
+        "source": "products.series",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "ACC",
+          "EMS",
+          "HC",
+          "INV"
+        ],
+        "predicate_sql": "p.series IN ('ACC', 'EMS', 'HC', 'INV')",
+        "business_name": "Product series",
+        "hint": "Restricts which product series are included. Allowed values ONLY: HC (battery cabinets), INV (inverters), EMS (energy management software), ACC (accessories). Use this when the user names a family rather than a SKU (\"how much HC stock do we have\") and disable the SKU filter in the same breath. DEFAULT: keep all four values. DISABLE: not needed — all four values already means no restriction."
+      },
+      {
+        "param_id": "f_warehouse",
+        "kind": "filter",
+        "source": "inventory.warehouse",
+        "operator": "IN",
+        "value_type": "enum",
+        "value_shape": "list",
+        "default_value": [
+          "Brisbane",
+          "Melbourne",
+          "Sydney"
+        ],
+        "predicate_sql": "i.warehouse IN ('Brisbane', 'Melbourne', 'Sydney')",
+        "business_name": "Warehouse",
+        "hint": "Restricts which warehouses are shown. Allowed values ONLY (match this capitalisation): Sydney, Melbourne, Brisbane. Map \"in Sydney\", \"the Melbourne DC\", \"east coast except Brisbane\" to the matching subset; reject any other location. DEFAULT: keep all three, which shows the full national picture. DISABLE: not needed."
+      }
+    ],
+    "outputs": [
+      {
+        "param_id": "o_product_sku",
+        "kind": "output",
+        "expr": "p.sku",
+        "alias": "product_sku",
+        "source": "products.sku",
+        "business_name": "SKU",
+        "hint": "Output: the product code. Keep by default; drop only if the user asks for fewer columns."
+      },
+      {
+        "param_id": "o_product_name",
+        "kind": "output",
+        "expr": "p.name",
+        "alias": "product_name",
+        "source": "products.name",
+        "business_name": "Product name",
+        "hint": "Output: the product's commercial name. Keep by default; safe to drop on request."
+      },
+      {
+        "param_id": "o_warehouse_name",
+        "kind": "output",
+        "expr": "i.warehouse",
+        "alias": "warehouse_name",
+        "source": "inventory.warehouse",
+        "business_name": "Warehouse",
+        "hint": "Output: which warehouse the row describes. Keep it whenever more than one warehouse can appear, otherwise the numbers cannot be told apart."
+      },
+      {
+        "param_id": "o_on_hand_units",
+        "kind": "output",
+        "expr": "i.on_hand_qty",
+        "alias": "on_hand_units",
+        "source": "inventory.on_hand_qty",
+        "business_name": "On hand (units)",
+        "hint": "Output: physical units sitting in that warehouse. Keep it — it is the point of the query."
+      },
+      {
+        "param_id": "o_reserved_units",
+        "kind": "output",
+        "expr": "i.reserved_qty",
+        "alias": "reserved_units",
+        "source": "inventory.reserved_qty",
+        "business_name": "Reserved (units)",
+        "hint": "Output: units already committed to orders and therefore not sellable. Keep by default; drop if the user only wants the headline on-hand number."
+      },
+      {
+        "param_id": "o_available_units",
+        "kind": "output",
+        "expr": "(i.on_hand_qty - i.reserved_qty)",
+        "alias": "available_units",
+        "source": "inventory.on_hand_qty",
+        "business_name": "Available (units)",
+        "hint": "Output: on hand minus reserved — what can actually be promised to a new order. Keep by default; this is usually the number the user means by \"available\"."
+      },
+      {
+        "param_id": "o_stock_updated_at",
+        "kind": "output",
+        "expr": "i.updated_at",
+        "alias": "stock_updated_at",
+        "source": "inventory.updated_at",
+        "business_name": "Position last updated",
+        "hint": "Output: when this stock position was last refreshed. Keep by default so the reader knows how fresh the snapshot is; safe to drop."
+      }
+    ],
+    "groupbys": []
+  },
+  "prefill_rounds": 0,
+  "generated_at": "2026-08-24T13:40:00",
+  "human_edited": true,
+  "finalized_at": "2026-08-24T13:40:00"
+}

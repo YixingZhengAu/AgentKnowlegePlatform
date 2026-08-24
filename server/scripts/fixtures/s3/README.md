@@ -9,7 +9,7 @@ re-spending the LLM budget that produced them.
 | File | What it is | Who reviewed it |
 | --- | --- | --- |
 | `semantic_layer.json` | table/column descriptions + per-value meanings for every enum | B2 gate |
-| `intents/i*.json` | 7 verified intents: SQL template + the three-zone parameter panel | B4 + B6 gates |
+| `intents/i*.json` | 12 verified intents: SQL template + the three-zone parameter panel | B4 + B6 gates (i01–i18); hand-authored and query-tested (i19–i23) |
 | `questions/i*.json` | ~8 similar questions per intent (the retrieval surface) | B7 |
 | `non_data_faces.json` | 12 "none of the above" faces that make the null route work | B7/B8 |
 | `eval_cases.json` | the frozen 20-question eval set, kept as a regression asset | B8 gate |

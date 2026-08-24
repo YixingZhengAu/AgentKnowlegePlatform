@@ -1,0 +1,16 @@
+{
+  "intent_id": "i19",
+  "summary": "Revenue and order count by customer state",
+  "questions": [
+    "Break our revenue down by state for this financial year.",
+    "Which states are selling the most? Revenue and order count since January 2026.",
+    "Revenue by state over the last 12 months, excluding cancelled orders.",
+    "Show me total revenue per state for our distributor customers only.",
+    "How does NSW compare with VIC on revenue year to date?",
+    "State by state sales performance for the past 6 months.",
+    "Give me revenue and how many orders per state, direct channel only.",
+    "What did each state contribute to revenue since 2026-01-01?"
+  ],
+  "generated_at": "2026-08-24T13:45:00",
+  "human_edited": true
+}
