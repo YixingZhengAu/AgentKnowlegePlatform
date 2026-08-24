@@ -11,7 +11,7 @@
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core.errors import NotFoundError
@@ -36,14 +36,17 @@ async def list_jobs(
     status: str | None = None,
     limit: int = Query(50, ge=1, le=200),
 ) -> ListResponse:
-    stmt = select(IngestJob).order_by(IngestJob.created_at.desc()).limit(limit)
+    stmt = select(IngestJob)
     if kb_id is not None:
         stmt = stmt.where(IngestJob.kb_id == kb_id)
     if status is not None:
         stmt = stmt.where(IngestJob.status == status)
-    rows = (await session.execute(stmt)).scalars().all()
+    # total 是过滤后的总数,不是本页条数(见 exact_qa.list_documents 同款注释)
+    total = await session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    rows = (await session.execute(
+        stmt.order_by(IngestJob.created_at.desc()).limit(limit))).scalars().all()
     items = [JobOut.model_validate(r) for r in rows]
-    return ListResponse[JobOut](items=items, total=len(items))
+    return ListResponse[JobOut](items=items, total=total)
 
 
 @router.get("/types", response_model=list[str])

@@ -226,14 +226,17 @@ async def list_documents(
     kb_id: uuid.UUID | None = None,
     limit: int = Query(50, ge=1, le=200),
 ) -> ListResponse:
-    stmt = select(Document).order_by(Document.created_at.desc()).limit(limit)
+    stmt = select(Document)
     if kb_id is not None:
         stmt = stmt.where(Document.kb_id == kb_id)
     else:
         stmt = stmt.where(Document.kb_id == (await _default_kb(session)).id)
-    rows = (await session.execute(stmt)).scalars().all()
+    # total 是**过滤后的总数**,不是本页条数 —— 否则前端一到 limit 就把总数显示成 limit
+    total = await session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    rows = (await session.execute(
+        stmt.order_by(Document.created_at.desc()).limit(limit))).scalars().all()
     items = [await _document_out(session, d) for d in rows]
-    return ListResponse[DocumentOut](items=items, total=len(items))
+    return ListResponse[DocumentOut](items=items, total=total)
 
 
 @router.get("/documents/{document_id}", response_model=DocumentOut)
@@ -410,12 +413,14 @@ async def list_items(
     limit: int = Query(100, ge=1, le=500),
 ) -> ListResponse:
     """正式 QA 列表:**不带答案正文**(列表轻详情重),带索引面行数好确认它真的可被检索。"""
-    stmt = select(ExactQaItem).order_by(ExactQaItem.created_at.desc()).limit(limit)
+    stmt = select(ExactQaItem)
     if kb_id is not None:
         stmt = stmt.where(ExactQaItem.kb_id == kb_id)
     if status is not None:
         stmt = stmt.where(ExactQaItem.status == status)
-    rows = (await session.execute(stmt)).scalars().all()
+    total = await session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    rows = (await session.execute(
+        stmt.order_by(ExactQaItem.created_at.desc()).limit(limit))).scalars().all()
     faces = await _face_counts(session, [r.id for r in rows])
     items = [
         ExactQaItemOut(
@@ -432,7 +437,7 @@ async def list_items(
         )
         for r in rows
     ]
-    return ListResponse[ExactQaItemOut](items=items, total=len(items))
+    return ListResponse[ExactQaItemOut](items=items, total=total)
 
 
 @router.get("/items/{item_id}", response_model=ExactQaItemDetail)

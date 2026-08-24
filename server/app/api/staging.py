@@ -10,7 +10,7 @@
 import uuid
 
 from fastapi import APIRouter, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.core.staging import bulk_review, get_item, patch_item, summarize
@@ -51,10 +51,12 @@ async def list_staging_items(
         stmt = stmt.where(StagingItem.review_status == review_status)
     if item_type is not None:
         stmt = stmt.where(StagingItem.item_type == item_type)
-    stmt = stmt.order_by(*SORTS[sort]).limit(limit)
-    rows = (await session.execute(stmt)).scalars().all()
+    # total 是过滤后的总数,不是本页条数(审核台一次能有几百条候选,很容易撞到 limit)
+    total = await session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    rows = (await session.execute(
+        stmt.order_by(*SORTS[sort]).limit(limit))).scalars().all()
     items = [StagingItemOut.model_validate(r) for r in rows]
-    return ListResponse[StagingItemOut](items=items, total=len(items))
+    return ListResponse[StagingItemOut](items=items, total=total)
 
 
 @router.get("/summary", response_model=StagingSummary)
