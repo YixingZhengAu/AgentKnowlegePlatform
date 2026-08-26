@@ -14,7 +14,8 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: {
-    port: 5173,
+    // 5173 被占时:VITE_PORT=5273 npm run dev(或 make dev VITE_PORT=5273)
+    port: Number(process.env.VITE_PORT ?? 5173),
     proxy: {
       '/api': { target: API_TARGET, changeOrigin: true },
       '/healthz': { target: API_TARGET, changeOrigin: true },

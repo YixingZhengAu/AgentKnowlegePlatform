@@ -5,6 +5,9 @@
 
 SHELL := /bin/bash
 COMPOSE := docker compose
+# 本机端口被占时:make dev API_PORT=8100 VITE_PORT=5273(前端代理目标自动跟 API_PORT 走)
+API_PORT ?= 8000
+VITE_PORT ?= 5173
 PG_CONTAINER := agent_system_pg
 BIZ_CONTAINER := agent_system_bizdb
 MINERU_CONTAINER := agent_system_mineru
@@ -104,16 +107,16 @@ mineru-stop:  ## 停 MinerU 解析容器(保留模型权重卷)
 
 # ===== 开发服务 =====
 
-api:  ## 只起后端(8000)
-	cd server && uv run uvicorn app.main:app --reload --port 8000
+api:  ## 只起后端(默认 8000,可 API_PORT=xxxx 覆盖)
+	cd server && uv run uvicorn app.main:app --reload --port $(API_PORT)
 
-web:  ## 只起前端(5173)
-	cd web && npm run dev
+web:  ## 只起前端(默认 5173,可 VITE_PORT=xxxx 覆盖;代理目标跟 API_PORT 走)
+	cd web && VITE_PORT=$(VITE_PORT) VITE_API_TARGET=$${VITE_API_TARGET:-http://localhost:$(API_PORT)} npm run dev
 
-dev:  ## 前后端一起起(Ctrl-C 一起停)
+dev:  ## 前后端一起起(Ctrl-C 一起停;端口都被占时:make dev API_PORT=8100 VITE_PORT=5273)
 	@trap 'kill 0' EXIT INT TERM; \
-	( cd server && uv run uvicorn app.main:app --reload --port 8000 ) & \
-	( cd web && npm run dev ) & \
+	( cd server && uv run uvicorn app.main:app --reload --port $(API_PORT) ) & \
+	( cd web && VITE_PORT=$(VITE_PORT) VITE_API_TARGET=$${VITE_API_TARGET:-http://localhost:$(API_PORT)} npm run dev ) & \
 	wait
 
 # ===== 契约与依赖 =====

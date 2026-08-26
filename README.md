@@ -29,6 +29,8 @@ and finally runs the offline tests, lint, and an LLM smoke test:
 ```bash
 ./bootstrap.sh            # or: make bootstrap
 make dev                  # frontend :5173, backend :8000 (Swagger at /docs)
+                          # ports taken? make dev API_PORT=8100 VITE_PORT=5273
+                          # container ports: set PG_PORT / BIZ_PORT / MINERU_PORT in .env
 ```
 
 It is idempotent and safe to re-run (an existing `.env` is never overwritten). Common flags:
