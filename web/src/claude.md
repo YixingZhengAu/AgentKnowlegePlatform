@@ -5,7 +5,7 @@
 | 路径 | 说明 |
 | --- | --- |
 | `main.tsx` | 挂载 React + BrowserRouter,引入 `index.css` |
-| `App.tsx` | 路由表(`/chat` `/agents/:id` `/ingest/<域>/*`(遍历 DOMAINS 生成,`/*` 是域自己的子路由空间)`/jobs/:id/review` `/how-it-works(/:layer)` `/settings` + 隐藏 `/styleguide`)+ `<Toaster/>` |
+| `App.tsx` | 路由表(`/chat` `/agents/:id` `/ingest/<域>/*`(遍历 DOMAINS 生成,`/*` 是域自己的子路由空间)`/jobs/:id/review` `/how-it-works` `/how-it-works/:layer` `/settings` + 隐藏 `/styleguide`)+ `<Toaster/>` |
 | `index.css` | **全站唯一色源**:品牌原色 → 语义变量 → Tailwind `@theme`(三层,见 `../architect.md`) |
 | `api/` | 后端交互层,见 `api/claude.md` |
 | `components/` | 通用组件,见 `components/claude.md` |

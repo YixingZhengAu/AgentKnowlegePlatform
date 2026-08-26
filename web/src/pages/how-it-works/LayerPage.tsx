@@ -6,7 +6,8 @@
 import { ArrowLeft, Check, X } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 
-import { BACK_TO_OVERVIEW, LAYER_DETAILS, LAYERS, type LayerSlug } from './content'
+import { BACK_TO_OVERVIEW, FLOWS_HEADING, LAYER_DETAILS, LAYERS, type LayerSlug } from './content'
+import { FlowFigure } from './figures'
 import { Emphasized, Lede, Screen, ScreenTitle, SectionHeading } from './Section'
 
 function KeywordCard({
@@ -77,6 +78,23 @@ export function LayerPage() {
               {ex}
             </span>
           ))}
+        </div>
+      </Screen>
+
+      {/* 两条流程:治理期做完的事 vs 回答时剩下的事 */}
+      <Screen className="space-y-5">
+        <SectionHeading>{FLOWS_HEADING}</SectionHeading>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <FlowFigure
+            label={detail.curation.label}
+            steps={detail.curation.steps}
+            dotClass={dotClass}
+          />
+          <FlowFigure
+            label={detail.runtime.label}
+            steps={detail.runtime.steps}
+            dotClass={dotClass}
+          />
         </div>
       </Screen>
 

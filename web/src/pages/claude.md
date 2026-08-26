@@ -11,6 +11,6 @@
 | `ReviewPage.tsx` | `GET /api/jobs/{id}` + 探一条 `/api/staging`(定类型)→ `<StagingReview>`;路由 `/jobs/:jobId/review`,当前唯一入口是直链(旧任务列表页已删) |
 | `SettingsPage.tsx` | `GET /healthz`(**任何密钥都不进前端**) |
 | `StyleGuidePage.tsx` | 无后端依赖;隐藏路由 `/styleguide`,UI 验收对照页 |
-| `how-it-works/` | 面试投屏用的说明页(`/how-it-works` 总页 + `/:layer` 子页),零后端依赖;见该目录 claude.md |
+| `how-it-works/` | 面试投屏用的说明页(总页 `/how-it-works`,含架构段;+ 三层子页 `/:layer`),零后端依赖;侧栏子项清单也出自这里;见该目录 claude.md |
 
 详见 `architect.md`。

@@ -27,7 +27,8 @@ export default function App() {
             <Route key={d.key} path={`${d.path}/*`} element={<d.IngestPage />} />
           ))}
           <Route path="/jobs/:jobId/review" element={<ReviewPage />} />
-          {/* 项目说明页(投屏讲稿):总页 + 三个知识层的子页,零后端依赖 */}
+          {/* 项目说明页(投屏讲稿):总页 + 架构页 + 三个知识层的子页,零后端依赖。
+              架构页必须排在 `/:layer` 之前,否则会被当成未知 slug 重定向回总页 */}
           <Route path="/how-it-works" element={<OverviewPage />} />
           <Route path="/how-it-works/:layer" element={<LayerPage />} />
           <Route path="/settings" element={<SettingsPage />} />

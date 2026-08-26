@@ -214,3 +214,80 @@ web/src/pages/how-it-works/
 | 字阶例外被后续开发误当全站规范 | UI-STYLE 里写明作用域;字阶只在 `Section.tsx` 一处实现 |
 | 文档 RAG 那页与实际未实现产生落差 | 该页只讲设计取向、不描述界面,故不依赖实现进度;S2 落地后回看是否要改口径 |
 | 内容随系统演进过期 | 文案集中在 `content.ts` 一个文件;文档同步纪律里已挂在根 `architect.md` 的索引表上 |
+
+---
+
+## 10. v2:补架构(2026-08-26)
+
+**动机(需求方原话的意思)**:v1 把「为什么这么设计」讲得不错,但**架构讲得不够专业** ——
+整体没有技术架构图,没有用户使用流程图,每个模块也没有自己的流程图;而且说明页在侧栏是
+一个孤零零的链接,不像 Knowledge Ingestion 那样能展开、能看见里面有什么。
+参考物是一张分层技术架构幻灯片(`tmp/` 里那张中文图:自下而上六层 + 每层若干能力块 + 四方协同图例),
+以及一份面试复盘笔记(`tmp/NAB_AI_Scientist_Interview_Frameworks.md`)里的架构观点。
+**不照抄**:图是英文的,层次按本项目的真实结构重排;笔记里与面试技巧有关的杂讯一概不进页面。
+
+### 10.1 结构改成三级
+
+| 级 | 路由 | 回答的问题 |
+| --- | --- | --- |
+| 主张 | `/how-it-works` | 为什么这么设计 |
+| 结构 | `/how-it-works/architecture`(**新增**) | 系统由什么组成、一次请求怎么走 |
+| 各层 | `/how-it-works/:layer` | 这一层治理期做什么、回答期还剩什么 |
+
+侧栏 `How It Works` 从普通链接改成**可展开分组**(和 Knowledge Ingestion 同一形状),
+子项 = Overview / Architecture / Exact Q&A / Document RAG / Text-to-SQL。
+子项清单出自 `content.ts` 的 `HOW_IT_WORKS_NAV`,`AppLayout` 只遍历 —— 与 DOMAINS 同一纪律。
+
+### 10.2 架构页六段(全部常驻,顶部一条锚点条)
+
+| 段 | 图 | 讲什么 |
+| --- | --- | --- |
+| The stack, tier by tier | 六层堆叠,箭头向上 | Surfaces / Agent runtime / Control plane / Knowledge plane / Data & integration / Model foundation,每层标 owner(参考图里的「四方协同」改成按层标责任方) |
+| Deterministic shell, agentic core | 外框套内框 | 外壳(检索顺序、白名单、只读、必须给出处、无副作用动作、全程留痕)是代码;内核才是模型能想的地方 |
+| One request, end to end | 竖向链路 | 每一步标出「谁决定」+ 命中/未命中两个出口;末尾列出每次回答都会留下的痕迹 |
+| The loop people actually live in | 七步闭环 | 业务 / 终端用户 / 系统三色,末尾回到 01 —— 这就是「用户使用流程图」 |
+| How we know it works | 四层评估 | 组件 → 轨迹 → 端到端 → 生产与安全 |
+| Where autonomy stops | 左右两列 | 读/析/摘宽松,写/执行/外发不给;明说今天这个 agent 不做任何动作 |
+
+总页同步加一屏 **Four positions we argue from**(四条立场:
+agentic where necessary / 模型概率而系统不必 / 自主性按后果分级 / correctness ≠ safety),
+它是上面六段的论证起点。原「What happens when someone asks」与「Who uses it, and how」
+两个折叠区被架构页的第 3、4 段取代,已从总页删掉(`ANSWER_FLOW` / `ROLES` 同时删)。
+
+### 10.3 每个模块两条流程
+
+三个层子页各加一对流程图(`FlowFigure`):左 **Curation time**,右 **Answer time**,
+闸门步打黄色 `GATE` 徽标、终点步打灰色 `END` 徽标 —— 一眼看出「重活在治理期做完了,
+回答期只剩很少的判断」。这是这次改动里最贴「每个模块也要有流程图」那条要求的部分。
+
+### 10.4 口径纪律(新增一条)
+
+评估那段**只写现在真做得到的事**(固定评测集在每次 prompt / 模型 / 检索变更后复跑、
+数字回源核对、无出处即缺陷、失败转回归用例),不写没落地的平台能力;
+`Where autonomy stops` 结尾明说「今天这个 agent 不做任何动作」。G2(不出现表名/字段名/
+接口/阈值)在 v2 继续适用,评测集的题量这类数字也不写进页面,免得过期。
+
+### 10.5 自测
+
+`make lint`(ruff + eslint + tsc)全绿;浏览器 1440×900 走查总页 / 架构页 / 三个子页,
+窄到 1100px 时 `main` 无横向滚动(实测 `scrollWidth === clientWidth`);
+侧栏分组展开、直链刷新都落在正确的子项上(Overview 用 `end` 避免被子页点亮)。
+
+## 11. v2.1:架构段并回总页 + 署名(2026-08-26)
+
+需求方看过 v2 后定的两条:
+
+1. **`/how-it-works/architecture` 子页取消**,六小节内容原样并进总页。理由:
+   「为什么这么设计」与「结构长什么样」本来就是一条论证,拆成两页反而要来回跳转;
+   一页讲完更合理。侧栏子项因此回到 Overview / Exact Q&A / Document RAG / Text-to-SQL。
+2. **加上开发者署名**:Yixing (Ethan) Zheng、Delai (Tony) Ye,落在总页页脚(`AUTHORS`)。
+
+落地要点:
+
+- `ArchitecturePage.tsx` 删除,路由 `/how-it-works/architecture` 与入口卡片文案
+  `ARCH_LINK` 一并删除;`HOW_IT_WORKS_NAV` 去掉 Architecture 一项。
+- 六小节搬进 `OverviewPage`,位置在四条立场之后、三层卡片之前,顶部保留那条锚点条
+  (`ANCHORS`)。小节标题从 30px `ScreenTitle` 降到 20px `SectionHeading`,让
+  「总页大块(30)> 架构小节(20)」的层级站得住;小节间距 80 → 64px。
+- 页面变长,靠三样东西控制:顶部锚点条、后半段四个默认收起的折叠区、大块之间的分隔线。
+- 文案仍然只在 `content.ts`;`ARCHITECTURE` 从 `{headline, lede}` 改成 `{title, lede}`。

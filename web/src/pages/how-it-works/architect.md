@@ -2,50 +2,88 @@
 
 ## 这页是什么
 
-一副长在系统里的**幻灯片**:屏幕共享时讲哪点开哪,把「为什么这么设计」讲完。
-不放技术细节(不出现表名、字段名、接口路径、阈值),不做深链,不动后端。
+一副长在系统里的**幻灯片**:屏幕共享时讲哪点开哪,把「为什么这么设计」与「结构长什么样」讲完。
+不放实现细节(不出现表名、字段名、接口路径、阈值),不做深链,不动后端。
 **体裁是关键词,不是文章**(2026-08-24 需求方定):面试官不会逐句读,全篇只保留
-两类完整句 —— 每层一句主角句、每屏一句强调句,其余一律关键词/短语。
+两类完整句 —— 每层一句主角句、每段一句强调句,其余一律关键词/短语。
 
-## 内容骨架(总页)
+**v2(2026-08-26)**:原来只有「主张 + 三层」,架构讲得不够专业。于是补了架构内容:
+六层技术架构 / 外壳内核 / 一次请求 / 角色闭环 / 四层评估 / 自主性边界,每层子页也各加
+两条流程图;侧栏做成可展开分组,和 Knowledge Ingestion 一个形状。架构思想的来源是面试
+复盘笔记里那几条(deterministic shell + agentic core、autonomy 按后果分级、四层评估、
+correctness ≠ safety)。
 
-结构 = 两个常驻块 + 六个折叠区(2026-08-24 需求方定,替代八屏长滚):
+**v2.1(同日,需求方定)**:架构内容一度是独立子页 `/how-it-works/architecture`,现已
+**并回总页** —— 「为什么这么设计 → 结构长什么样」本就是一条论证,拆两页反而要来回跳。
+子页与其入口卡片(`ARCH_LINK`)已删,长度靠锚点条 + 折叠区控制。
 
-| 块 | 数据来源(`content.ts`) | 图 |
+## 两级结构
+
+| 路由 | 页面 | 内容 |
+| --- | --- | --- |
+| `/how-it-works` | `OverviewPage` | **为什么 + 是什么**:主张 → 四条立场 → 架构段(六小节 + 锚点条)→ 三层卡片 → 四个折叠区 → 署名 |
+| `/how-it-works/:layer` | `LayerPage` | **怎么做**:一层一页,含治理期 / 回答期两条流程 |
+
+侧栏子项清单是 `content.ts` 的 `HOW_IT_WORKS_NAV`(总页 / 三层),
+由 `AppLayout` 遍历渲染 —— **AppLayout 不硬编码任何一页**,和 DOMAINS 同一纪律。
+
+## 总页(常驻 + 折叠)
+
+| 块 | 数据来源 | 图 |
 | --- | --- | --- |
 | 常驻:The claim | `CLAIM` + `FUNNEL` | `FunnelFigure` |
-| 常驻:The three layers(进子页) | `LAYERS` + `LAYER_CARDS_TITLE` | 三张卡片 |
-| 折叠:Why generic RAG isn’t enough | `PAIN_POINTS`(症状 → 回答) | — |
+| 常驻:Four positions we argue from | `PRINCIPLES` | 四张卡 |
+| 常驻:Architecture(六小节,见下表) | `ARCHITECTURE` + 六个数据块 | 六张图 |
+| 常驻:The three layers | `LAYERS` + `LAYER_CARDS_TITLE` | 三张卡片 |
+| 折叠:Why generic RAG isn’t enough | `PAIN_POINTS` | — |
 | 折叠:Three layers, one gate | `GATE` + `LAYERS` | `GateFigure` |
-| 折叠:What happens when someone asks | `ANSWER_FLOW` | `AnswerFlowFigure` |
-| 折叠:Who uses it, and how | `ROLES` | `RolesFigure` |
 | 折叠:The three layers side by side | `COMPARISON` | 表(全页唯一) |
 | 折叠:What we deliberately don’t do | `TRADEOFFS` | — |
+| 页脚:署名 | `AUTHORS` | — |
 
 折叠区由 `Section.tsx` 的 `CollapsibleScreen` 实现:默认收起,折叠态一行 =
-24px 标题 + 13px 关键词摘要(`*.summary`),当目录用,讲哪点开哪。
+24px 标题 + 13px 关键词摘要(`*.summary`),当目录用。
+三条推论(`CLAIM.corollaries`)是全篇地基;检索顺序 **精准问答 → Text-to-SQL → 文档 →
+说没有依据** 与后端 `core/chat.py` 的 stage 顺序一致。命名纪律:该层全站叫 **Text-to-SQL**。
 
-三条推论(`CLAIM.corollaries`)是全篇地基:前置而非临场 / 业务团队是知识的所有者 /
-RAG 是兜底。检索顺序 **精准问答 → Text-to-SQL → 文档 → 说没有依据** 与后端 `core/chat.py`
-的 stage 顺序一致。命名纪律:该层全站叫 **Text-to-SQL**(与侧栏一致),不再自创别名。
+## 架构段(总页内,六小节全部常驻)
+
+顶部有锚点条(`OverviewPage` 的 `ANCHORS`,顺序 = 下面 `<Screen id>` 的顺序);
+小节标题用 20px `SectionHeading`,与 30px 的 `ScreenTitle`(总页各大块)拉开层级。
+
+| 小节 | 数据来源 | 图 | 讲什么 |
+| --- | --- | --- | --- |
+| The stack, tier by tier | `STACK` | `StackFigure` | 六层 + 每层的 owner,箭头向上表示谁支撑谁 |
+| Deterministic shell, agentic core | `SHELL_CORE` | `ShellCoreFigure` | 外壳是代码写的确定性约束,内核才是模型真正能想的地方 |
+| One request, end to end | `REQUEST_PATH` | `RequestPathFigure` | 一次提问逐 stage 走,每步标出命中 / 未命中两个出口 + 全程留痕 |
+| The loop people actually live in | `JOURNEY` | `JourneyFigure` | 两个角色 + 系统的七步闭环,末尾回到 01 |
+| How we know it works | `EVALUATION` | `EvaluationFigure` | 四层评估:组件 / 轨迹 / 端到端 / 生产与安全 |
+| Where autonomy stops | `AUTONOMY` | `AutonomyFigure` | 读/析/摘宽松,写/执行/外发不给 |
+
+**口径纪律**:评估那段只写现在真做得到的事(固定评测集复跑、数字回源核对、无出处即缺陷),
+不写没落地的平台能力;`AUTONOMY` 最后一句明说「今天这个 agent 不做任何动作」。
 
 ## 子页
 
-`LAYER_DETAILS[slug]`,三页同一结构:主角句 + 示例 chips → 四张关键词卡
-(What it’s for / Why it can’t be improvised / Settled up front / Where the business steps in,
-业务介入那张黄色识别条高亮)→ **may / may not 两列**(绿底/红底,全站状态色)→ Deliberately doesn’t。
+`LAYER_DETAILS[slug]`,三页同一结构:主角句 + 示例 chips → **两条流程**
+(`curation` / `runtime`,`FlowFigure` 渲染,`kind: gate` 打黄色 GATE 徽标、`kind: stop`
+打灰色 END 徽标)→ 四张关键词卡(业务介入那张黄色识别条高亮)→ **may / may not 两列**
+(绿底/红底)→ Deliberately doesn’t。
 
-文档 RAG 那页**照常写、不标未实现**(需求方 2026-08-24 决定),因此只讲设计取向,不描述界面。
+两条流程是这次 v2 的重点:左边治理期、右边回答期,一眼看出「重活在前面做完了」。
+文档 RAG 那页**照常写、不标未实现**(需求方 2026-08-24 决定)。
 
 ## 排版
 
 `Section.tsx` 收敛 UI-STYLE §2「演示页字阶(作用域仅 /how-it-works)」:主张 34 / 屏标题 30 /
-段标题 20 / 正文 17·1.65 / 强调 19 / meta 13。内容最大宽 860px,屏间距 88px,屏内 28px,
-右侧面板不挂载。行内强调只支持 `**...**`,由 `Section.tsx` 的 `<Emphasized>` 解析。
+折叠区标题 24 / 段标题 20 / 正文 17·1.65 / 强调 19 / meta 13。内容最大宽 860px,
+架构段小节间距 64px,右侧面板不挂载。行内强调只支持 `**...**`,由 `<Emphasized>` 解析。
 
 `figures.tsx` 用填充块而非 SVG:图里的说明句较长,SVG `<text>` 不换行、窄屏必溢出;
-填充块既合「白底 + 填充块」的基调,也天然自适应。倒漏斗保留几何语义(块宽自上而下递增 =
-模型自由度递增)。
+填充块既合「白底 + 填充块」的基调,也天然自适应(1100px 实测无横向滚动)。
+倒漏斗保留几何语义(块宽自上而下递增 = 模型自由度递增)。
+黄色只出现在两处语义上一致的地方:三层里的 Exact Q&A 识别色,以及**人审闸门**
+(治理骨架第 3 步 / 流程图的 GATE / 闭环里的 ops 步)。
 
 ## 我要改 X 去哪
 
@@ -53,5 +91,8 @@ RAG 是兜底。检索顺序 **精准问答 → Text-to-SQL → 文档 → 说�
 | --- | --- |
 | 任何一句文案 | `content.ts`(唯一出处) |
 | 图的画法 | `figures.tsx` |
-| 字号 / 行长 / 屏间距 | `Section.tsx` + `OverviewPage.tsx` 的容器类 |
-| 加一屏 | `content.ts` 加数据 + `OverviewPage.tsx` 加一个 `<Screen>` |
+| 侧栏里说明页的子项 | `content.ts` 的 `HOW_IT_WORKS_NAV`(AppLayout 只遍历) |
+| 字号 / 行长 / 段间距 | `Section.tsx` + 各页面的容器类 |
+| 架构段加一小节 | `content.ts` 加数据 + `figures.tsx` 加图 + `OverviewPage.tsx` 加 `<Screen>` 并在 `ANCHORS` 里加一项 |
+| 署名 | `content.ts` 的 `AUTHORS` |
+| 总页加一个折叠区 | `content.ts` 加数据 + `OverviewPage.tsx` 加一个 `<CollapsibleScreen>` |

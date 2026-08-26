@@ -5,8 +5,9 @@
  * 右侧面板是个"插槽":页面通过 useRightPanel() 往里塞内容(Step 7 塞 trace 面板),
  * 没塞东西时整块不占宽度 —— 这样列表页不会白白让出 320px。
  *
- * 侧栏的 "Knowledge Ingestion" 是可展开分组,子项来自域清单(src/domains/index.ts),
- * 本文件不出现任何具体域的硬编码(结构调整,见 S0-PLAN §5)。
+ * 侧栏有两个可展开分组,子项清单都在别处、本文件不硬编码:
+ *   "How It Works"        → src/pages/how-it-works 的 HOW_IT_WORKS_NAV(总页 / 架构 / 三层)
+ *   "Knowledge Ingestion" → 域清单 src/domains/index.ts(结构调整,见 S0-PLAN §5)
  */
 
 import {
@@ -25,9 +26,9 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { DOMAINS } from '@/domains'
 import { RightPanelContext, type PanelSlot } from '@/layouts/rightPanel'
 import { cn } from '@/lib/utils'
+import { HOW_IT_WORKS_NAV } from '@/pages/how-it-works'
 
 const NAV_MAIN = [
-  { to: '/how-it-works', label: 'How It Works', icon: BookOpen },
   { to: '/chat', label: 'Chat', icon: MessagesSquare },
   { to: '/agents', label: 'Agents', icon: Bot },
 ]
@@ -69,7 +70,8 @@ export function AppLayout() {
   const [open, setOpen] = useState(true)
   const { pathname } = useLocation()
   const ctx = useMemo(() => ({ setPanel }), [])
-  // 分组展开态:落在任何域路由上时默认展开
+  // 分组展开态:落在本组的任何路由上时默认展开
+  const [deckOpen, setDeckOpen] = useState(() => pathname.startsWith('/how-it-works'))
   const [ingestOpen, setIngestOpen] = useState(() => pathname.startsWith('/ingest'))
 
   const title =
@@ -87,8 +89,41 @@ export function AppLayout() {
             </span>
           </div>
           <div className="flex flex-col gap-[3px] px-3.5 pt-2.5">
-            {NAV_MAIN.map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} className={({ isActive }) => navItemClass(isActive)}>
+            {/* How It Works 分组:子项 = 说明页自己的页面清单(总页 / 架构 / 三层),
+                清单出处在 pages/how-it-works,本文件不硬编码任何一页 */}
+            <button
+              onClick={() => setDeckOpen((v) => !v)}
+              className={cn(navItemClass(pathname.startsWith('/how-it-works')), 'py-1.5')}
+            >
+              <BookOpen className="size-[17px] shrink-0" strokeWidth={1.75} />
+              <span className="flex-1 text-left">How It Works</span>
+              <ChevronDown
+                className={cn(
+                  'size-3.5 shrink-0 opacity-50 transition-transform duration-150',
+                  !deckOpen && '-rotate-90',
+                )}
+                strokeWidth={1.75}
+              />
+            </button>
+            {deckOpen &&
+              HOW_IT_WORKS_NAV.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) => subItemClass(isActive)}
+                >
+                  <span className={cn('size-[7px] shrink-0 rounded-full', item.dotClass)} />
+                  {item.label}
+                </NavLink>
+              ))}
+
+            {NAV_MAIN.map(({ to, label, icon: Icon }, i) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) => cn(navItemClass(isActive), i === 0 && 'mt-0.5')}
+              >
                 <Icon className="size-[17px] shrink-0" strokeWidth={1.75} />
                 {label}
               </NavLink>

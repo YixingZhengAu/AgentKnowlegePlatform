@@ -6,7 +6,9 @@ A demo system for tiered enterprise knowledge governance with agent-routed Q&A. 
 - Stage plans: [S0](documents/S0-PLAN.md) (foundation) · [S1](documents/S1-PLAN.md) (exact Q&A, done) · [S3](documents/S3-PLAN.md) (analytics Q&A, done — [requirements](documents/S3-PRD.md), [Text2SQL research notes](documents/S3-TEXT2SQL-RESEARCH.md), [lab review records B1-B8](documents/s3-lab-reviews/))
 - Single source of truth for the schema: [documents/DB-DESIGN.md](documents/DB-DESIGN.md)
 - Single source of truth for frontend style: [documents/UI-STYLE.md](documents/UI-STYLE.md)
-- In-app design walkthrough: `/how-it-works` — a presentation-style page explaining why the system is designed this way (curation-first, human-approved knowledge, RAG as fallback)
+- In-app design walkthrough: `/how-it-works` — a presentation-style section explaining why the system is designed this way (curation-first, human-approved knowledge, RAG as fallback), with an architecture section (the stack tier by tier, one request end to end, the curation loop, evaluation levels, autonomy boundary) and one page per knowledge layer
+
+**Built by** Yixing (Ethan) Zheng · Delai (Tony) Ye
 
 > The UI and all Q&A interactions are English-only (the platform targets Australian users). Internal design documents and code comments are written in Chinese.
 
