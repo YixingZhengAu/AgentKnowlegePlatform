@@ -52,6 +52,7 @@ export function ReviewPage() {
           itemRenderer={renderers.card}
           editorRenderer={renderers.editor}
           originPanel={renderers.origin}
+          originPlacement={renderers.originPlacement}
           actions={renderers.actions}
           // 采纳即发布的域(S1)每裁决一条 job 就可能变终态,所以每条都刷一次 job
           onDecided={job.reload}

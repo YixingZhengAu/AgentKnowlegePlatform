@@ -81,6 +81,8 @@ type Props = {
   itemRenderer: ComponentType<ItemCardProps>
   editorRenderer: ComponentType<ItemEditorProps>
   originPanel?: ComponentType<OriginPanelProps>
+  /** 原文面板的布局提示(域声明,默认 'below' = 原有行为;见 staging/types.ts) */
+  originPlacement?: 'below' | 'side'
   /** 本类知识的动作层;不给走 S0 默认(见 DEFAULT_ACTIONS) */
   actions?: ReviewActions
   /** 一条被裁决之后回调(S1 用它刷新正式 QA 列表 —— 采纳即发布,那边立刻多一行) */
@@ -94,6 +96,7 @@ export function StagingReview({
   itemRenderer: Card,
   editorRenderer: Editor,
   originPanel: Origin,
+  originPlacement = 'below',
   actions: actionsProp,
   onDecided,
   onPublished,
@@ -113,6 +116,10 @@ export function StagingReview({
   const [justPublished, setJustPublished] = useState(false)
   // 存过改动、但因此掉出当前筛选的那一条(见 `save()`):它得继续留在眼前
   const [pinned, setPinned] = useState<StagingItem | null>(null)
+  // 并排布局下原文面板开/收('below' 布局用不到;默认展开 —— 对照就是这个布局的意义)
+  const [originOpen, setOriginOpen] = useState(true)
+
+  const sideBySide = originPlacement === 'side' && Origin !== undefined
 
   const filter = statusFilter === 'all' ? '' : `&review_status=${statusFilter}`
   const list = useApi<StagingList>(`/api/staging?job_id=${jobId}&sort=${sort}${filter}`)
@@ -469,23 +476,54 @@ export function StagingReview({
                 <ConfidenceBadge value={selected.confidence} className="ml-auto h-6 text-[12px]" />
                 {selected.published && <Badge tone="navy">published</Badge>}
                 {dirty && <Badge tone="info">unsaved</Badge>}
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-y-auto px-7 pt-[26px] pb-[30px] [&>*]:max-w-[680px]">
-                <Editor
-                  payload={payload}
-                  disabled={readOnly || busy}
-                  onChange={(patch) =>
-                    setDraft({ id: selected.id, payload: { ...payload, ...patch } })
-                  }
-                />
-                {Origin && (
-                  <div className="mt-6 max-w-[680px] border-t border-[var(--border-soft)] pt-5">
-                    <div className="mb-[7px] text-[12.5px] font-semibold">Source</div>
-                    <Origin item={selected} />
-                  </div>
+                {sideBySide && (
+                  <button
+                    className="text-faint hover:text-foreground text-[12px] font-medium transition-colors duration-150"
+                    onClick={() => setOriginOpen((v) => !v)}
+                  >
+                    {originOpen ? 'Hide source' : 'Show source'}
+                  </button>
                 )}
               </div>
+
+              {sideBySide ? (
+                /* 并排对照('side',S2-PLAN 附录三 F2):左原文右编辑,各自滚动 ——
+                   审切片的问题是"这一刀切得对不对",原文和结果必须同屏,
+                   画在正下方就要来回滚,每滚一次对照就断一次 */
+                <div className="flex min-h-0 flex-1">
+                  {originOpen && Origin && (
+                    <div className="w-[45%] min-w-[280px] shrink-0 overflow-y-auto border-r border-[var(--border-soft)] px-6 pt-[26px] pb-[30px]">
+                      <div className="mb-[7px] text-[12.5px] font-semibold">Source</div>
+                      <Origin item={selected} />
+                    </div>
+                  )}
+                  <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-7 pt-[26px] pb-[30px] [&>*]:max-w-[680px]">
+                    <Editor
+                      payload={payload}
+                      disabled={readOnly || busy}
+                      onChange={(patch) =>
+                        setDraft({ id: selected.id, payload: { ...payload, ...patch } })
+                      }
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="min-h-0 flex-1 overflow-y-auto px-7 pt-[26px] pb-[30px] [&>*]:max-w-[680px]">
+                  <Editor
+                    payload={payload}
+                    disabled={readOnly || busy}
+                    onChange={(patch) =>
+                      setDraft({ id: selected.id, payload: { ...payload, ...patch } })
+                    }
+                  />
+                  {Origin && (
+                    <div className="mt-6 max-w-[680px] border-t border-[var(--border-soft)] pt-5">
+                      <div className="mb-[7px] text-[12.5px] font-semibold">Source</div>
+                      <Origin item={selected} />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--border-soft)] px-5 py-4">
                 <Button disabled={readOnly || busy} onClick={() => approve(selected)}>

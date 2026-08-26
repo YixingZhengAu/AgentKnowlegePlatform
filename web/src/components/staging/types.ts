@@ -65,6 +65,12 @@ export type ItemRenderers = {
   card: ComponentType<ItemCardProps>
   editor: ComponentType<ItemEditorProps>
   origin?: ComponentType<OriginPanelProps>
+  /** 原文面板放哪(**布局提示,由域声明,壳不猜**):
+   *  - `'below'`(默认)= 画在编辑区正下方,S1/S3 维持原样;
+   *  - `'side'` = 左原文右编辑并排,可收起 —— 审切片的问题是"这一刀切得对不对",
+   *    原文和结果必须同屏(S2-PLAN 附录三 F2)。
+   *  没有 origin 渲染器时本字段无意义。 */
+  originPlacement?: 'below' | 'side'
   /** 本类知识的审核动作;不给就走 S0 泛型默认(approve/reject + 批量发布) */
   actions?: ReviewActions
 }

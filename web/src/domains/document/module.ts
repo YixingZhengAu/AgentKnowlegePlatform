@@ -22,6 +22,8 @@ export const documentDomain: DomainModule = {
       card: ChunkItemCard,
       editor: ChunkItemEditor,
       origin: ChunkOriginPanel,
+      // 左原文右编辑并排(可收起):审切片要原文和结果同屏对照(S2-PLAN 附录三 F2)
+      originPlacement: 'side',
       // 保留 S0 泛型语义(标 approved → 批量发布),只换文案与驳回纪律(见 actions.ts)
       actions: chunkActions,
     },

@@ -4,7 +4,7 @@
 
 | 文件 | 说明 |
 | --- | --- |
-| `types.ts` | 渲染器契约:`ItemCardProps` / `ItemEditorProps` / `OriginPanelProps` / **`ReviewActions`**(动作层)+ payload 取值工具 |
+| `types.ts` | 渲染器契约:`ItemCardProps` / `ItemEditorProps` / `OriginPanelProps` / `originPlacement`(原文面板布局提示:'below' 默认 / 'side' 并排对照,S2 用)/ **`ReviewActions`**(动作层)+ payload 取值工具 |
 | `registry.ts` | 汇总各域 manifest 登记的 `item_type → 渲染器`;没登记的类型落到 JSON 兜底 |
 | `JsonRenderers.tsx` | 兜底:直接看/改 payload 的 JSON(渲染器还没写时任何类型都能审) |
 
