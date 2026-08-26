@@ -14,6 +14,7 @@
 | `smoke_s1_chat.py` | S1 问答三问(正例/越界/困难负例)+ SSE 协议 + **历史消息读回来标注还在** |
 | `verify_bizdb.py` | 演示业务库 27 项数据断言(行数/对账/日期覆盖/库存流水/**只读账号写入被拒**),`make bizdb-verify` |
 | `seed_s3_demo.py` | 灌 S3 演示知识:数据源(连接串加密)+ 语义层 + 12 个已验证意图 + 索引面,`make seed-s3`(幂等) |
+| `smoke_s2_api.sh` | S2 运营层 HTTP 冒烟(切片列表/引用回显/检索调试台/禁用启用);**分册 4 §6 四条断言**;**不留痕**(禁用过的启用回来,`trap` 保证半路失败也放回);`--with-rerun` 才跑第四条(会改演示数据),`make smoke-s2` / `make smoke-s2-rerun` |
 | `smoke_s3_index.py` | S3 索引层:**pgvector 余弦 vs 手算点积对数(1e-6)** + 留一法审计 + 空路由回归 |
 | `smoke_s3_e2e.py` | S3 全链路:B8 冻结的 20 题评测集(`--check` 零 LLM / `--all` 真调 / `--question` 单问)—— **"迁移无损"的唯一证据** |
 | `smoke_s3_api.sh` | S3 HTTP 层 27 步(数据源/治理/意图/Run/发布);**一半的价值在错误路径**,且**不留痕**(临时资产删掉、下线的重新发布、索引面回到原数),`make smoke-s3-api` |
@@ -27,5 +28,6 @@
 | `qa_with_similar.json` | `smoke_exact_qa_store.py` 的候选集(36 条 / 180 个索引面),免得每次先花钱跑抽取 |
 | `company-handbook.{html,pdf}` | 手动演示用的虚构业务手册(无真实公司名,html 是可再生成的源) |
 | `s3/` | S3 的**已评审治理资产**(语义层 / 12 个意图的模板与参数区 / 相似问法 / 空路由负例面 / 评测集 / 已存改写计划);`seed_s3_demo.py` 与 `smoke_s3_e2e.py` 读它。**不是测试数据**,见该目录 README |
+| `fetch_rerank_model.py` | 预下载重排模型权重(~90MB);运行时走 `HF_HUB_OFFLINE` 本地缓存,省掉每次 8.6s 的 Hub 版本核对。由 `bootstrap.sh` 第 8 步与 `make rerank-model` 调用 |
 
 详见 `architect.md`。

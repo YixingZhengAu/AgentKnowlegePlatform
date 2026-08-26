@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 面试演示项目:企业知识 Agent 系统(Enterprise Knowledge Agent)(精准问答对 / 文档 RAG / 智能问数 + Agent 路由问答)。
-需求见 `documents/PRD.md`,阶段计划见 `documents/S0-PLAN.md`、`documents/S1-PLAN.md`(S1 已完成),表结构唯一出处 `documents/DB-DESIGN.md`,前端风格唯一出处 `documents/UI-STYLE.md`,临时公网部署唯一出处 `documents/DEPLOY.md`,**开发某类 knowledge ingestion 前必读 `documents/DOMAIN-DEV-GUIDE.md`**(代码落点与并行开发纪律,防止冲突)。语言纪律见下节。
+需求见 `documents/PRD.md`,阶段计划见 `documents/S0-PLAN.md`、`documents/S1-PLAN.md`(S1 已完成)、`documents/S3-PLAN.md`(S3 已完成)、`documents/S2-PLAN.md`(S2 已完成),表结构唯一出处 `documents/DB-DESIGN.md`,前端风格唯一出处 `documents/UI-STYLE.md`,临时公网部署唯一出处 `documents/DEPLOY.md`,**开发某类 knowledge ingestion 前必读 `documents/DOMAIN-DEV-GUIDE.md`**(代码落点与并行开发纪律,防止冲突)。语言纪律见下节。
 
 ## 语言纪律:对外英文,对内中文
 

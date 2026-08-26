@@ -1,24 +1,14 @@
 """M1 文档解析:PDF → 带页标记的 markdown + 图片 + parse_result.json。
 
-形态:**HTTP 调常驻 mineru-api 容器**(Step 0 实测结论)。
-为什么不用 CLI:3.4.5 的 CLI 内部本就是起一个临时 mineru-api 再打自己,
-每次调用白付 ~13s 模型加载(实测 CLI 热跑 32s vs 常驻服务 17.7s)。
-好处还有一个:MinerU 那 4.9GB 依赖树永远不进 server 的镜像。
-
-S1 沙箱阶段(已删除)验证过的形态;集成只换了两处:
-httpx 同步 → 异步(Job 跑在事件循环里)、落盘目录 → FILE_STORAGE_DIR。
-拼 md 与统计的纯函数原样搬过来,连注释一起。
+**MinerU 的 HTTP 客户端已上提到 `app/providers/mineru.py`**(契约变更 C3,S2 引入)——
+S1 与 S2 都要解析 PDF,而域与域之间不许互相 import,所以解析入口归供应商层。
+本文件只剩 S1 自己的产物加工:拼 `paged.md`、页尺寸、落图、统计。
 """
 
 import base64
-import json
 from collections import Counter
 from pathlib import Path
 
-import httpx
-
-from app.config import settings
-from app.core.errors import ProviderError
 from app.core.logging import get_logger
 from app.schemas.exact_qa import (
     PAGE_MARKER_FMT,
@@ -28,60 +18,6 @@ from app.schemas.exact_qa import (
 )
 
 log = get_logger(__name__)
-
-
-# ---------------------------------------------------------------- MinerU 调用
-
-
-async def call_mineru(pdf: Path) -> dict:
-    """POST /file_parse,一次拿回 md / content_list / middle_json / images。
-
-    只开我们需要的四个开关:model_output 与 original_file 体积大且没用。
-    """
-    url = f"{settings.mineru_api_url.rstrip('/')}/file_parse"
-    data = {
-        "backend": "pipeline",         # 3.4.5 默认已是 hybrid-engine,必须显式指定
-        "parse_method": "auto",
-        "formula_enable": "true",
-        "table_enable": "true",
-        "return_md": "true",
-        "return_content_list": "true",
-        "return_middle_json": "true",  # 只为拿每页 page_size(PDF point)
-        "return_images": "true",
-        "return_model_output": "false",
-        "return_original_file": "false",
-    }
-    try:
-        async with httpx.AsyncClient(timeout=settings.mineru_timeout_sec) as client:
-            with pdf.open("rb") as fh:
-                resp = await client.post(
-                    url, data=data, files={"files": (pdf.name, fh, "application/pdf")}
-                )
-        resp.raise_for_status()
-    except httpx.HTTPError as exc:
-        # 报错要能直接指向"容器没起来",否则一眼看不出是服务问题还是文档问题
-        raise ProviderError(
-            f"MinerU 解析服务不可用({url}):{type(exc).__name__}: {exc}。"
-            "起法:make mineru(定义在 docker/mineru + 根 docker-compose.yml)。",
-            code="mineru_unavailable",
-        ) from exc
-
-    body = resp.json()
-    if body.get("error"):
-        raise ProviderError(f"MinerU 解析失败:{body['error']}", code="mineru_failed")
-    results = body.get("results") or {}
-    if not results:
-        raise ProviderError(
-            f"MinerU 返回空 results:{json.dumps(body)[:300]}", code="mineru_empty"
-        )
-    # 单文件上传,取第一个(key 是去掉扩展名的文件名)
-    return next(iter(results.values()))
-
-
-def as_json(value: object) -> object:
-    """`/file_parse` 把 content_list / middle_json 以 **JSON 字符串** 回传(实测),
-    CLI 落盘的是对象 —— 这里统一成对象,免得下游两套写法。"""
-    return json.loads(value) if isinstance(value, str) else value
 
 
 # ---------------------------------------------------------------- 产物加工(纯函数)

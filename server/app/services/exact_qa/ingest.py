@@ -24,6 +24,7 @@ from app.core.jobs import JobRunContext, JobRunner, JobStepDef, register_job
 from app.core.logging import get_logger
 from app.db import SessionLocal
 from app.models import Document, StagingItem
+from app.providers import mineru
 from app.schemas.exact_qa import (
     PAGED_MD_NAME,
     ContentBlock,
@@ -110,9 +111,9 @@ class QaParseJob(_DocumentJob):
         return f"Loaded {doc.name} ({pdf.stat().st_size / 1024:.0f} KB)"
 
     async def step_parse(self, ctx: JobRunContext) -> str:
-        raw = await parser.call_mineru(ctx.scratch["pdf"])
+        raw = await mineru.call_mineru(ctx.scratch["pdf"])
         ctx.scratch["raw"] = raw
-        content_list = parser.as_json(raw.get("content_list")) or []
+        content_list = mineru.as_json(raw.get("content_list")) or []
         blocks = [ContentBlock.model_validate(b) for b in content_list]
         ctx.scratch["blocks_raw"] = blocks
 
@@ -132,7 +133,7 @@ class QaParseJob(_DocumentJob):
         raw = ctx.scratch["raw"]
         raw_blocks: list[ContentBlock] = ctx.scratch["blocks_raw"]
         kept = [b for b in raw_blocks if not b.is_noise]
-        pages = parser.extract_pages(parser.as_json(raw.get("middle_json")) or {})
+        pages = parser.extract_pages(mineru.as_json(raw.get("middle_json")) or {})
 
         out_dir = storage.parse_dir(str(document_id))
         out_dir.mkdir(parents=True, exist_ok=True)

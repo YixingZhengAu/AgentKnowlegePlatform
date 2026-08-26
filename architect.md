@@ -25,7 +25,7 @@
 | 要改的东西 | 唯一出处 | 纪律 |
 | --- | --- | --- |
 | 需求、模块边界、锁定决策 D1–D5 | `documents/PRD.md` | 改需求先改这里 |
-| 当前阶段的步骤与验收 | `documents/S0-PLAN.md`(S0)、`S1-PLAN.md`(S1)、`S3-PLAN.md`(S3,最新) | 每个 Step 完成后回填自测证据 |
+| 当前阶段的步骤与验收 | `documents/S0-PLAN.md`(S0)、`S1-PLAN.md`(S1)、`S3-PLAN.md`(S3)、`S2-PLAN.md`(S2,最新) | 每个 Step 完成后回填自测证据 |
 | S3 实验床的原始评审证据(历史,非现行规格) | `documents/s3-lab-reviews/`(B1–B8 九份报告) | 只读存档;现行结论看 `S3-PLAN.md` |
 | 表结构、字段定义 | `documents/DB-DESIGN.md` | **文档先于 migration**;两者不一致以文档为准 |
 | 颜色、字体、组件样式 | `documents/UI-STYLE.md` | hex 只允许出现在 token 定义处 |
@@ -63,6 +63,8 @@
 | 改问数一条模板的验收台(SQL / Run / 参数区 / 问法 / 发布) | `web/src/domains/text2sql/{IntentDetailPage.tsx,SqlEditor.tsx}`(D4) |
 | 改 chat 里问数命中怎么显示(结果表格 / 最终 SQL / 踩线提示) | `web/src/domains/text2sql/SqlCitation.tsx`(D5) |
 | 改命中阈值或那两道关 | `.env` 的 `EXACT_QA_*` 三项;**改前先读 `documents/S1-PLAN.md` §5 M4** |
+| 改文档 RAG 的切分 / 描述 / 检索 | `.env` 的 `DOC_RAG_*`;实现在 `server/app/services/document/`,该目录 `architect.md` 有"我要改 X"细表 |
+| 改文档 RAG 的重排策略或阈值 | `.env` 的 `DOC_RAG_RERANK_*`;实现在 `server/app/providers/cross_encoder_rerank.py` |
 | 改容器/系统库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
 | 改演示业务库的表或数据 | `docker/mysql/init/02-schema.sql` / `gen_seed.py`(改生成器后 `make bizdb-seed-gen`),**改完必须 `make bizdb-reset`** |
 | 改问数的执行闸(超时/行上限) | `.env` 的 `TEXT2SQL_*` 两项;闸的实现在 `server/app/services/text2sql/executor.py` |
@@ -87,7 +89,8 @@
 | 改上传原件的 PDF 预览出口 | `server/app/api/files.py` 的 `/api/files/documents/{id}/pdf` |
 | 改"命中复核关"放不放行的取向 | `server/app/services/exact_qa/retriever.py` 的 `GATE_PROMPT`(改完跑 `smoke_exact_qa.py` 的用例表) |
 | 改历史消息要不要带引用/标注 | `server/app/api/conversations.py`(verified 的判定规则只在这一处) |
-| 删一份文档要清哪些东西 | `server/app/api/exact_qa.py::delete_document` + `services/exact_qa/storage.py::remove_document_files` |
+| 删一份文档要清哪些东西 | S1:`server/app/api/exact_qa.py::delete_document` + `services/exact_qa/storage.py::remove_document_files`;S2 同形状,在 `api/document.py` + `services/document/storage.py` |
+| 改 PDF 解析的调用参数 | `server/app/providers/mineru.py::call_mineru`(**C3 已上提到供应商层**,S1 与 S2 共用) |
 | 加一类知识的审核界面 | `web/src/domains/<域>/` 写一对渲染器 + 在该域 `module.ts` 的 `renderers` 登记(registry 自动聚合;没登记走 JSON 兜底) |
 | 改审核/发布的后端规则 | `server/app/core/staging.py`(状态推导、浅合并、发布状态机) |
 | 加一类知识的 publisher(写正式表) | `@register_publisher("qa_pair")`,见 `server/app/core/architect.md` |
@@ -151,7 +154,7 @@ Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型
   `/ingest/text2sql` 是问数的治理台(数据源接入 → Schema 治理 → 意图台账与候选审核 →
   意图详情页 `/ingest/text2sql/intents/:id` 的模板验收,D1–D4;问数命中在 `/chat` 里
   显示成结果表格 + 可展开的最终 SQL,D5),
-  `/ingest/document` 仍是空白壳(待该域开发),
+  `/ingest/document` 是文档 RAG 的流水线(上传 PDF → 五步摄取 → 审核台改/合并/不采纳 → 发布成切片),
   `/how-it-works` 是面试投屏用的说明页(设计思想讲稿,总页 + 三个层的子页,零后端依赖),
   `/jobs/{id}/review` 是审核台(直链进入;筛选/改/批量/键盘流/发布),`/styleguide` 是 UI 验收对照页
   (`/kbs`、`/jobs` 页面已删,重定向回 `/chat`;接口与表保留)
@@ -177,6 +180,18 @@ curl localhost:8000/api/traces/<message_id>
 Step 8 用一份 4 页虚构业务手册从浏览器走完全程:上传 → 校对(修掉 7 处 MinerU 瑕疵)
 → 抽取 23 条候选 → 采纳 8 条 → 对话命中并原样返回标准答案,刷新后标注仍在。
 计划与实施记录见 `documents/S1-PLAN.md`;S0 的见 `documents/S0-PLAN.md`。
+
+**S2(文档 RAG)已闭环到"上传→发布→问答带引用"**(需求 `documents/S2-PRD.md`,
+计划与逐段实测证据 `documents/S2-PLAN.md`):沙箱 Step 1–5 逐步调优(解析契约 / 切分 / 三段式图表描述 /
+混合检索评测集 31 题),Step 6 把它整体平移进 `server/app/services/document/`,
+**三处机械替换**:直调 openai → Provider 层、内存索引 → pgvector、文件与 CLI → Job + 数据库。
+一个 Job 五步(parse / clean / chunk / describe / stage)跑完停在审核台;
+发布走 `@register_publisher("chunk")`,`chunks` 行与 embedding 同一事务,`tsv` 由生成列自动算。
+问答链路上它是**串行兜底的最后一棒**:`retrieve_exact_qa` → `retrieve_text2sql` →
+`retrieve_doc_rag` → `generate`(命中时把切片当证据拼进 prompt,答案带 `chunk` 引用,
+但**不标 Verified** —— 那句话是模型写的,不是人工采纳过的原文)。
+引用**只挂答案正文真正引过的那几条**(编号在拼 prompt 时定死防错位,入选按正文筛);
+材料答不了时模型回一句固定的哨兵话术,后端据此落零引用(分册 3 §3b「区分派」)。
 
 **S3(智能问数)已闭环**(计划与逐段证据见 `documents/S3-PLAN.md`,需求见 `documents/S3-PRD.md`):
 Phase A/B 已完成并过闸 —— 演示业务库(MySQL)+ 实验床里逐段实测调优的六个 AI 环节

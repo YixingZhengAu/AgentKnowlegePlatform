@@ -4,7 +4,10 @@
 1. **tier 而非型号**:入参只有 `model_tier`,型号由 `settings.model_for_tier()` 给。
 2. **JSON 模式自愈**:`json_schema` 走 structured output;万一仍拿不到合法 JSON,
    带着报错把上一轮回复喂回去重试(共 3 次),usage 累加,`attempts` 记在结果里。
-3. **参数能力回退**:推理型模型不接受 `temperature` 之类参数。第一次被拒后记住
+3. **图文混排零成本**:`ChatMessage["content"]` 允许是 `list[TextPart | ImagePart]`(C6),
+   而这些字典的结构与 Chat Completions 的线上格式逐字一致 —— 所以下面 `_payload()` 那句
+   `list(messages)` 原样透传就够了,**本文件没有为多模态加任何分支**。
+4. **参数能力回退**:推理型模型不接受 `temperature` 之类参数。第一次被拒后记住
    "这个型号不支持这个参数",去掉重发,并对该进程后续调用直接不再带 —— 换型号不用改业务代码。
 """
 

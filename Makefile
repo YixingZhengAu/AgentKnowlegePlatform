@@ -1,7 +1,7 @@
 # 企业知识 Agent 系统 —— 开发命令入口
 # 详细说明见 README.md
 
-.PHONY: help bootstrap db db-stop db-wait migrate seed db-reset bizdb bizdb-wait bizdb-verify bizdb-reset bizdb-seed-gen seed-s3 mysql mineru mineru-stop api web dev types install psql smoke smoke-s1 smoke-s3 smoke-s3-api smoke-s3-chat smoke-sse test lint demo
+.PHONY: help bootstrap db db-stop db-wait migrate seed db-reset bizdb bizdb-wait bizdb-verify bizdb-reset bizdb-seed-gen seed-s3 mysql mineru mineru-stop rerank-model api web dev types install psql smoke smoke-s1 smoke-s2 smoke-s2-rerun smoke-s3 smoke-s3-api smoke-s3-chat smoke-sse test lint demo
 
 SHELL := /bin/bash
 COMPOSE := docker compose
@@ -83,6 +83,11 @@ bizdb-reset:  ## 删业务库数据卷重建(init 脚本只在首次创建时执
 bizdb-seed-gen:  ## 重新生成 03-seed.sql(改了生成器才用;之后必须 make bizdb-reset)
 	cd docker/mysql && python3 gen_seed.py
 
+# ===== 重排模型(S2 文档 RAG)=====
+
+rerank-model:  ## 预下载重排模型权重(~90MB;运行时走离线缓存,省掉每次 8.6s 的版本核对)
+	cd server && uv run python -m scripts.fetch_rerank_model
+
 # ===== PDF 解析服务(S1)=====
 
 mineru:  ## 起 MinerU 解析容器(18001;首次会 build 镜像 + 下 1GB 权重)
@@ -122,6 +127,12 @@ smoke-s1:  ## 冒烟:S1 精准问答全链路(LLM 三点 + 存储/pgvector 对�
 	cd server && uv run python -m scripts.smoke_exact_qa_store
 	cd server && ./scripts/smoke_s1_api.sh
 	cd server && uv run python -m scripts.smoke_s1_chat
+
+smoke-s2:  ## 冒烟:S2 文档 RAG 运营层(禁用/启用 · 引用回显 · 检索调试台;不留痕。需先 make api)
+	cd server && ./scripts/smoke_s2_api.sh
+
+smoke-s2-rerun:  ## 冒烟:S2 单文档重跑(分册 4 §6 第四条)。⚠ 会改演示数据、花钱,演示前不要跑
+	cd server && ./scripts/smoke_s2_api.sh --with-rerun
 
 seed-s3:  ## 灌 S3 演示知识(数据源 + 语义层 + 7 个已验证意图 + 索引面;幂等)
 	cd server && uv run python -m scripts.seed_s3_demo

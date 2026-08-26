@@ -6,6 +6,7 @@ from app.api import (
     agents,
     chat,
     conversations,
+    document,
     exact_qa,
     files,
     health,
@@ -28,6 +29,8 @@ api_router.include_router(staging.router)
 # S1:精准问答的域接口 + 解析产物图片出口(M1.5)
 api_router.include_router(exact_qa.router)
 api_router.include_router(files.router)
+# S2:文档 RAG 的域接口(上传 / 文档列表 / 合并切片 / 检索自检)
+api_router.include_router(document.router)
 # S3:智能问数的域接口(数据源 / Schema 治理 / 意图与模板 / 发布)
 api_router.include_router(text2sql.router)
 

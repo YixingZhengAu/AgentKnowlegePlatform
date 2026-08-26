@@ -582,6 +582,225 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/document/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Documents
+         * @description 文档列表(最新在前)。
+         */
+        get: operations["list_documents_api_document_documents_get"];
+        put?: never;
+        /**
+         * Upload Document
+         * @description 上传一份 PDF 并立刻启动五步摄取。
+         */
+        post: operations["upload_document_api_document_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Document
+         * @description 单份文档。
+         */
+        get: operations["get_document_api_document_documents__document_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Document
+         * @description 删掉文档:库里的行(切片 CASCADE)+ 磁盘上的解析产物与原件。
+         */
+        delete: operations["delete_document_api_document_documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/candidates/{item_id}/merge-next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Next
+         * @description 把这条切片与**紧随其后的那条**合并成一条。
+         *
+         *     切分是自动的,偶尔会把一句话的上下文拆两半 —— 审核台要能就地补救。
+         *     合并后:被并进来的那条标成 `rejected`(不再发布),本条标成 `modified`;
+         *     🩸 **seq 不重排**(`chunks` 的 UNIQUE(doc_id, seq) 允许留空洞),
+         *     因为重排会让"上下文扩展取前后片"在重跑之间对不上。
+         */
+        post: operations["merge_next_api_document_candidates__item_id__merge_next_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/chunks/{chunk_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Chunk
+         * @description 按 id 取一条**已发布**切片的全文与元数据 —— 答案里点开 `[n]` 走这里。
+         *
+         *     引用面板只存 240 字摘录(`message_citations.snippet`),全文实时读库,
+         *     历史会话因此永远显示切片的**当前**内容,而不是提问那天的快照。
+         */
+        get: operations["get_chunk_api_document_chunks__chunk_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/documents/{document_id}/chunks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Chunks
+         * @description 一份文档已发布的全部切片,按 `seq` 排。
+         *
+         *     默认**不含退休行**(重新发布时被引用过的旧行会退休成 `disabled` 且 seq 变负数)——
+         *     它们只为历史会话的引用还能读得到而留着,不该混在"这份文档现在是什么样"里。
+         *     `include_retired=true` 时一并返回,用于排查"引用点开的是哪一条"。
+         *
+         *     Args:
+         *         document_id: 文档 id。
+         *         include_retired: 是否带上退休行(seq < 0)。
+         */
+        get: operations["list_chunks_api_document_documents__document_id__chunks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/chunks/{chunk_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable Chunk
+         * @description 下线一条切片:两条召回都不再返回它,历史会话里引用过它的地方照样读得到。
+         *
+         *     **不物理删** —— `message_citations.ref_id` 可能指着它。
+         *     同时清空 `embedding`:只改 status 的话,HNSW 索引里那条还在,是白占空间的死数据。
+         */
+        post: operations["disable_chunk_api_document_chunks__chunk_id__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/chunks/{chunk_id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enable Chunk
+         * @description 重新上线一条切片。
+         *
+         *     🩸 **这不是纯状态变更** —— 禁用时把向量清了,所以启用要重算一次 embedding
+         *     (一次 Embedding 调用)。前端那颗按钮必须有 loading 态,不能装成瞬时操作。
+         */
+        post: operations["enable_chunk_api_document_chunks__chunk_id__enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/documents/{document_id}/reingest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reingest Document
+         * @description 对一份已发布的文档重跑一遍五步摄取(切分参数或解析质量变了才用得上)。
+         *
+         *     三条语义(S2-4 分册 §4 已定,不要在这里重新发明):
+         *
+         *     1. **重跑要过人工关** —— 重跑的意义就是切分结果变了,不重审等于白跑;
+         *     2. **重跑期间旧切片仍然 `active`** —— 比"这份文档几分钟内搜不到"好;
+         *     3. 新的一批发布时,`replace_document_chunks` 才处理旧行(被引用过的退休,其余删)。
+         */
+        post: operations["reingest_document_api_document_documents__document_id__reingest_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/document/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search
+         * @description 跑一次真实的混合检索,把两条腿的名次与重排分原样返回。
+         *
+         *     给**检索调试台**与 `make smoke-s2` 用 —— 问答链路走 `core/chat.py`,不走这里,
+         *     但两边调的是同一个 `retriever.retrieve()`,所以这里看到的就是问答那一刻发生的事。
+         */
+        get: operations["search_api_document_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/text2sql/datasources": {
         parameters: {
             query?: never;
@@ -1180,6 +1399,14 @@ export interface components {
              */
             updated_at: string;
         };
+        /** Body_upload_document_api_document_documents_post */
+        Body_upload_document_api_document_documents_post: {
+            /**
+             * File
+             * @description PDF only (S2 boundary)
+             */
+            file: string;
+        };
         /** Body_upload_document_api_exact_qa_documents_post */
         Body_upload_document_api_exact_qa_documents_post: {
             /**
@@ -1239,6 +1466,84 @@ export interface components {
              * @default []
              */
             trace: components["schemas"]["TraceSpanOut"][];
+        };
+        /**
+         * ChunkDetail
+         * @description 点开引用 `[n]` 时回显的**全量原文 + 元数据**(分册 3 §6)。
+         *
+         *     🩸 **不在 `message_citations` 里存全文副本**,点开时按 `ref_id` 实时读库。
+         *     这样做安全的前提是被引用过的切片**不物理删**(下线是软标志,归 S2-4),
+         *     所以 `ref_id` 永远解析得到。
+         */
+        ChunkDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Document Name */
+            document_name: string;
+            /** Seq */
+            seq: number;
+            /** Content */
+            content: string;
+            /** Heading Path */
+            heading_path?: string | null;
+            /** Page Idx */
+            page_idx?: number | null;
+            /** Token Count */
+            token_count?: number | null;
+            /**
+             * Figures
+             * @default []
+             */
+            figures: components["schemas"]["Figure"][];
+            /**
+             * Retired
+             * @default false
+             */
+            retired: boolean;
+        };
+        /**
+         * ChunkMergeResult
+         * @description 合并相邻切片的结果。
+         */
+        ChunkMergeResult: {
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+            /**
+             * Merged Item Id
+             * Format: uuid
+             */
+            merged_item_id: string;
+            /** Token Count */
+            token_count: number;
+        };
+        /**
+         * ChunkStatusResult
+         * @description 启用/禁用的回执。启用要重算 embedding,所以它不是瞬时操作。
+         */
+        ChunkStatusResult: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "disabled";
+            /** Embedded */
+            embedded: boolean;
         };
         /**
          * CitationExtra
@@ -1652,6 +1957,45 @@ export interface components {
             updated_at: string;
         };
         /**
+         * DocumentSummary
+         * @description 文档列表的一行。
+         */
+        DocumentSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Size Bytes */
+            size_bytes?: number | null;
+            /** Parse Status */
+            parse_status: string;
+            /** Parse Error */
+            parse_error?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Stage
+             * @default pending
+             * @enum {string}
+             */
+            stage: "pending" | "ingesting" | "review" | "published" | "failed";
+            /** Ingest Job Id */
+            ingest_job_id?: string | null;
+            /**
+             * Chunk Count
+             * @default 0
+             */
+            chunk_count: number;
+            /** Page Count */
+            page_count?: number | null;
+        };
+        /**
          * EnumValueOut
          * @description 枚举字典的一项。改写阶段真正需要的是"值 → 含义",裸 string 给不了这个。
          */
@@ -1753,6 +2097,51 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * Figure
+         * @description 切片里的一张图/表,对应 `chunks.meta.figures[]` 的一项。
+         *
+         *     `description` 在 describe 步骤才填;`source_caption` / `source_footnote`
+         *     是原文线索 —— **只作为喂给模型的输入留档,不要求原样出现在 `content` 里**。
+         */
+        Figure: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "image" | "chart" | "table";
+            /**
+             * Img
+             * @description 相对路径 images/<sha256>.jpg
+             */
+            img: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+            /**
+             * Source Caption
+             * @default []
+             */
+            source_caption: string[];
+            /**
+             * Source Footnote
+             * @default []
+             */
+            source_footnote: string[];
+            /**
+             * Table Body
+             * @description 给模型当提示,不进 content
+             */
+            table_body?: string | null;
+            /** Page Idx */
+            page_idx: number;
+            /** Bbox */
+            bbox?: number[] | null;
+        };
         /** GenerateIntentsRequest */
         GenerateIntentsRequest: {
             /**
@@ -1816,6 +2205,27 @@ export interface components {
              * @default 0
              */
             published_intents: number;
+        };
+        /**
+         * IngestSubmitted
+         * @description 上传接口的回执 —— 三个 id 前端都要用(轮询 job、跳审核台)。
+         */
+        IngestSubmitted: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
         };
         /**
          * IntentCreate
@@ -2055,6 +2465,13 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ListResponse[DocumentSummary] */
+        ListResponse_DocumentSummary_: {
+            /** Items */
+            items: components["schemas"]["DocumentSummary"][];
+            /** Total */
+            total: number;
+        };
         /** ListResponse[ExactQaItemOut] */
         ListResponse_ExactQaItemOut_: {
             /** Items */
@@ -2094,6 +2511,13 @@ export interface components {
         ListResponse_NonDataFaceOut_: {
             /** Items */
             items: components["schemas"]["NonDataFaceOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ListResponse[PublishedChunk] */
+        ListResponse_PublishedChunk_: {
+            /** Items */
+            items: components["schemas"]["PublishedChunk"][];
             /** Total */
             total: number;
         };
@@ -2433,6 +2857,44 @@ export interface components {
             created_at: string;
         };
         /**
+         * PublishedChunk
+         * @description 切片管理页的一行 —— 已发布的正式行(不是待审候选)。
+         */
+        PublishedChunk: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Seq */
+            seq: number;
+            /** Content */
+            content: string;
+            /** Heading Path */
+            heading_path?: string | null;
+            /** Page Idx */
+            page_idx?: number | null;
+            /** Token Count */
+            token_count?: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "disabled";
+            /** Embedded */
+            embedded: boolean;
+            /**
+             * Figure Count
+             * @default 0
+             */
+            figure_count: number;
+            /**
+             * Retired
+             * @default false
+             */
+            retired: boolean;
+        };
+        /**
          * QuestionsGenerated
          * @description AI 生成的相似问法**建议**(未落库)。`dropped` 是被跨意图冲突过滤掉的。
          */
@@ -2467,6 +2929,24 @@ export interface components {
              * @default 0
              */
             faces: number;
+        };
+        /**
+         * ReingestSubmitted
+         * @description 单文档重跑的回执。
+         */
+        ReingestSubmitted: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Live Chunks */
+            live_chunks: number;
         };
         /**
          * RejectRequest
@@ -2595,6 +3075,81 @@ export interface components {
             tables: components["schemas"]["TableDetailOut"][];
             /** Relations */
             relations: components["schemas"]["RelationOut"][];
+        };
+        /**
+         * SearchHit
+         * @description 调试台的一条结果。`rank_*` 为空 = **这条腿没召回它**,那正是要看的东西。
+         */
+        SearchHit: {
+            /**
+             * Chunk Id
+             * Format: uuid
+             */
+            chunk_id: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Doc Name */
+            doc_name: string;
+            /** Seq */
+            seq: number;
+            /** Page Idx */
+            page_idx: number;
+            /** Heading Path */
+            heading_path?: string | null;
+            /** Score */
+            score: number;
+            /** Rank Vector */
+            rank_vector?: number | null;
+            /** Rank Fts */
+            rank_fts?: number | null;
+            /**
+             * Figures
+             * @default 0
+             */
+            figures: number;
+            /** Content */
+            content: string;
+        };
+        /**
+         * SearchRecall
+         * @description 两条腿各召回多少、融合后剩多少 —— 调试台最上面那一行。
+         */
+        SearchRecall: {
+            /** Vector */
+            vector: number;
+            /** Fts */
+            fts: number;
+            /** Fused */
+            fused: number;
+        };
+        /**
+         * SearchResult
+         * @description `GET /search` 的响应 —— 检索调试台的全部数据来源。
+         */
+        SearchResult: {
+            /** Query */
+            query: string;
+            recall: components["schemas"]["SearchRecall"];
+            /** Hits */
+            hits: components["schemas"]["SearchHit"][];
+            /**
+             * Reranked
+             * @default false
+             */
+            reranked: boolean;
+            /**
+             * Guard Fallback
+             * @default false
+             */
+            guard_fallback: boolean;
+            /**
+             * Empty
+             * @default false
+             */
+            empty: boolean;
         };
         /** SqlIntentDetail */
         SqlIntentDetail: {
@@ -4131,6 +4686,354 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_document_documents_get: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_DocumentSummary_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_document_api_document_documents_post: {
+        parameters: {
+            query?: {
+                kb_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_api_document_documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestSubmitted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_api_document_documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_api_document_documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_next_api_document_candidates__item_id__merge_next_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkMergeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chunk_api_document_chunks__chunk_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_chunks_api_document_documents__document_id__chunks_get: {
+        parameters: {
+            query?: {
+                include_retired?: boolean;
+            };
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListResponse_PublishedChunk_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_chunk_api_document_chunks__chunk_id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkStatusResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enable_chunk_api_document_chunks__chunk_id__enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chunk_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkStatusResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reingest_document_api_document_documents__document_id__reingest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReingestSubmitted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_document_search_get: {
+        parameters: {
+            query: {
+                /** @description Question in natural language */
+                q: string;
+                kb_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResult"];
                 };
             };
             /** @description Validation Error */
