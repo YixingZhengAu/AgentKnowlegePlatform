@@ -11,7 +11,9 @@ S1 / S3 之后的链路:
         未命中 → [stage: retrieve_text2sql](Agent 绑了问数库才跑)
             executed → 返回确定性结论 + 数据表格 + 最终 SQL(citation_type=sql),标 Verified
             refused_out_of_template → 直接返回拒答话术(**不让生成模型接手**)
-            refused_non_data / 链路出错 → 继续走 [stage: generate] 调 LLM
+            refused_non_data / 链路出错 → [stage: retrieve_doc_rag](Agent 绑了文档库才跑)
+                有召回 → 把切片当证据拼进 prompt,生成时带引用
+                零召回 → 继续走 [stage: generate] 调 LLM
     → 存回复 → flush traces
 
 ★ **命中时零改写、零生成调用**是 PRD 的零幻觉承诺落地的地方:答案是人工采纳过的原文,
@@ -28,6 +30,7 @@ S4 插 `route` 同理:往这里加一个 `async with traced(...)` 块,
 """
 
 import asyncio
+import re
 import uuid
 from collections.abc import AsyncIterator, Coroutine
 from dataclasses import dataclass, field
@@ -38,6 +41,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.errors import NotFoundError
 from app.core.logging import get_logger
 from app.core.trace import ChatContext, TraceSpan, flush_traces, spans_as_dicts, traced
@@ -46,6 +50,8 @@ from app.models import Agent, Conversation, Message, MessageCitation, User
 from app.models.user import DEFAULT_USERNAME
 from app.providers import ChatMessage, get_llm
 from app.schemas.exact_qa import HitTier, RetrievalResult
+from app.services.document import retriever as doc_rag
+from app.services.document import verifier as doc_verifier
 from app.services.exact_qa.retriever import agent_exact_qa_kb_ids, retrieve
 from app.services.text2sql import runtime as t2s
 
@@ -216,6 +222,11 @@ STAGE_EXACT_QA = "retrieve_exact_qa"
 #: 问数链路的第一个 stage(后面两个 stage 名由 pipeline.trace_events() 给出:
 #: rewrite_sql / execute_sql)。三个合起来就是 trace 五要素
 STAGE_TEXT2SQL = "retrieve_text2sql"
+#: 文档 RAG 的 stage(S2)。它是串行兜底的最后一棒:前两条都没命中才跑
+STAGE_DOC_RAG = "retrieve_doc_rag"
+
+#: 生成后校验的 stage 名(只有 DOC_RAG_VERIFY=true 时才出现在轨迹里)
+STAGE_DOC_VERIFY = "verify_doc_rag"
 
 
 def _retrieval_trace(result: RetrievalResult) -> dict:
@@ -259,6 +270,122 @@ def _exact_qa_citations(result: RetrievalResult) -> list[dict]:
             },
         }
     ]
+
+
+# ---------------------------------------------------------------- 文档 RAG(S2)
+
+#: 证据块的最大字符数 —— 5 片 × 512 token 已经不小,再多会挤掉历史对话
+DOC_RAG_SNIPPET_CHARS = 240
+
+#: 🩸 **哨兵句**:材料答不了时模型必须原样回这一句。它有两个身份 ——
+#: ① 用户看到的兜底话术(每次拒答措辞一致,演示可预期);
+#: ② 后端判定"零引用"的判据(见 `_doc_rag_used`)。
+#: 判据因此是一次字符串比对,不是关键词猜测,也不用再多付一次 LLM 调用。
+#: 措辞改了就得同步 `documents/S2-PLAN.md` C4(引用入选规则)。
+DOC_RAG_NO_EVIDENCE = "I could not find support for this in the available documents."
+
+DOC_RAG_INSTRUCTION = (
+    "Answer the question using only the excerpts below. "
+    "Cite the excerpt number in square brackets after each claim, e.g. [1]. "
+    "If the excerpts do not contain the answer, reply with exactly this sentence "
+    f"and nothing else: {DOC_RAG_NO_EVIDENCE}"
+)
+
+#: 答案正文里的引用标记。上限两位数:我们最多给 5 片,三位数的一定是原文自带的文献号
+_CITATION_MARK = re.compile(r"\[(\d{1,2})\]")
+
+
+def _doc_rag_context(hits: list[doc_rag.DocRagHit]) -> ChatMessage:
+    """把召回的切片拼成一条 system 消息 —— 生成模型的唯一证据来源。
+
+    编号从 1 起,与 `_doc_rag_citations` 的 `seq` 对齐:
+    模型写的 `[2]` 与引用面板的第 2 条必须是同一片,否则点回原文会点错。
+    """
+    blocks = []
+    for i, h in enumerate(hits, 1):
+        where = f"{h.doc_name} — {h.heading_path}" if h.heading_path else h.doc_name
+        blocks.append(f"[{i}] {where} (page {h.page_idx + 1})\n{h.content}")
+    return {"role": "system", "content": DOC_RAG_INSTRUCTION + "\n\n" + "\n\n".join(blocks)}
+
+
+def _doc_rag_used(content: str, citations: list[dict]) -> list[dict]:
+    """按答案正文挑出**真正被引用**的那几条(分册 3 §3b「区分派」)。
+
+    🩸 **定编号 ≠ 定入选**。编号在拼 prompt 时就定死(不让模型自己编号,防错位),
+    但"哪几条该出现在引用面板上"要看答案实际站在哪几片上 ——
+    把 Top-5 无条件全挂,等于告诉用户"这句话有 5 个出处",而它可能只用了 1 个。
+
+    三种情形:
+    - 正文里有编号 → 只留出现过的,**编号不重排**(重排会让正文的 `[3]` 指向面板第 2 条);
+    - 没有编号,但答案是哨兵句(模型明说没找到依据)→ **零引用**;
+    - 没有编号,答案却有实质内容 → **保底留 Top-1**。短答案上模型偶尔忘标编号,
+      而把一个有据的答案显示成"无出处",比多显示一条最相关的材料更糟。
+
+    Args:
+        content: 生成模型的完整回答。
+        citations: `_doc_rag_citations()` 给出的候选引用(seq 与 prompt 里的编号一致)。
+
+    Returns:
+        要落库的引用子集;`citations` 为空时恒为空。
+    """
+    if not citations:
+        return []
+
+    valid = {c["seq"] for c in citations}
+    marks = {int(m) for m in _CITATION_MARK.findall(content)}
+    if unknown := sorted(marks - valid):
+        # 模型引了不存在的编号(或照抄了原文自带的文献号)—— 丢掉,但要看得见
+        log.warning("doc_rag_citation_out_of_range", marks=unknown, available=sorted(valid))
+
+    if used := [c for c in citations if c["seq"] in marks]:
+        return used
+    if DOC_RAG_NO_EVIDENCE.rstrip(".") in content:
+        return []
+    return citations[:1]
+
+
+def _doc_rag_citations(hits: list[doc_rag.DocRagHit]) -> list[dict]:
+    """把每条召回做成一条**候选**引用(真正落哪几条由 `_doc_rag_used` 决定)。"""
+    return [
+        {
+            "seq": i,
+            "citation_type": "chunk",
+            "ref_id": str(h.chunk_id),
+            "snippet": h.content[:DOC_RAG_SNIPPET_CHARS],
+            "extra": {
+                "score": round(h.score, 4),
+                "document_id": str(h.doc_id),
+                "document_name": h.doc_name,
+                "page_idx": h.page_idx,
+                "heading_path": h.heading_path,
+                "seq_in_doc": h.seq,
+                "rank_vector": h.rank_vector,
+                "rank_fts": h.rank_fts,
+                "figures": h.figures,
+            },
+        }
+        for i, h in enumerate(hits, 1)
+    ]
+
+
+def _doc_rag_trace(hits: list[doc_rag.DocRagHit], trace: doc_rag.DocRagTrace) -> dict:
+    """轨迹面板要如实显示真实发生的事:两条腿各召回多少、融合多少、最后留几条。"""
+    return {
+        "recall": {"vector": trace.vector_hits, "fts": trace.fts_hits, "fused": trace.fused},
+        "reranked": trace.reranked,
+        "hits": [
+            {
+                "chunk_id": str(h.chunk_id),
+                "document": h.doc_name,
+                "heading_path": h.heading_path,
+                "page_idx": h.page_idx,
+                "score": round(h.score, 4),
+                "rank_vector": h.rank_vector,
+                "rank_fts": h.rank_fts,
+            }
+            for h in hits
+        ],
+    }
 
 
 # ---------------------------------------------------------------- 命中路径的收尾
@@ -374,6 +501,8 @@ async def chat_events(
     error: str | None = None
     final = None
     citations: list[dict] = []
+    #: 拼进 prompt 的那段文档证据(原样留一份给生成后校验),没召回时是 None
+    doc_evidence: str | None = None
     verified: RetrievalResult | None = None
 
     try:
@@ -479,7 +608,40 @@ async def chat_events(
                                         content=content, citations=[], verified=False):
                     yield ev
                 return
-            # refused_non_data:检索层零 LLM 就判掉了,本来就该由别的链路接手 → 往下走生成
+            # 🩸 refused_non_data:检索层零 LLM 就判掉了"这不是一个问数问题",
+            # 本来就该由别的链路接手 —— 从 S2 起,接手的是**下面的文档 RAG**,
+            # 而不是直接落到 generate 裸答(S2 集成时改,见 S2 分册 1 §4 Step 6)。
+
+        # ---- stage: retrieve_doc_rag(S2)—— 串行兜底的最后一棒
+        # 只在 Agent 绑了文档库时才跑。**没绑就一个事件都不发**:
+        # 只绑了精准问答的 Agent,它的事件流与 S1 时代逐字相同,轨迹面板上不会多出空阶段。
+        async with SessionLocal() as session:
+            doc_kb_ids = await doc_rag.agent_document_kb_ids(session, agent_id)
+
+        if doc_kb_ids:
+            yield ChatEvent("stage_start", {"stage": STAGE_DOC_RAG})
+            try:
+                async with traced(ctx, STAGE_DOC_RAG, input={"question": question}) as span:
+                    async with SessionLocal() as session:
+                        hits, rag_trace = await doc_rag.retrieve(
+                            session, question, kb_ids=doc_kb_ids
+                        )
+                    span.output = _doc_rag_trace(hits, rag_trace)
+                if hits:
+                    # 证据放在用户问题**之前**:模型先看到材料再看到问题,
+                    # 而且历史对话不会把证据挤到上下文更远处
+                    evidence = _doc_rag_context(hits)
+                    prompt = [*prompt[:-1], evidence, prompt[-1]]
+                    citations = _doc_rag_citations(hits)
+                    # 校验要拿模型看到的那份材料逐字比对,所以留一份
+                    doc_evidence = str(evidence["content"])
+            except Exception as exc:
+                # 与前两条链路同一条纪律:检索出错绝不能弄死一次问答,退化成"没召回"
+                log.warning("chat_doc_rag_failed", agent_id=str(agent_id), error=str(exc))
+                yield ChatEvent("error", {"stage": STAGE_DOC_RAG, "message": str(exc)})
+            yield ChatEvent(
+                "stage_end", {**spans_as_dicts(ctx.spans)[-1], "stage": STAGE_DOC_RAG}
+            )
 
         yield ChatEvent("stage_start", {"stage": "generate"})
         try:
@@ -514,7 +676,32 @@ async def chat_events(
         span_dicts = spans_as_dicts(ctx.spans)
         yield ChatEvent("stage_end", {**span_dicts[-1], "stage": "generate"})
 
-        await _persist(ctx, content=content, status=status, question=question)
+        # 兜底话术不是"根据证据回答"出来的,不能挂引用;
+        # 正常答完则按正文筛出真正被引用的那几条(分册 3 §3b)
+        answered = _doc_rag_used(content, citations) if status == "completed" else []
+
+        # 一致性后校验(分册 3 §5-4):默认关。它只写进轨迹,**不改答案正文,也不动引用面板** ——
+        # 一个诊断工具没资格改用户看到的结果,更不该因为自己出错就把问答判失败
+        if settings.doc_rag_verify and answered and doc_evidence:
+            # 🩸 **整块都在 try 里**:这一段跑在 `_persist` 之前,而外层只接住取消类异常 ——
+            # 它抛出去,这次问答的助手消息与 trace 会一起没落库。
+            # 一个默认关着的诊断开关没资格让用户丢掉一个已经答完的回答。
+            # (实测踩过一次:verifier 里写错了一个字段名,答案就这么没了。)
+            try:
+                yield ChatEvent("stage_start", {"stage": STAGE_DOC_VERIFY})
+                async with traced(ctx, STAGE_DOC_VERIFY, input={"answer": content}) as span:
+                    report = await doc_verifier.verify(content, doc_evidence)
+                    span.output = {"unsupported": [u.model_dump() for u in report.unsupported]}
+                yield ChatEvent(
+                    "stage_end", {**spans_as_dicts(ctx.spans)[-1], "stage": STAGE_DOC_VERIFY}
+                )
+            except (GeneratorExit, asyncio.CancelledError):
+                raise
+            except Exception as exc:
+                log.warning("chat_doc_verify_failed", error=str(exc))
+
+        await _persist(ctx, content=content, status=status, question=question,
+                       citations=answered)
 
         yield ChatEvent(
             "done",
@@ -525,8 +712,9 @@ async def chat_events(
                 "usage": ctx.total_usage.as_dict(),
                 "cost_usd": str(ctx.total_cost),
                 "latency_ms": ctx.total_latency_ms,
-                # 未命中时没有引用:引用只能来自检索到的证据,生成的内容不许编引用
-                "citations": [],
+                # 引用只能来自检索到的证据(文档 RAG 召回),生成的内容不许编引用
+                "citations": answered,
+                # 文档 RAG 的答案是模型写的,**不是**人工采纳过的原文 → 不标 Verified
                 "verified": False,
                 "trace": span_dicts,
                 "error": error,

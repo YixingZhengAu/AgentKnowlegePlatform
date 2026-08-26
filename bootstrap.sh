@@ -32,7 +32,7 @@ else
 fi
 
 STEP_NO=0
-TOTAL_STEPS=8
+TOTAL_STEPS=9
 WARN_COUNT=0
 # 模板必须带 XXXXXX:GNU mktemp 的 -t 不接受纯前缀(BSD 接受),写死前缀会让这个脚本只能在 macOS 上跑
 WARN_LOG="$(mktemp -t bootstrap-warn.XXXXXX)"
@@ -76,7 +76,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 	shift
 done
-[[ $WITH_MINERU -eq 1 ]] && TOTAL_STEPS=9
+[[ $WITH_MINERU -eq 1 ]] && TOTAL_STEPS=10
 
 confirm() {  # confirm "问题" -> 0=yes;-y 时一律 yes;非交互终端一律 no
 	[[ $ASSUME_YES -eq 1 ]] && return 0
@@ -271,7 +271,20 @@ else
 	info "跳过 MinerU(S1 上传 PDF 才需要)。要装:./bootstrap.sh --with-mineru 或 make mineru"
 fi
 
-# ===== 8. 自检 =====
+# ===== 8. 重排模型权重(S2 文档 RAG)=====
+
+step "预下载重排模型权重(约 90MB,已缓存则秒过)"
+
+# 运行时一律 HF_HUB_OFFLINE=1 走本地缓存 —— sentence-transformers 每次加载都会去
+# HuggingFace 核对版本,实测那一趟网络往返要 8.6s,把 3s 的加载拖成 13s。
+# 代价就是权重必须先下好,这正是装机该做的事,不该留给第一个用户请求。
+if (cd server && uv run python -m scripts.fetch_rerank_model); then
+	ok "重排模型就绪(离线加载 ~3s)"
+else
+	warn "重排模型没下下来。S2 的文档问答会退化:把 .env 的 RERANK_PROVIDER 改成 passthrough 可先跑通;有网后重跑 make rerank-model"
+fi
+
+# ===== 9. 自检 =====
 
 step "自检:离线测试 + lint + 业务库数据断言"
 
@@ -284,7 +297,7 @@ ok "lint + TS 编译通过(契约链路的守门人)"
 (cd server && uv run python -m scripts.verify_bizdb >/dev/null)
 ok "业务库 27 项数据断言全过(含只读账号写入被拒)"
 
-# ===== 9. 冒烟(真花钱)=====
+# ===== 10. 冒烟(真花钱)=====
 
 step "冒烟:真实调 LLM 与 Embedding(验证 key / 网络 / 代理)"
 

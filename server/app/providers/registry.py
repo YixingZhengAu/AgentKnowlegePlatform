@@ -8,6 +8,7 @@ from functools import lru_cache
 from app.config import settings
 from app.core.errors import ConfigError
 from app.providers.base import EmbeddingProvider, LLMProvider, RerankProvider
+from app.providers.cross_encoder_rerank import CrossEncoderReranker
 from app.providers.openai_embedding import OpenAIEmbeddingProvider
 from app.providers.openai_llm import OpenAILLMProvider
 from app.providers.passthrough_rerank import PassthroughReranker
@@ -33,4 +34,6 @@ def get_embedder() -> EmbeddingProvider:
 def get_reranker() -> RerankProvider:
     if settings.rerank_provider == "passthrough":
         return PassthroughReranker()
+    if settings.rerank_provider == "cross_encoder":
+        return CrossEncoderReranker()
     raise ConfigError(f"未知的 RERANK_PROVIDER={settings.rerank_provider}", code="unknown_provider")

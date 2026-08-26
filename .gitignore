@@ -27,3 +27,8 @@ deploy/*.env
 deploy/known_hosts
 deploy/stack.env
 !deploy/deploy.env.example
+
+# Claude Code 个人项目级配置,不入库
+.claude/
+
+md_files/

@@ -6,6 +6,7 @@
 2. 每次调用都要能产出 `TokenUsage` 与 `cost_usd`,Trace 框架直接消费(app/core/trace.py)。
 """
 
+import base64
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -15,11 +16,51 @@ ModelTier = Literal["main", "light"]
 Role = Literal["system", "user", "assistant"]
 
 
+class TextPart(TypedDict):
+    """多模态消息里的一段文字。"""
+
+    type: Literal["text"]
+    text: str
+
+
+class _ImageUrl(TypedDict):
+    url: str
+
+
+class ImagePart(TypedDict):
+    """多模态消息里的一张图。`url` 用 data URI(见 `image_part()`)。"""
+
+    type: Literal["image_url"]
+    image_url: _ImageUrl
+
+
 class ChatMessage(TypedDict):
-    """给 LLM 的一条消息。刻意用 TypedDict 而不是 Pydantic:这层是热路径,不需要校验开销。"""
+    """给 LLM 的一条消息。刻意用 TypedDict 而不是 Pydantic:这层是热路径,不需要校验开销。
+
+    `content` 支持两种形态(契约变更 C6,S2 引入):
+    - `str` —— 纯文本,**既有调用零改动**;
+    - `list[TextPart | ImagePart]` —— 图文混排,S2 描述图表时要把截图交给模型。
+
+    这两种形态的字典结构与 OpenAI Chat Completions 的线上格式逐字一致,
+    所以 `openai_llm.py` 原样透传即可,不需要任何转换分支。
+    """
 
     role: Role
-    content: str
+    content: str | list[TextPart | ImagePart]
+
+
+def image_part(data: bytes, mime: str = "image/jpeg") -> ImagePart:
+    """把图片字节包成一条 `ImagePart`(data URI,不依赖任何可公网访问的图床)。
+
+    Args:
+        data: 图片原始字节。
+        mime: MIME 类型,MinerU 落盘的截图是 jpeg。
+
+    Returns:
+        可直接放进 `ChatMessage["content"]` 列表里的一段。
+    """
+    b64 = base64.b64encode(data).decode()
+    return {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}}
 
 
 @dataclass(frozen=True, slots=True)

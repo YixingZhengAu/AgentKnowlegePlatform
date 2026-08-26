@@ -82,3 +82,42 @@ key 完全没配(空/太短)由 `config.py` 的 `MissingConfigError` 在 import 
 3. `config.py` 的 `llm_provider` Literal 加取值 + 新供应商的 key 字段
 4. `registry.py` 的 `get_llm()` 加分支
 5. `.env.example` / `.env` 同步
+
+## C7:cross-encoder 重排(S2 引入,2026-08-25)
+
+`CrossEncoderReranker` 与 bi-encoder(embedding)的区别:query 与候选**拼在一起**过模型
+(`[CLS] q [SEP] doc [SEP]`),交叉注意力直接输出相关性分数 —— **不能预计算**,
+所以只用在召回之后的少量候选上。
+
+**三个设计点**(全部有 Step 5 实测依据,见 `documents/S2-PLAN.md` 附录二):
+
+1. **进程内,不单起容器**:30 条候选一次重排中位 **207ms**(本机 CPU),
+   不值得为它多维护一个容器与一份 bootstrap 步骤。
+2. **CPU 推理必须 `asyncio.to_thread`**:`model.predict()` 是阻塞的,
+   直接 await 会把整个事件循环卡住 —— 一次重排就能拖垮全服务的并发。
+3. 🩸 **`guard` 策略**:cross-encoder 偶尔会**整题失灵**,对所有候选都打负分,
+   这时它的排序就是噪声(实测 c03:两条腿都排第 2 的切片被它打到第 11)。
+   判据**不能用单条分数**(跨题不可比,实测正例最低 −11.11 / 负例最高 +2.61 重叠),
+   而要用**整题最高分**:低于 `DOC_RAG_RERANK_GUARD`(−2.5)就原序返回。
+   → 因此 `rerank()` 的 `docs` **必须按上游召回融合的名次传入**,原序返回才有意义。
+   实测 90% → 95%。
+
+🩸 **加载耗时的真相**(2026-08-25 实测拆解):
+
+| 环节 | 联网核对版本 | `HF_HUB_OFFLINE=1` |
+| --- | --- | --- |
+| import torch/transformers/sentence_transformers | 3.2s | 2.5s |
+| **读权重 + 建模型** | **8.6s** | **0.4s** |
+| 首次 predict(计算图预热) | 1.4s | 0.1s |
+| 合计 | **13.2s** | **3.1s** |
+
+那 8.6 秒**不是在读盘**(权重才 90MB),是 `sentence-transformers` 每次加载都去
+HuggingFace 核对版本的网络往返。默认 `doc_rag_rerank_offline=True`,
+在 import 之前设 `HF_HUB_OFFLINE=1`(**必须在 import 前,HF 客户端在 import 期读它**)。
+代价:权重要先下好 —— `bootstrap.sh` 第 8 步 / `make rerank-model`。
+
+构造时用 daemon 线程后台预热;**预热只在第一次 `get_reranker()` 时才开始**,
+所以这 3 秒仍落在第一个用户请求上。
+✅ **决定不在 lifespan 里预热**(2026-08-25 需求方):3 秒可接受,
+而加那一行的代价是**所有环境都常驻几百 MB**(只跑 S1/S3 的也要付)、CI 也会去加载模型。
+—— 如果哪天加载时间又变长,或首问延迟成了演示问题,再回头加。

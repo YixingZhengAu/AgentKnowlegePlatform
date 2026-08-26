@@ -20,8 +20,8 @@
 ## 域文件夹内的约定
 
 - `module.ts`:描述符,域对外的全部信息
-- `IngestPage.tsx`:域内**路由壳**(`exact-qa`、`text2sql` 已是真页面;`document` 仍是
-  识别色 + EmptyState 的空白壳)。域内二级页在这里摆 `<Routes>`,加页面不碰共享文件;
+- `IngestPage.tsx`:域内**路由壳**(三个域现在都是真页面)。
+  域内二级页在这里摆 `<Routes>`,加页面不碰共享文件;
   本域的一切新代码(组件/hooks/渲染器)都落在本文件夹
 - 识别色:UI-STYLE §2 —— QA=黄 / 文档=蓝 / 问数=紫;组件里只用 `bg-kb-*` 工具类,
   hex 只存在于 `src/index.css` 品牌层

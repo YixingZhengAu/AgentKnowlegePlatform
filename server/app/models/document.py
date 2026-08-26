@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import Computed, ForeignKey, Index, Integer, Text, UniqueConstraint
+from sqlalchemy import Computed, ForeignKey, Index, Integer, Text, text
 from sqlalchemy.dialects.postgresql import BIGINT, JSONB, TSVECTOR
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -12,6 +12,10 @@ from app.models.base import Base, CreatedAtMixin, TimestampMixin, UUIDMixin, enu
 
 FILE_TYPES = ("pdf", "docx", "md", "txt", "html", "xlsx")
 PARSE_STATUSES = ("pending", "parsing", "parsed", "failed")
+
+#: 已发布切片的启用/禁用软标志。**不物理删** —— 它可能已被
+#: `message_citations.ref_id` 引用过,删了历史会话的引用就悬空(DB-DESIGN §3)
+CHUNK_STATUSES = ("active", "disabled")
 
 
 class Document(UUIDMixin, TimestampMixin, Base):
@@ -41,7 +45,18 @@ class Document(UUIDMixin, TimestampMixin, Base):
 class Chunk(UUIDMixin, CreatedAtMixin, Base):
     __tablename__ = "chunks"
     __table_args__ = (
-        UniqueConstraint("doc_id", "seq", name="uq_chunks_doc_seq"),
+        # 🩸 **只约束在用的行**。退休行(被引用过、被新一版取代)保留它原来的 `seq`,
+        # 于是同一个 seq 可以有一条 active 加若干条历史存根 —— 而"一份文档同一时刻
+        # 只有一条 seq=N 在用"这个真正要保证的东西,由 WHERE 子句写明了。
+        # 旧写法是把退休行的 seq 挪进负号区,那套编码**跨代不唯一**(同一个 seq
+        # 退休两次会撞同一个槽),2026-08-25 实测炸在这里。
+        Index(
+            "uq_chunks_doc_seq_active",
+            "doc_id",
+            "seq",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
         Index("ix_chunks_doc_id", "doc_id"),
         Index(
             "ix_chunks_embedding_hnsw",
@@ -50,6 +65,7 @@ class Chunk(UUIDMixin, CreatedAtMixin, Base):
             postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
         Index("ix_chunks_tsv_gin", "tsv", postgresql_using="gin"),
+        enum_check("status", CHUNK_STATUSES, "ck_chunks_status"),
     )
 
     doc_id: Mapped[uuid.UUID] = mapped_column(
@@ -69,5 +85,8 @@ class Chunk(UUIDMixin, CreatedAtMixin, Base):
     tsv: Mapped[str | None] = mapped_column(
         TSVECTOR, Computed("to_tsvector('simple', content)", persisted=True)
     )
+    # 🩸 下线是软标志,不是删行。禁用时 **embedding 一并清空**(照 S1"下线 = 删向量行"),
+    # 两条召回 SQL 都要过滤 `status='active'` —— 漏一条就是"下线了还能被搜到"
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default="active")
     # 页码、bbox 等定位信息(引用跳原文用)
     meta: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")

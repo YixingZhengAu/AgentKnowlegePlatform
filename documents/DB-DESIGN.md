@@ -83,6 +83,47 @@
 
 ## 3. 文档 RAG 域
 
+> **本节在 S2 开工时按需求方 2026-08-24 的口径修订**(依据逐条见 `documents/S2-PRD.md`)。
+> 三条改动,理由不是审美:
+>
+> 1. **`chunks` 的 `status` 列:✅ 2026-08-25 已加(S2-4 开工)。** migration
+>    `20260825_2038_080047c67e96_s2_4_chunk_status`,集成者已同意本次由 S2 在本地分支直接生成
+>    (**PR 描述里要单独说明这一点**)。下面那段是它当初被推迟的记录,保留作决策留痕。
+>    三件配套已全部落地:① 列 + CHECK;② 两条召回 SQL 各加了 `status='active'`
+>    (`retriever._search_fts` / `_search_vector`);③ 禁用时清空 `embedding`。
+>    另外多做了一件当初没写进来的:**重新发布时,被 `message_citations` 引用过的旧行不删,
+>    退休成 `disabled` 且 `seq` 原样保留**;唯一性交给下面那条**只管 `active` 行的部分索引**
+>    (migration `f1c8fb31883d`)—— 不这么做,重跑或重新发布会让历史会话里的引用悬空。
+>    ⚠ 本条原写"把退休行的 `seq` 挪进负号区",那套编码**跨代不唯一**、已实测炸掉并删除,
+>    详见本节下方的「踩过的坑」。
+>
+> 1'. ~~**`chunks` 的 `status` 列:推迟到 S2-4**~~(已完成,原文如下)
+>    它是为"发布后下线单条切片"准备的,而那个功能本来就归 S2-4(运营)——
+>    本阶段没有任何东西需要它:发布只写不读、检索没有可禁用的切片要过滤、
+>    引用回显按 `ref_id` 直查。**为一个还不会写的功能提前付协调与 migration 的成本,不划算。**
+>    也不采用"塞进 `meta` jsonb"的将就写法:那是把一个每条召回 SQL 都要过滤的高频字段
+>    放进无索引、无 CHECK 的地方,省事换结构性正确,不符合项目口径。
+>
+>    **S2-4 真正开工时要一起做的三件事(缺一不可):**
+>    ① 加列 `status text CHECK IN ('active','disabled') DEFAULT 'active'`;
+>    ② 🩸 **两条召回 SQL 都补 `status='active'` 过滤 —— 向量腿和全文腿,漏一条就是
+>    "下线了还能被搜到"**,这是最容易忘的一处;
+>    ③ 禁用时同时清空 `embedding`(照 S1"下线 = 删向量行"的做法)。
+>
+>    背景不变:切片可能已被 `message_citations.ref_id` 引用过,**物理删会让历史消息的引用悬空**,
+>    所以下线只能是软标志。与人工审核关的"不采纳"是两件事 —— 不采纳用 `staging_items`
+>    现成的 `review_status`(那时还没进正式表),`status` 管的是已发布之后。
+> 2. **`tsv` 保持 `simple`,不改生成列**(需求方 2026-08-24 决定)。原说明写的是"S2 评估中文
+>    分词方案",与平台的语言决策冲突(英文单语、无 i18n),所以该评估项本身作废;
+>    候选过的 `english`(词干化 + 去停用词)**不采用** —— 混合检索里全文这条腿的主要职责是
+>    抓型号/编号这类**精确字符串**,词干归一对它没有帮助,还多一次 migration 的风险。
+>    **结论:这一列一行都不动。**
+> 3. **`summary` / `hypo_questions` 两列本期留空不用**(需求方决定不做富化)。列保留,便于将来加回。
+> 4. **`documents.file_type` 的 CHECK 不改**:本期只做 PDF,收窄在 API 入口校验(英文报错),
+>    表约束留给后续格式扩展。**`documents` 也不加切片数汇总列**(用 `COUNT` 推导)。
+>
+> 🩸 migration 由集成者统一生成(避免 multiple heads),本节是它的唯一依据。
+
 ### documents
 
 | 列 | 类型 | 约束 | 说明 |
@@ -110,15 +151,42 @@
 | seq | int | NOT NULL | 文档内顺序,上下文扩展(取前后块)靠它 |
 | content | text | NOT NULL | 切片正文 |
 | heading_path | text | | 如 `安装手册 > 3 接线 > 3.2 直流侧`,拼进 embedding 输入 |
-| summary | text | | 离线生成的块摘要 |
-| hypo_questions | jsonb | DEFAULT '[]' | string[],离线 HyDE 假设性问题 |
+| summary | text | | 离线生成的块摘要 —— **S2 本期不用,留空**(不做富化) |
+| hypo_questions | jsonb | DEFAULT '[]' | string[],离线 HyDE 假设性问题 —— **S2 本期不用,留空** |
 | token_count | int | | |
-| embedding | vector(DIM) | | |
-| tsv | tsvector | GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED | S0 用 simple 占位,S2 评估中文分词方案(届时改此生成列) |
-| meta | jsonb | DEFAULT '{}' | 页码、bbox 等定位信息(引用跳原文用) |
+| embedding | vector(DIM) | | 输入 = `heading_path` + `content`(无 summary);禁用切片时清空 |
+| tsv | tsvector | GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED | **S2 确认沿用 `simple`,不改**(2026-08-24):全文腿主要抓型号/编号等精确串,词干化无收益。平台英文单语,原"评估中文分词"一项作废 |
+| status | text | CHECK IN ('active','disabled') DEFAULT 'active' NOT NULL | ✅ **S2-4 已加**(2026-08-25)。发布后的启用/禁用软标志。被引用过的行不物理删;**两条召回 SQL 都过滤 `status='active'`**;禁用时一并清空 `embedding`。与审核关的"不采纳"(`staging_items.review_status`)是两件事 |
+| meta | jsonb | DEFAULT '{}' | 页码、bbox 等定位信息(引用跳原文用);图表切片另存 `figures` 数组(见下) |
 | created_at | timestamptz | | |
 
-约束:UNIQUE `(doc_id, seq)`。索引:HNSW `(embedding)`、GIN `(tsv)`、`(doc_id)`。
+约束:UNIQUE `(doc_id, seq)` **WHERE `status='active'`**(部分索引 `uq_chunks_doc_seq_active`)。
+两件事都靠它:**合并/驳回后 seq 不重排,允许留空洞**;以及 ——
+
+🩸 **退休行与新一代同号并存**。重新发布(含单文档重跑)时,被 `message_citations` 引用过的旧行
+不物理删,置 `status='disabled'` + 清 `embedding` + `meta.retired=true`,**`seq` 原样保留**;
+同一份文档其余旧行(含用户手动禁用的)一律删除。于是同一个 seq 可以有一条 active
+加若干条历史存根,而"同一时刻只有一条 seq=N 在用"由 WHERE 子句写明。
+判据是 `meta.retired` 而不是 `status` —— `disabled` 有两个来源:人手点的「禁用」(可逆)
+与重新发布时的退休(不可逆),前端要能分开显示(`app/schemas/document.py::chunk_is_retired`)。
+
+> ⚠ **踩过的坑**:最初用"把退休行的 seq 挪进负号区(`-seq-1`)"来让开全表唯一约束。
+> 那套编码**跨代不唯一** —— 同一个 seq 退休第二次会撞同一个负号槽,2026-08-25 实测
+> 直接炸在唯一约束上。教训:别为了绕开一个约束去发明编码,把约束改成表达真正的意图。
+> migration `f1c8fb31883d` 换约束并顺手把负号行还原。
+索引:HNSW `(embedding)`、GIN `(tsv)`、`(doc_id)`。
+
+**`chunks.meta` 的约定结构**(S2;图表切片才有 `figures`,供引用回显与审核台渲染):
+
+```json
+{"page_idx": 5, "bbox": [120, 340, 880, 700],
+ "figures": [{"kind": "image|chart|table", "img": "images/<sha256>.jpg",
+              "description": "...", "source_caption": "...", "source_footnote": [],
+              "truncated": false, "page_idx": 5, "bbox": [120, 340, 880, 700]}]}
+```
+
+图片按内容哈希落盘 `storage/parses/{document_id}/images/<sha256>.jpg`,**库里只存相对路径**,
+URL 改写只在后端出口做(出口已存在:`GET /api/files/parses/{document_id}/images/{name}`)。
 
 ---
 

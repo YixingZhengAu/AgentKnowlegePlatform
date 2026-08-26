@@ -16,9 +16,11 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "pymysql>=1.2.0",
     "python-multipart>=0.0.32",
+    "sentence-transformers>=6.0.0",
     "sqlalchemy>=2.0.52",
     "sqlglot>=30.17.0",
     "structlog>=26.1.0",
+    "tiktoken>=0.14.0",
     "uvicorn[standard]>=0.52.4",
 ]
 

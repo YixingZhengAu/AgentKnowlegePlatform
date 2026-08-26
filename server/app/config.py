@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # ===== Provider 选择 =====
     llm_provider: Literal["openai"] = "openai"
     embedding_provider: Literal["openai"] = "openai"
-    rerank_provider: Literal["passthrough"] = "passthrough"
+    rerank_provider: Literal["passthrough", "cross_encoder"] = "cross_encoder"
 
     # ===== OpenAI =====
     openai_api_key: str = Field(min_length=8)
@@ -69,6 +69,45 @@ class Settings(BaseSettings):
     exact_qa_borderline_threshold: float = 0.40
     # 命中前用 light 模型复核一次(挡纯语义邻近的困难负例;实测 23/27 → 26/27,命中时 +2.9s)
     exact_qa_hit_gate: bool = True
+
+    # ===== 文档 RAG(S2)=====
+    # 重排:本地 cross-encoder(契约变更 C7)。以下五个值全部由 Step 5 评测集实测定稿,
+    # 依据逐条见 documents/S2-PLAN.md 附录二(参数定稿总表)。
+    doc_rag_rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # 每条候选喂给重排前截到多少 token(512 是 BERT 家族位置数硬上限,余量留给 query)
+    doc_rag_rerank_max_tokens: int = 400
+    # 重排后保留几条喂给生成:hit@k 曲线显示 5→8 收益为 0,5→10 只多 1 题却让上下文翻倍
+    doc_rag_rerank_topn: int = 5
+    # rerank=纯用重排分;guard=整题最高分低于阈值时判定模型失灵,退回召回名次(实测 90%→95%)
+    doc_rag_rerank_strategy: Literal["rerank", "guard"] = "guard"
+    # guard 阈值:扫描全区间得最优平台 −4.86 ~ +0.02,取中点。
+    # 人话含义 sigmoid(−2.5)≈7.6% —— "连最好的候选模型都认为相关概率不到 8%"时才推翻它。
+    # 🩸 两个边界各只有 1 个样本,评测集变大后必须重扫。
+    doc_rag_rerank_guard: float = -2.5
+    # 🩸 强制走本地权重缓存。sentence-transformers 每次加载都会去 HuggingFace 核对版本,
+    # 哪怕权重早已缓存 —— 实测这一趟网络往返 8.6s,把 3s 的加载拖成 13s。
+    # 代价:权重必须先下好(bootstrap.sh 的"预下载重排模型"那一步)。
+    doc_rag_rerank_offline: bool = True
+
+    # 切分:沙箱 Step 5 评测集逐题查过 3 道失败题,没有一道是切分造成的 → 定稿不改
+    doc_rag_chunk_max_tokens: int = 512
+    doc_rag_chunk_overlap: int = 80
+    # 图表描述(整条摄取链唯一调 LLM 的地方,走 light tier)
+    doc_rag_describe_figures: bool = True
+    doc_rag_describe_concurrency: int = 4
+    # 表格逐行覆盖的行数上限。🩸 15 曾把 Darknet-53(18 行)刚好卡进截断,
+    # 丢掉的恰是表尾的分类头 —— 表格是纯文本,token 便宜,阈值给足。
+    doc_rag_table_exhaustive_rows: int = 40
+    # 检索:两条腿各召回多少条进 RRF,以及 RRF 的平滑常数
+    doc_rag_vector_topk: int = 30
+    doc_rag_fts_topk: int = 30
+    doc_rag_rrf_k: int = 60
+    # 命中片前后各带几片上下文(只记 ref,拼不拼由生成阶段决定)
+    doc_rag_context_expand: int = 1
+    # 生成之后再跑一次"每个结论有没有材料支撑"的校验(多一次 light 调用)。
+    # 默认关:它挡的是"有材料但概括过头"这种低频问题,演示时可以打开当亮点。
+    # 结果只进 trace 的 verify_doc_rag 跨度,不改答案正文,也不动引用面板。
+    doc_rag_verify: bool = False
 
     # ===== 数据库 =====
     database_url: str

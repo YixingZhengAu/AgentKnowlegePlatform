@@ -15,6 +15,7 @@
 | `jobs.py` | `GET/POST /api/jobs`、`GET /api/jobs/types`、`GET /api/jobs/{id}`、`POST /api/jobs/{id}/retry`、`POST /api/jobs/{id}/publish` |
 | `staging.py` | `GET /api/staging`、`GET /api/staging/summary`、`PATCH /api/staging/{id}`、`POST /api/staging/bulk` |
 | `exact_qa.py` | **S1 域接口**:上传/文档列表/**删文档**、校对文本读写、确认抽取、采纳/不采纳、正式 QA 管理 |
+| `document.py` | **S2 域接口**:上传 PDF(启 `doc_ingest`)/ 文档列表与详情 / 删文档 / 合并相邻切片 / `GET /chunks/{id}` 引用回显取全文 / **运营(S2-4)**:切片列表 · 禁用 · 启用 · 单文档重跑 / `GET /search` 检索调试台 |
 | `text2sql.py` | **S3 域接口**:数据源 CRUD/测连/同步、Schema 治理读写、AI 三件套(批量走 Job、单点同步)、意图与模板 Run、相似问法、空路由负例面、发布/下线 |
 | `files.py` | `GET /api/files/parses/{document_id}/images/{name}`(图片出口,M1.5)、`GET /api/files/documents/{id}/pdf`(原件) |
 

@@ -1586,6 +1586,544 @@
         }
       }
     },
+    "/api/document/documents": {
+      "post": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Upload Document",
+        "description": "上传一份 PDF 并立刻启动五步摄取。",
+        "operationId": "upload_document_api_document_documents_post",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_api_document_documents_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestSubmitted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "document"
+        ],
+        "summary": "List Documents",
+        "description": "文档列表(最新在前)。",
+        "operationId": "list_documents_api_document_documents_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_DocumentSummary_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/documents/{document_id}": {
+      "get": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Get Document",
+        "description": "单份文档。",
+        "operationId": "get_document_api_document_documents__document_id__get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Delete Document",
+        "description": "删掉文档:库里的行(切片 CASCADE)+ 磁盘上的解析产物与原件。",
+        "operationId": "delete_document_api_document_documents__document_id__delete",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/candidates/{item_id}/merge-next": {
+      "post": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Merge Next",
+        "description": "把这条切片与**紧随其后的那条**合并成一条。\n\n切分是自动的,偶尔会把一句话的上下文拆两半 —— 审核台要能就地补救。\n合并后:被并进来的那条标成 `rejected`(不再发布),本条标成 `modified`;\n🩸 **seq 不重排**(`chunks` 的 UNIQUE(doc_id, seq) 允许留空洞),\n因为重排会让\"上下文扩展取前后片\"在重跑之间对不上。",
+        "operationId": "merge_next_api_document_candidates__item_id__merge_next_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkMergeResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/chunks/{chunk_id}": {
+      "get": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Get Chunk",
+        "description": "按 id 取一条**已发布**切片的全文与元数据 —— 答案里点开 `[n]` 走这里。\n\n引用面板只存 240 字摘录(`message_citations.snippet`),全文实时读库,\n历史会话因此永远显示切片的**当前**内容,而不是提问那天的快照。",
+        "operationId": "get_chunk_api_document_chunks__chunk_id__get",
+        "parameters": [
+          {
+            "name": "chunk_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chunk Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/documents/{document_id}/chunks": {
+      "get": {
+        "tags": [
+          "document"
+        ],
+        "summary": "List Chunks",
+        "description": "一份文档已发布的全部切片,按 `seq` 排。\n\n默认**不含退休行**(重新发布时被引用过的旧行会退休成 `disabled` 且 seq 变负数)——\n它们只为历史会话的引用还能读得到而留着,不该混在\"这份文档现在是什么样\"里。\n`include_retired=true` 时一并返回,用于排查\"引用点开的是哪一条\"。\n\nArgs:\n    document_id: 文档 id。\n    include_retired: 是否带上退休行(seq < 0)。",
+        "operationId": "list_chunks_api_document_documents__document_id__chunks_get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "include_retired",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Retired"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_PublishedChunk_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/chunks/{chunk_id}/disable": {
+      "post": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Disable Chunk",
+        "description": "下线一条切片:两条召回都不再返回它,历史会话里引用过它的地方照样读得到。\n\n**不物理删** —— `message_citations.ref_id` 可能指着它。\n同时清空 `embedding`:只改 status 的话,HNSW 索引里那条还在,是白占空间的死数据。",
+        "operationId": "disable_chunk_api_document_chunks__chunk_id__disable_post",
+        "parameters": [
+          {
+            "name": "chunk_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chunk Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkStatusResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/chunks/{chunk_id}/enable": {
+      "post": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Enable Chunk",
+        "description": "重新上线一条切片。\n\n🩸 **这不是纯状态变更** —— 禁用时把向量清了,所以启用要重算一次 embedding\n(一次 Embedding 调用)。前端那颗按钮必须有 loading 态,不能装成瞬时操作。",
+        "operationId": "enable_chunk_api_document_chunks__chunk_id__enable_post",
+        "parameters": [
+          {
+            "name": "chunk_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chunk Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChunkStatusResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/documents/{document_id}/reingest": {
+      "post": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Reingest Document",
+        "description": "对一份已发布的文档重跑一遍五步摄取(切分参数或解析质量变了才用得上)。\n\n三条语义(S2-4 分册 §4 已定,不要在这里重新发明):\n\n1. **重跑要过人工关** —— 重跑的意义就是切分结果变了,不重审等于白跑;\n2. **重跑期间旧切片仍然 `active`** —— 比\"这份文档几分钟内搜不到\"好;\n3. 新的一批发布时,`replace_document_chunks` 才处理旧行(被引用过的退休,其余删)。",
+        "operationId": "reingest_document_api_document_documents__document_id__reingest_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReingestSubmitted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/document/search": {
+      "get": {
+        "tags": [
+          "document"
+        ],
+        "summary": "Search",
+        "description": "跑一次真实的混合检索,把两条腿的名次与重排分原样返回。\n\n给**检索调试台**与 `make smoke-s2` 用 —— 问答链路走 `core/chat.py`,不走这里,\n但两边调的是同一个 `retriever.retrieve()`,所以这里看到的就是问答那一刻发生的事。",
+        "operationId": "search_api_document_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Question in natural language",
+              "title": "Q"
+            },
+            "description": "Question in natural language"
+          },
+          {
+            "name": "kb_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kb Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/text2sql/datasources": {
       "get": {
         "tags": [
@@ -3190,6 +3728,21 @@
         ],
         "title": "AgentOut"
       },
+      "Body_upload_document_api_document_documents_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "PDF only (S2 boundary)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_api_document_documents_post"
+      },
       "Body_upload_document_api_exact_qa_documents_post": {
         "properties": {
           "file": {
@@ -3304,6 +3857,143 @@
           "latency_ms"
         ],
         "title": "ChatResponse"
+      },
+      "ChunkDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "document_name": {
+            "type": "string",
+            "title": "Document Name"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "heading_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Path"
+          },
+          "page_idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Idx"
+          },
+          "token_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Count"
+          },
+          "figures": {
+            "items": {
+              "$ref": "#/components/schemas/Figure"
+            },
+            "type": "array",
+            "title": "Figures",
+            "default": []
+          },
+          "retired": {
+            "type": "boolean",
+            "title": "Retired",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "document_id",
+          "document_name",
+          "seq",
+          "content"
+        ],
+        "title": "ChunkDetail",
+        "description": "点开引用 `[n]` 时回显的**全量原文 + 元数据**(分册 3 §6)。\n\n🩸 **不在 `message_citations` 里存全文副本**,点开时按 `ref_id` 实时读库。\n这样做安全的前提是被引用过的切片**不物理删**(下线是软标志,归 S2-4),\n所以 `ref_id` 永远解析得到。"
+      },
+      "ChunkMergeResult": {
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Item Id"
+          },
+          "merged_item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Merged Item Id"
+          },
+          "token_count": {
+            "type": "integer",
+            "title": "Token Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "merged_item_id",
+          "token_count"
+        ],
+        "title": "ChunkMergeResult",
+        "description": "合并相邻切片的结果。"
+      },
+      "ChunkStatusResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "title": "Status"
+          },
+          "embedded": {
+            "type": "boolean",
+            "title": "Embedded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "embedded"
+        ],
+        "title": "ChunkStatusResult",
+        "description": "启用/禁用的回执。启用要重算 embedding,所以它不是瞬时操作。"
       },
       "CitationExtra": {
         "properties": {
@@ -4205,6 +4895,99 @@
         "title": "DocumentOut",
         "description": "文档列表/详情的一行。\n\n`stage` 是给界面用的**推导态**:文档表只存解析态(4 态),\n\"待校对 / 抽取中 / 待采纳 / 已完成\"由关联 Job 的状态推出来(S1-plan §8.4)。"
       },
+      "DocumentSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "parse_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Error"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ingesting",
+              "review",
+              "published",
+              "failed"
+            ],
+            "title": "Stage",
+            "default": "pending"
+          },
+          "ingest_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingest Job Id"
+          },
+          "chunk_count": {
+            "type": "integer",
+            "title": "Chunk Count",
+            "default": 0
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "parse_status",
+          "created_at"
+        ],
+        "title": "DocumentSummary",
+        "description": "文档列表的一行。"
+      },
       "EnumValueOut": {
         "properties": {
           "value": {
@@ -4402,6 +5185,96 @@
         "title": "ExactQaItemOut",
         "description": "正式 QA 列表的一行(**不带长答案正文**,S1-plan §4 决策 5:列表轻详情重)。"
       },
+      "Figure": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "chart",
+              "table"
+            ],
+            "title": "Kind"
+          },
+          "img": {
+            "type": "string",
+            "title": "Img",
+            "description": "相对路径 images/<sha256>.jpg"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "default": false
+          },
+          "source_caption": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Caption",
+            "default": []
+          },
+          "source_footnote": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Footnote",
+            "default": []
+          },
+          "table_body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Body",
+            "description": "给模型当提示,不进 content"
+          },
+          "page_idx": {
+            "type": "integer",
+            "title": "Page Idx"
+          },
+          "bbox": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "img",
+          "page_idx"
+        ],
+        "title": "Figure",
+        "description": "切片里的一张图/表,对应 `chunks.meta.figures[]` 的一项。\n\n`description` 在 describe 步骤才填;`source_caption` / `source_footnote`\n是原文线索 —— **只作为喂给模型的输入留档,不要求原样出现在 `content` 里**。"
+      },
       "GenerateIntentsRequest": {
         "properties": {
           "count": {
@@ -4520,6 +5393,33 @@
         ],
         "title": "IndexStats",
         "description": "索引体检:各类面各有多少。`summary + question + non_data` 就是检索的全部输入。"
+      },
+      "IngestSubmitted": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "source_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "source_id",
+          "job_id"
+        ],
+        "title": "IngestSubmitted",
+        "description": "上传接口的回执 —— 三个 id 前端都要用(轮询 job、跳审核台)。"
       },
       "IntentCreate": {
         "properties": {
@@ -5122,6 +6022,27 @@
         ],
         "title": "ListResponse[DocumentOut]"
       },
+      "ListResponse_DocumentSummary_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[DocumentSummary]"
+      },
       "ListResponse_ExactQaItemOut_": {
         "properties": {
           "items": {
@@ -5247,6 +6168,27 @@
           "total"
         ],
         "title": "ListResponse[NonDataFaceOut]"
+      },
+      "ListResponse_PublishedChunk_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublishedChunk"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ListResponse[PublishedChunk]"
       },
       "ListResponse_SqlIntentOut_": {
         "properties": {
@@ -5858,6 +6800,88 @@
         "title": "PublishResult",
         "description": "发布结果 = 一条审计记录 + 发布后的 job 状态。"
       },
+      "PublishedChunk": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "heading_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Path"
+          },
+          "page_idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Idx"
+          },
+          "token_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Count"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "title": "Status"
+          },
+          "embedded": {
+            "type": "boolean",
+            "title": "Embedded"
+          },
+          "figure_count": {
+            "type": "integer",
+            "title": "Figure Count",
+            "default": 0
+          },
+          "retired": {
+            "type": "boolean",
+            "title": "Retired",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "seq",
+          "content",
+          "status",
+          "embedded"
+        ],
+        "title": "PublishedChunk",
+        "description": "切片管理页的一行 —— 已发布的正式行(不是待审候选)。"
+      },
       "QuestionsGenerated": {
         "properties": {
           "questions": {
@@ -5920,6 +6944,32 @@
           "questions"
         ],
         "title": "QuestionsSaveResult"
+      },
+      "ReingestSubmitted": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "live_chunks": {
+            "type": "integer",
+            "title": "Live Chunks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "job_id",
+          "live_chunks"
+        ],
+        "title": "ReingestSubmitted",
+        "description": "单文档重跑的回执。"
       },
       "RejectRequest": {
         "properties": {
@@ -6175,6 +7225,155 @@
         ],
         "title": "SchemaOut",
         "description": "Schema 治理页一次拿全:数据源 + 表(含列)+ join。"
+      },
+      "SearchHit": {
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "doc_name": {
+            "type": "string",
+            "title": "Doc Name"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "page_idx": {
+            "type": "integer",
+            "title": "Page Idx"
+          },
+          "heading_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Path"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "rank_vector": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Vector"
+          },
+          "rank_fts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank Fts"
+          },
+          "figures": {
+            "type": "integer",
+            "title": "Figures",
+            "default": 0
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "document_id",
+          "doc_name",
+          "seq",
+          "page_idx",
+          "score",
+          "content"
+        ],
+        "title": "SearchHit",
+        "description": "调试台的一条结果。`rank_*` 为空 = **这条腿没召回它**,那正是要看的东西。"
+      },
+      "SearchRecall": {
+        "properties": {
+          "vector": {
+            "type": "integer",
+            "title": "Vector"
+          },
+          "fts": {
+            "type": "integer",
+            "title": "Fts"
+          },
+          "fused": {
+            "type": "integer",
+            "title": "Fused"
+          }
+        },
+        "type": "object",
+        "required": [
+          "vector",
+          "fts",
+          "fused"
+        ],
+        "title": "SearchRecall",
+        "description": "两条腿各召回多少、融合后剩多少 —— 调试台最上面那一行。"
+      },
+      "SearchResult": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "recall": {
+            "$ref": "#/components/schemas/SearchRecall"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "type": "array",
+            "title": "Hits"
+          },
+          "reranked": {
+            "type": "boolean",
+            "title": "Reranked",
+            "default": false
+          },
+          "guard_fallback": {
+            "type": "boolean",
+            "title": "Guard Fallback",
+            "default": false
+          },
+          "empty": {
+            "type": "boolean",
+            "title": "Empty",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "recall",
+          "hits"
+        ],
+        "title": "SearchResult",
+        "description": "`GET /search` 的响应 —— 检索调试台的全部数据来源。"
       },
       "SqlIntentDetail": {
         "properties": {
