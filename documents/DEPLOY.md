@@ -64,7 +64,11 @@ cp deploy.env.example deploy.env && vi deploy.env   # 只有四项要填,见 §1
 | `provision` | `provision.sh`:Docker + compose、Node 22、uv、Caddy、2G swap |
 | `bootstrap` | `./bootstrap.sh -y --with-mineru`:依赖、两个库、迁移、seed、真调 LLM 的冒烟。**最慢的一步**(MinerU 要 build 镜像 + 下 1GB 权重) |
 | `seed` | `make seed-s3`:问数的演示知识与向量 |
-| `release` | `release.sh`:前端生产构建 → `/srv/knowledge-agent/web` → 渲染装 systemd 单元与 Caddyfile → 起服务 → 自检 |
+| `migrate` | `make migrate`:只跑 Alembic 迁移(单独重跑用;`release` 已经自带它) |
+| `release` | **先 `make migrate`**,再 `release.sh`:前端生产构建 → `/srv/knowledge-agent/web` → 渲染装 systemd 单元与 Caddyfile → 起服务 → 自检 |
+
+`release` 为什么要自带迁移:发新版本走的是 `code && release`,这条路以前不碰库,于是新代码会撞上旧
+schema(见 §6.6 最后一行)。迁移必须排在 `release.sh` 重启后端之前。
 
 `code` 阶段有一个例外:`bootstrap.sh` 用**本地版**覆盖 HEAD 版。装机路径上的修复必须立刻生效,
 不能等提交(实测踩过:`mktemp -t bootstrap-warn` 是 BSD 语法,GNU mktemp 要模板带 `XXXXXX`,
@@ -171,7 +175,9 @@ trace 里只有 `retrieve_exact_qa`、不过生成模型)、销售面 3 轮、�
 老实说"知识里没有"→ 道别。**三条零引用的回答全是如实拒答,没有一条是编的** —— 这个会话
 比答对的那几个更值得在面试时打开。
 
-**文档 RAG(S2)** —— 该域还没开发,`/ingest/document` 是空白壳,面试时说明是阶段计划里的下一片。
+**文档 RAG(S2)** —— S2 已完成并已发到这台机器。2026-08-26 在线上真跑通:
+`company-travel-policy.pdf` / `company-it-policy.pdf` 两份都已上传并解析(5 页 / 5 页),停在 review 阶段。
+线上没有种子数据,要演示得自己走一遍上传 → 解析 → 切片 → 发布。
 
 ## 6.6 部署时踩到的四个坑(已修在仓库里,别再踩)
 
@@ -181,6 +187,7 @@ trace 里只有 `retrieve_exact_qa`、不过生成模型)、销售面 3 轮、�
 | arm64 torch 带 CUDA | PyPI 的 linux-aarch64 torch wheel 会拖进一套 nvidia cu13 库,MinerU 镜像撑爆 30GiB 磁盘 | `docker/mineru/Dockerfile`(先从 `download.pytorch.org/whl/cpu` 钉住 torch/torchvision 再装 mineru;torch 从数 GB 降到 147MB,build 从 138s 降到 17s) |
 | Caddy 写不了 `/var/log/caddy` | 官方 `caddy.service` 有文件系统沙箱,启动直接 permission denied | `deploy/Caddyfile.tmpl`(访问日志改走 journal) |
 | `SECRET_KEY` 每次重发都换 | `datasources.dsn_enc` 用它加密,换 key 后问数报 `datasource_dsn_undecryptable` | `deploy/remote_deploy.sh`(服务器上已有的 key 沿用,只有首次生成) |
+| 发新版本不跑迁移 | 只有 `bootstrap` 阶段跑 `alembic upgrade head`,而发版走的是 `code && release` —— 2026-08-26 线上 S2 代码撞 S3 schema:上传 PDF 本身 201 成功,但列表接口 503 `column chunks.status does not exist`,前端显示 "db error" | `deploy/remote_deploy.sh`(`stage_release` 先跑 `stage_migrate`) |
 
 另两处环境差异,脚本里已处理:非交互 ssh 不读 `~/.bashrc`,所以 `rsh()` 显式补
 `PATH=$HOME/.local/bin`(否则 `make` 报 `uv: command not found`);EC2 实例访问自己的

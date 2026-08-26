@@ -5,7 +5,8 @@
 #   ./remote_deploy.sh provision  服务器装机(Docker / Node / uv / Caddy / swap)
 #   ./remote_deploy.sh bootstrap  ./bootstrap.sh -y --with-mineru(慢,MinerU 要 build + 下 1GB 权重)
 #   ./remote_deploy.sh seed       make seed-s3(问数的演示知识与向量)
-#   ./remote_deploy.sh release    构建前端 + systemd + Caddy + 自检
+#   ./remote_deploy.sh migrate    make migrate(只跑 Alembic 迁移)
+#   ./remote_deploy.sh release    迁移 + 构建前端 + systemd + Caddy + 自检
 #   ./remote_deploy.sh all        以上全部,按顺序
 set -euo pipefail
 
@@ -111,16 +112,20 @@ stage_bootstrap() {
 	rsh "cd $REPO_ROOT && ./bootstrap.sh $flags"
 }
 stage_seed()     { say "灌问数演示知识(make seed-s3)"; rsh "cd $REPO_ROOT && make seed-s3"; }
-stage_release()  { say "发布"; rsh "cd $REPO_ROOT/deploy && ./release.sh"; }
+stage_migrate()  { say "跑迁移(make migrate)"; rsh "cd $REPO_ROOT && make migrate"; }
+# 迁移必须在 release 之前:release.sh 会重启后端,新代码起来时 schema 得已经是新的。
+# (踩过:只跑 code+release 发了 S2 的代码,库还停在 S3 版本,列表接口 503 column chunks.status does not exist)
+stage_release()  { stage_migrate; say "发布"; rsh "cd $REPO_ROOT/deploy && ./release.sh"; }
 
 case "${1:-all}" in
 	code)      stage_code ;;
 	provision) stage_provision ;;
 	bootstrap) stage_bootstrap ;;
 	seed)      stage_seed ;;
+	migrate)   stage_migrate ;;
 	release)   stage_release ;;
 	all)       stage_code; stage_provision; stage_bootstrap; stage_seed; stage_release ;;
-	*)         die "不认识的阶段:$1(code|provision|bootstrap|seed|release|all)" ;;
+	*)         die "不认识的阶段:$1(code|provision|bootstrap|seed|migrate|release|all)" ;;
 esac
 
 say "完成"

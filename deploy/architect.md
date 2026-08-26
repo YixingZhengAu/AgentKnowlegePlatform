@@ -67,6 +67,7 @@ bcrypt hash 里有 `$` `.` `/` 这些元字符,字面替换省心。
 | 后端的启动参数(worker 数、端口、代理头) | `knowledge-agent-api.service.tmpl` |
 | 装机要多装一个系统依赖 | `provision.sh`(同时想一想:该不该进 `bootstrap.sh`?应用级依赖归它) |
 | 发布流程加一步(如新的 seed 命令) | `release.sh` 的对应小节 + `documents/DEPLOY.md` §4 |
+| 发新版本时要先动库 | 已经有了:`stage_release()` 会先跑 `stage_migrate()`(`make migrate`),再 `release.sh` 重启后端 —— 顺序不能反 |
 | AWS 侧操作、运维手册、成本与收尾 | `documents/DEPLOY.md` |
 
 **边界**:应用级的依赖与初始化(容器、迁移、seed、环境变量)一律进 `bootstrap.sh`,
