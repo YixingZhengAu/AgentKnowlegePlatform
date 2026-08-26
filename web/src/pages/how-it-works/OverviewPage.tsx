@@ -1,15 +1,18 @@
 /**
- * `/how-it-works` 总页。结构(2026-08-26 v2.1):
+ * `/how-it-works` 总页。结构(2026-08-26 v3,自读优先):
  *
- *   主张块 → 四条立场 → 架构段(六小节 + 锚点条) → 三层卡片 →
- *   四个折叠区(默认收起 = 目录) → 署名
+ *   主张块(漏斗带例句) → 三层卡片(带例子 chips) → 一次请求(常驻) →
+ *   架构段(标题 + 四条立场常驻,其余五小节折叠) →
+ *   四个折叠区 → 署名
  *
- * 架构段一度是独立子页 `/how-it-works/architecture`,已并回本页:
- * 「为什么这么设计 → 结构长什么样」本来就是一条论证,拆两页反而要来回跳;
- * 「一层怎么做」仍在三个层子页。长度靠锚点条与折叠区控制。
+ * v3 要点:前三屏 = 冷读者自读就能拿走的完整故事;下面 9 个折叠区
+ * (架构五小节 + 原四区)默认收起,折叠态标题 + 结论句摘要就是目录;
+ * 投屏讲解场景用折叠组顶部的 Expand all 一键还原全展开(v2.1 形态)。
+ * 锚点条已删(折叠列表取代其目录功能)。
  * 只渲染 content.ts 的数据;字阶走 Section.tsx。
  */
 import { ArrowRight, MoveRight } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import {
@@ -22,6 +25,7 @@ import {
   GATE,
   JOURNEY,
   LAYER_CARDS_TITLE,
+  LAYER_DETAILS,
   LAYERS,
   PAIN_POINTS,
   PRINCIPLES,
@@ -47,25 +51,43 @@ import {
   Emphasized,
   Lede,
   Meta,
-  Screen,
   ScreenTitle,
   SectionHeading,
 } from './Section'
 
-/** 架构段的锚点条(顺序 = 下面 <Screen> 的顺序) */
-const ANCHORS = [
-  { id: 'stack', label: STACK.title },
-  { id: 'shell-core', label: SHELL_CORE.title },
-  { id: 'request-path', label: REQUEST_PATH.title },
-  { id: 'journey', label: JOURNEY.title },
-  { id: 'evaluation', label: EVALUATION.title },
-  { id: 'autonomy', label: AUTONOMY.title },
+/** 全部折叠区的 id(顺序 = 页面顺序),Expand all / Collapse all 以它为准 */
+const COLLAPSIBLE_IDS = [
+  'stack',
+  'shell-core',
+  'journey',
+  'evaluation',
+  'autonomy',
+  'pain-points',
+  'one-gate',
+  'comparison',
+  'tradeoffs',
 ]
 
 export function OverviewPage() {
+  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set())
+  const allOpen = openIds.size === COLLAPSIBLE_IDS.length
+  const toggleOne = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  const toggleAll = () => setOpenIds(allOpen ? new Set() : new Set(COLLAPSIBLE_IDS))
+  const collapsibleProps = (id: string) => ({
+    id,
+    open: openIds.has(id),
+    onToggle: () => toggleOne(id),
+  })
+
   return (
     <div className="mx-auto max-w-[860px] pt-6 pb-28">
-      {/* 常驻块 1:主张 + 倒漏斗 + 三条推论 */}
+      {/* 常驻块 1:主张 + 倒漏斗(带例句) + 三条推论 */}
       <div className="space-y-8">
         <div className="space-y-4">
           <ClaimHeadline>{CLAIM.headline}</ClaimHeadline>
@@ -95,113 +117,7 @@ export function OverviewPage() {
         <Emphasis text={CLAIM.emphasis} />
       </div>
 
-      {/* 常驻块 2:四条立场(整套架构的论证起点) */}
-      <div className="mt-16 space-y-6">
-        <ScreenTitle>{PRINCIPLES.title}</ScreenTitle>
-        <div className="grid gap-4 md:grid-cols-2">
-          {PRINCIPLES.items.map((item, i) => (
-            <div key={item.line} className="bg-subtle flex flex-col rounded-[16px] px-5 py-5">
-              <span className="text-fainter font-mono text-[11px]">{`P${i + 1}`}</span>
-              <p className="text-foreground mt-1.5 text-[16px] leading-[1.4] font-semibold">
-                {item.line}
-              </p>
-              <p className="border-border-soft text-faint mt-auto border-t pt-3 text-[13.5px] leading-[1.55]">
-                {item.here}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 常驻块 3:架构段 —— 六小节,顶部锚点条 */}
-      <div className="border-border-soft mt-16 border-t pt-10">
-        <div className="space-y-4">
-          <ScreenTitle>{ARCHITECTURE.title}</ScreenTitle>
-          <Lede text={ARCHITECTURE.lede} />
-          <nav className="flex flex-wrap gap-2 pt-1">
-            {ANCHORS.map((a) => (
-              <a
-                key={a.id}
-                href={`#${a.id}`}
-                className="text-secondary-foreground hover:text-primary rounded-[var(--radius-pill)] border border-[var(--border-strong)] px-3.5 py-1.5 text-[12.5px] font-medium transition-colors duration-150"
-              >
-                {a.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-
-        <div className="mt-12 space-y-16">
-          {/* 1. 六层技术架构 */}
-          <Screen id="stack">
-            <div className="space-y-2">
-              <SectionHeading>{STACK.title}</SectionHeading>
-              <Meta>{STACK.summary}</Meta>
-            </div>
-            <StackFigure />
-            <div className="space-y-2">
-              {STACK.notes.map((n) => (
-                <p key={n} className="text-secondary-foreground text-[15px] leading-[1.6]">
-                  {n}
-                </p>
-              ))}
-            </div>
-            <Emphasis text={STACK.emphasis} />
-          </Screen>
-
-          {/* 2. 确定性外壳 + 有限自主内核 */}
-          <Screen id="shell-core">
-            <div className="space-y-2">
-              <SectionHeading>{SHELL_CORE.title}</SectionHeading>
-              <Meta>{SHELL_CORE.summary}</Meta>
-            </div>
-            <ShellCoreFigure />
-            <Emphasis text={SHELL_CORE.emphasis} />
-          </Screen>
-
-          {/* 3. 一次请求 */}
-          <Screen id="request-path">
-            <div className="space-y-2">
-              <SectionHeading>{REQUEST_PATH.title}</SectionHeading>
-              <Meta>{REQUEST_PATH.summary}</Meta>
-            </div>
-            <RequestPathFigure />
-            <Emphasis text={REQUEST_PATH.emphasis} />
-          </Screen>
-
-          {/* 4. 两个角色的闭环 */}
-          <Screen id="journey">
-            <div className="space-y-2">
-              <SectionHeading>{JOURNEY.title}</SectionHeading>
-              <Meta>{JOURNEY.summary}</Meta>
-            </div>
-            <JourneyFigure />
-            <Emphasis text={JOURNEY.emphasis} />
-          </Screen>
-
-          {/* 5. 四层评估 */}
-          <Screen id="evaluation">
-            <div className="space-y-2">
-              <SectionHeading>{EVALUATION.title}</SectionHeading>
-              <Meta>{EVALUATION.summary}</Meta>
-            </div>
-            <EvaluationFigure />
-            <Emphasis text={EVALUATION.emphasis} />
-          </Screen>
-
-          {/* 6. 自主性边界 */}
-          <Screen id="autonomy">
-            <div className="space-y-2">
-              <SectionHeading>{AUTONOMY.title}</SectionHeading>
-              <Meta>{AUTONOMY.summary}</Meta>
-            </div>
-            <AutonomyFigure />
-            <Emphasis text={AUTONOMY.emphasis} />
-          </Screen>
-        </div>
-      </div>
-
-      {/* 常驻块 4:三层卡片(进子页) */}
+      {/* 常驻块 2:三层卡片(带例子 chips,进子页)。冷读者先知道"三层是什么" */}
       <div className="border-border-soft mt-16 border-t pt-10">
         <div className="space-y-6">
           <ScreenTitle>{LAYER_CARDS_TITLE}</ScreenTitle>
@@ -221,6 +137,16 @@ export function OverviewPage() {
                 <span className="text-secondary-foreground mt-3 flex-1 text-[14px] leading-[1.6]">
                   <Emphasized text={layer.leadLine} />
                 </span>
+                <span className="mt-3 flex flex-wrap gap-1.5">
+                  {LAYER_DETAILS[layer.slug].examples.map((example) => (
+                    <span
+                      key={example}
+                      className="bg-muted text-secondary-foreground rounded-[var(--radius-pill)] px-2.5 py-1 text-[11.5px]"
+                    >
+                      {example}
+                    </span>
+                  ))}
+                </span>
                 <span className="text-primary mt-5 flex items-center gap-1.5 text-[12.5px] font-semibold">
                   Read on
                   <ArrowRight
@@ -234,9 +160,110 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {/* 四个折叠区:默认收起,折叠态就是目录 */}
-      <div className="mt-16">
-        <CollapsibleScreen id="pain-points" title={PAIN_POINTS.title} summary={PAIN_POINTS.summary}>
+      {/* 常驻块 3:一次请求的全链路(自读者最直觉的入口,从架构段拎出独立成块) */}
+      <div className="border-border-soft mt-16 border-t pt-10">
+        <div className="space-y-7">
+          <div className="space-y-2">
+            <ScreenTitle>{REQUEST_PATH.title}</ScreenTitle>
+            <Meta>{REQUEST_PATH.summary}</Meta>
+          </div>
+          <RequestPathFigure />
+          <Emphasis text={REQUEST_PATH.emphasis} />
+        </div>
+      </div>
+
+      {/* 常驻块 4:架构段开场 —— 标题 + lede + 四条立场;其余五小节在下面的折叠组 */}
+      <div className="border-border-soft mt-16 border-t pt-10">
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <ScreenTitle>{ARCHITECTURE.title}</ScreenTitle>
+            <Lede text={ARCHITECTURE.lede} />
+          </div>
+          <SectionHeading>{PRINCIPLES.title}</SectionHeading>
+          <div className="grid gap-4 md:grid-cols-2">
+            {PRINCIPLES.items.map((item, i) => (
+              <div key={item.line} className="bg-subtle rounded-[16px] px-5 py-5">
+                <span className="text-fainter font-mono text-[11px]">{`P${i + 1}`}</span>
+                <p className="text-foreground mt-1.5 text-[16px] leading-[1.4] font-semibold">
+                  {item.line}
+                </p>
+                <p className="border-border-soft text-faint mt-3 border-t pt-3 text-[13.5px] leading-[1.55]">
+                  {item.here}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 折叠组:架构五小节 + 原四区,默认全收起 = 目录;Expand all 给投屏讲解用 */}
+      <div className="mt-14">
+        <div className="flex justify-end pb-2">
+          <button
+            onClick={toggleAll}
+            className="text-faint hover:text-secondary-foreground text-[13px] font-medium transition-colors duration-150"
+          >
+            {allOpen ? 'Collapse all' : 'Expand all'}
+          </button>
+        </div>
+
+        <CollapsibleScreen
+          {...collapsibleProps('stack')}
+          title={STACK.title}
+          summary={STACK.summary}
+        >
+          <StackFigure />
+          <div className="space-y-2">
+            {STACK.notes.map((n) => (
+              <p key={n} className="text-secondary-foreground text-[15px] leading-[1.6]">
+                {n}
+              </p>
+            ))}
+          </div>
+          <Emphasis text={STACK.emphasis} />
+        </CollapsibleScreen>
+
+        <CollapsibleScreen
+          {...collapsibleProps('shell-core')}
+          title={SHELL_CORE.title}
+          summary={SHELL_CORE.summary}
+        >
+          <ShellCoreFigure />
+          <Emphasis text={SHELL_CORE.emphasis} />
+        </CollapsibleScreen>
+
+        <CollapsibleScreen
+          {...collapsibleProps('journey')}
+          title={JOURNEY.title}
+          summary={JOURNEY.summary}
+        >
+          <JourneyFigure />
+          <Emphasis text={JOURNEY.emphasis} />
+        </CollapsibleScreen>
+
+        <CollapsibleScreen
+          {...collapsibleProps('evaluation')}
+          title={EVALUATION.title}
+          summary={EVALUATION.summary}
+        >
+          <EvaluationFigure />
+          <Emphasis text={EVALUATION.emphasis} />
+        </CollapsibleScreen>
+
+        <CollapsibleScreen
+          {...collapsibleProps('autonomy')}
+          title={AUTONOMY.title}
+          summary={AUTONOMY.summary}
+        >
+          <AutonomyFigure />
+          <Emphasis text={AUTONOMY.emphasis} />
+        </CollapsibleScreen>
+
+        <CollapsibleScreen
+          {...collapsibleProps('pain-points')}
+          title={PAIN_POINTS.title}
+          summary={PAIN_POINTS.summary}
+        >
           {PAIN_POINTS.rows.map((row) => (
             <div
               key={row.symptom}
@@ -255,7 +282,11 @@ export function OverviewPage() {
           ))}
         </CollapsibleScreen>
 
-        <CollapsibleScreen id="one-gate" title={GATE.title} summary={GATE.summary}>
+        <CollapsibleScreen
+          {...collapsibleProps('one-gate')}
+          title={GATE.title}
+          summary={GATE.summary}
+        >
           <div className="flex flex-wrap gap-x-8 gap-y-2">
             {LAYERS.map((layer) => (
               <p key={layer.slug} className="flex items-center gap-2.5 text-[14px]">
@@ -269,7 +300,11 @@ export function OverviewPage() {
           <Emphasis text={GATE.emphasis} />
         </CollapsibleScreen>
 
-        <CollapsibleScreen id="comparison" title={COMPARISON.title} summary={COMPARISON.summary}>
+        <CollapsibleScreen
+          {...collapsibleProps('comparison')}
+          title={COMPARISON.title}
+          summary={COMPARISON.summary}
+        >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] border-collapse text-left">
               <thead>
@@ -309,7 +344,11 @@ export function OverviewPage() {
           </div>
         </CollapsibleScreen>
 
-        <CollapsibleScreen id="tradeoffs" title={TRADEOFFS.title} summary={TRADEOFFS.summary}>
+        <CollapsibleScreen
+          {...collapsibleProps('tradeoffs')}
+          title={TRADEOFFS.title}
+          summary={TRADEOFFS.summary}
+        >
           <div className="grid gap-3 md:grid-cols-2">
             {TRADEOFFS.items.map((item) => (
               <div key={item.what} className="bg-subtle rounded-[16px] px-5 py-4">

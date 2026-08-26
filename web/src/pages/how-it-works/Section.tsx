@@ -90,26 +90,31 @@ export function Meta({ children, className }: { children: ReactNode; className?:
   return <p className={cn('text-faint text-[13px]', className)}>{children}</p>
 }
 
-/** 折叠区:折叠态 = 目录一行(标题 + 关键词摘要),点开才看细节。
- *  讲解时按需展开,不逼观众从上滚到底(2026-08-24 需求方定)。 */
+/** 折叠区:折叠态 = 目录一行(标题 + 结论句摘要),点开才看细节。
+ *  传 open + onToggle 则受控(总页 Expand all 需要统一开合);
+ *  不传则内部自持状态(层子页等处零改动)。 */
 export function CollapsibleScreen({
   id,
   title,
   summary,
+  open: openProp,
+  onToggle,
   children,
 }: {
   id: string
   title: string
   summary: string
+  open?: boolean
+  onToggle?: () => void
   children: ReactNode
 }) {
-  const [open, setOpen] = useState(false)
+  const [openState, setOpenState] = useState(false)
+  const controlled = openProp !== undefined
+  const open = controlled ? openProp : openState
+  const toggle = controlled ? onToggle : () => setOpenState((v) => !v)
   return (
     <section id={id} className="border-border-soft border-t">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="group flex w-full items-center gap-5 py-6 text-left"
-      >
+      <button onClick={toggle} className="group flex w-full items-center gap-5 py-6 text-left">
         <span className="min-w-0 flex-1">
           <span className="font-display text-foreground block text-[24px] leading-[1.25] font-bold tracking-[-0.02em]">
             {title}

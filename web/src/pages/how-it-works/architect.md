@@ -2,10 +2,11 @@
 
 ## 这页是什么
 
-一副长在系统里的**幻灯片**:屏幕共享时讲哪点开哪,把「为什么这么设计」与「结构长什么样」讲完。
+把「为什么这么设计」与「结构长什么样」讲完的说明页。
 不放实现细节(不出现表名、字段名、接口路径、阈值),不做深链,不动后端。
-**体裁是关键词,不是文章**(2026-08-24 需求方定):面试官不会逐句读,全篇只保留
-两类完整句 —— 每层一句主角句、每段一句强调句,其余一律关键词/短语。
+**体裁:自读优先**(2026-08-26 需求方定,取代 08-24 的「投屏讲稿」定位):
+一个没时间的人自己点开,前三屏拿到全部精髓;投屏讲解靠折叠组的 Expand all 还原全展开。
+仍然一律关键词/短语,完整句只留两类 —— 每层一句主角句、每段一句强调句。
 
 **v2(2026-08-26)**:原来只有「主张 + 三层」,架构讲得不够专业。于是补了架构内容:
 六层技术架构 / 外壳内核 / 一次请求 / 角色闭环 / 四层评估 / 自主性边界,每层子页也各加
@@ -15,50 +16,61 @@ correctness ≠ safety)。
 
 **v2.1(同日,需求方定)**:架构内容一度是独立子页 `/how-it-works/architecture`,现已
 **并回总页** —— 「为什么这么设计 → 结构长什么样」本就是一条论证,拆两页反而要来回跳。
-子页与其入口卡片(`ARCH_LINK`)已删,长度靠锚点条 + 折叠区控制。
+子页与其入口卡片(`ARCH_LINK`)已删。
+
+**v3(同日,需求方定)**:自读优先重排(计划 §12)。四个动作:**提前、收折、加例子、
+砍重复**。三层卡片提到第二屏、request path 拎出独立成块;架构五小节 + 原四区共 9 个
+折叠区默认收起,顶部 Expand all / Collapse all 统一开合;锚点条删除(折叠列表取代其
+目录功能);漏斗每层加例句、折叠摘要改结论句;常驻黄条只剩 2 条(CLAIM + REQUEST_PATH)。
 
 ## 两级结构
 
-| 路由 | 页面 | 内容 |
-| --- | --- | --- |
-| `/how-it-works` | `OverviewPage` | **为什么 + 是什么**:主张 → 四条立场 → 架构段(六小节 + 锚点条)→ 三层卡片 → 四个折叠区 → 署名 |
-| `/how-it-works/:layer` | `LayerPage` | **怎么做**:一层一页,含治理期 / 回答期两条流程 |
+| 路由                   | 页面           | 内容                                                                                                                       |
+| ---------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `/how-it-works`        | `OverviewPage` | **为什么 + 是什么**:主张 + 漏斗(例句)→ 三层卡片(例子 chips)→ 一次请求 → 架构段(四条立场常驻 + 五小节折叠)→ 四折叠区 → 署名 |
+| `/how-it-works/:layer` | `LayerPage`    | **怎么做**:一层一页,含治理期 / 回答期两条流程                                                                              |
 
 侧栏子项清单是 `content.ts` 的 `HOW_IT_WORKS_NAV`(总页 / 三层),
 由 `AppLayout` 遍历渲染 —— **AppLayout 不硬编码任何一页**,和 DOMAINS 同一纪律。
 
 ## 总页(常驻 + 折叠)
 
-| 块 | 数据来源 | 图 |
-| --- | --- | --- |
-| 常驻:The claim | `CLAIM` + `FUNNEL` | `FunnelFigure` |
-| 常驻:Four positions we argue from | `PRINCIPLES` | 四张卡 |
-| 常驻:Architecture(六小节,见下表) | `ARCHITECTURE` + 六个数据块 | 六张图 |
-| 常驻:The three layers | `LAYERS` + `LAYER_CARDS_TITLE` | 三张卡片 |
-| 折叠:Why generic RAG isn’t enough | `PAIN_POINTS` | — |
-| 折叠:Three layers, one gate | `GATE` + `LAYERS` | `GateFigure` |
-| 折叠:The three layers side by side | `COMPARISON` | 表(全页唯一) |
-| 折叠:What we deliberately don’t do | `TRADEOFFS` | — |
-| 页脚:署名 | `AUTHORS` | — |
+| 块                                                                           | 数据来源                       | 图                  |
+| ---------------------------------------------------------------------------- | ------------------------------ | ------------------- |
+| 常驻:The claim(漏斗每层带例句)                                               | `CLAIM` + `FUNNEL`             | `FunnelFigure`      |
+| 常驻:The three layers(卡片带例子 chips,取 `LAYER_DETAILS[slug].examples`)    | `LAYERS` + `LAYER_CARDS_TITLE` | 三张卡片            |
+| 常驻:One request, end to end                                                 | `REQUEST_PATH`                 | `RequestPathFigure` |
+| 常驻:Architecture 开场(标题 + lede + 四条立场)                               | `ARCHITECTURE` + `PRINCIPLES`  | 四张卡              |
+| 折叠:架构五小节(stack / shell-core / journey / evaluation / autonomy,见下表) | 五个数据块                     | 五张图              |
+| 折叠:Why generic RAG isn’t enough                                            | `PAIN_POINTS`                  | —                   |
+| 折叠:Three layers, one gate                                                  | `GATE` + `LAYERS`              | `GateFigure`        |
+| 折叠:The three layers side by side                                           | `COMPARISON`                   | 表(全页唯一)        |
+| 折叠:What we deliberately don’t do                                           | `TRADEOFFS`                    | —                   |
+| 页脚:署名                                                                    | `AUTHORS`                      | —                   |
 
 折叠区由 `Section.tsx` 的 `CollapsibleScreen` 实现:默认收起,折叠态一行 =
-24px 标题 + 13px 关键词摘要(`*.summary`),当目录用。
+24px 标题 + 13px **结论句**摘要(`*.summary`),9 行拼起来就是目录。
+它是受控/非受控两用:传 `open` + `onToggle` 受控(总页把 9 个折叠区的开合状态
+提升为 `openIds: Set<string>`,折叠组顶部一个 Expand all / Collapse all 文本按钮
+统一开合),不传则内部自持状态。常驻黄条(`Emphasis`)恰好 2 条:CLAIM 与
+REQUEST_PATH;其余 emphasis 随所在小节进折叠区。
 三条推论(`CLAIM.corollaries`)是全篇地基;检索顺序 **精准问答 → Text-to-SQL → 文档 →
 说没有依据** 与后端 `core/chat.py` 的 stage 顺序一致。命名纪律:该层全站叫 **Text-to-SQL**。
 
-## 架构段(总页内,六小节全部常驻)
+## 架构段(总页内:开场常驻,五小节折叠)
 
-顶部有锚点条(`OverviewPage` 的 `ANCHORS`,顺序 = 下面 `<Screen id>` 的顺序);
-小节标题用 20px `SectionHeading`,与 30px 的 `ScreenTitle`(总页各大块)拉开层级。
+开场 = `ScreenTitle` + lede + 四条立场(`PRINCIPLES`);`REQUEST_PATH` 已拎出到
+常驻区独立成块(30px `ScreenTitle`);其余五小节进折叠组(标题走 `CollapsibleScreen`
+的 24px)。锚点条(v2.1 的 `ANCHORS`)已删,折叠列表取代其目录功能。
 
-| 小节 | 数据来源 | 图 | 讲什么 |
-| --- | --- | --- | --- |
-| The stack, tier by tier | `STACK` | `StackFigure` | 六层 + 每层的 owner,箭头向上表示谁支撑谁 |
-| Deterministic shell, agentic core | `SHELL_CORE` | `ShellCoreFigure` | 外壳是代码写的确定性约束,内核才是模型真正能想的地方 |
-| One request, end to end | `REQUEST_PATH` | `RequestPathFigure` | 一次提问逐 stage 走,每步标出命中 / 未命中两个出口 + 全程留痕 |
-| The loop people actually live in | `JOURNEY` | `JourneyFigure` | 两个角色 + 系统的七步闭环,末尾回到 01 |
-| How we know it works | `EVALUATION` | `EvaluationFigure` | 四层评估:组件 / 轨迹 / 端到端 / 生产与安全 |
-| Where autonomy stops | `AUTONOMY` | `AutonomyFigure` | 读/析/摘宽松,写/执行/外发不给 |
+| 小节                                    | 数据来源       | 图                  | 讲什么                                                       |
+| --------------------------------------- | -------------- | ------------------- | ------------------------------------------------------------ |
+| One request, end to end(常驻)           | `REQUEST_PATH` | `RequestPathFigure` | 一次提问逐 stage 走,每步标出命中 / 未命中两个出口 + 全程留痕 |
+| The stack, tier by tier(折叠)           | `STACK`        | `StackFigure`       | 六层 + 每层的 owner,箭头向上表示谁支撑谁                     |
+| Deterministic shell, agentic core(折叠) | `SHELL_CORE`   | `ShellCoreFigure`   | 外壳是代码写的确定性约束,内核才是模型真正能想的地方          |
+| The loop people actually live in(折叠)  | `JOURNEY`      | `JourneyFigure`     | 两个角色 + 系统的七步闭环,末尾回到 01                        |
+| How we know it works(折叠)              | `EVALUATION`   | `EvaluationFigure`  | 四层评估:组件 / 轨迹 / 端到端 / 生产与安全                   |
+| Where autonomy stops(折叠)              | `AUTONOMY`     | `AutonomyFigure`    | 读/析/摘宽松,写/执行/外发不给                                |
 
 **口径纪律**:评估那段只写现在真做得到的事(固定评测集复跑、数字回源核对、无出处即缺陷),
 不写没落地的平台能力;`AUTONOMY` 最后一句明说「今天这个 agent 不做任何动作」。
@@ -77,7 +89,8 @@ correctness ≠ safety)。
 
 `Section.tsx` 收敛 UI-STYLE §2「演示页字阶(作用域仅 /how-it-works)」:主张 34 / 屏标题 30 /
 折叠区标题 24 / 段标题 20 / 正文 17·1.65 / 强调 19 / meta 13。内容最大宽 860px,
-架构段小节间距 64px,右侧面板不挂载。行内强调只支持 `**...**`,由 `<Emphasized>` 解析。
+常驻大块间距 64px(`mt-16` + 分隔线),右侧面板不挂载。
+行内强调只支持 `**...**`,由 `<Emphasized>` 解析。
 
 `figures.tsx` 用填充块而非 SVG:图里的说明句较长,SVG `<text>` 不换行、窄屏必溢出;
 填充块既合「白底 + 填充块」的基调,也天然自适应(1100px 实测无横向滚动)。
@@ -87,12 +100,13 @@ correctness ≠ safety)。
 
 ## 我要改 X 去哪
 
-| 要改 | 去哪 |
-| --- | --- |
-| 任何一句文案 | `content.ts`(唯一出处) |
-| 图的画法 | `figures.tsx` |
-| 侧栏里说明页的子项 | `content.ts` 的 `HOW_IT_WORKS_NAV`(AppLayout 只遍历) |
-| 字号 / 行长 / 段间距 | `Section.tsx` + 各页面的容器类 |
-| 架构段加一小节 | `content.ts` 加数据 + `figures.tsx` 加图 + `OverviewPage.tsx` 加 `<Screen>` 并在 `ANCHORS` 里加一项 |
-| 署名 | `content.ts` 的 `AUTHORS` |
-| 总页加一个折叠区 | `content.ts` 加数据 + `OverviewPage.tsx` 加一个 `<CollapsibleScreen>` |
+| 要改                 | 去哪                                                                                                                        |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 任何一句文案         | `content.ts`(唯一出处)                                                                                                      |
+| 图的画法             | `figures.tsx`                                                                                                               |
+| 侧栏里说明页的子项   | `content.ts` 的 `HOW_IT_WORKS_NAV`(AppLayout 只遍历)                                                                        |
+| 字号 / 行长 / 段间距 | `Section.tsx` + 各页面的容器类                                                                                              |
+| 架构段加一小节       | `content.ts` 加数据 + `figures.tsx` 加图 + `OverviewPage.tsx` 折叠组加 `<CollapsibleScreen>` 并把 id 加进 `COLLAPSIBLE_IDS` |
+| 漏斗某层的例句       | `content.ts` 的 `FUNNEL.layers[].example`                                                                                   |
+| 署名                 | `content.ts` 的 `AUTHORS`                                                                                                   |
+| 总页加一个折叠区     | `content.ts` 加数据 + `OverviewPage.tsx` 加一个 `<CollapsibleScreen>` 并把 id 加进 `COLLAPSIBLE_IDS`                        |

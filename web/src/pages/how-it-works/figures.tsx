@@ -25,7 +25,7 @@ import {
 } from './content'
 import { Emphasized, Meta } from './Section'
 
-/** 总页:倒漏斗 —— 自上而下四层,块宽递增 */
+/** 总页:倒漏斗 —— 自上而下四层,块宽递增;每层带一句真实例句(自读者的锚点) */
 export function FunnelFigure() {
   const widths = ['58%', '72%', '86%', '100%']
   return (
@@ -34,14 +34,24 @@ export function FunnelFigure() {
         {FUNNEL.layers.map((layer, i) => (
           <div
             key={layer.label}
-            className="bg-subtle flex min-w-[260px] items-center gap-2.5 rounded-[13px] px-4 py-3"
+            className="bg-subtle flex min-w-[260px] items-start gap-2.5 rounded-[13px] px-4 py-3"
             style={{ width: widths[i] }}
           >
-            <span aria-hidden className={`size-2 shrink-0 rounded-full ${layer.dotClass}`} />
-            <span className="text-foreground text-[15px] font-semibold whitespace-nowrap">
-              {layer.label}
+            <span
+              aria-hidden
+              className={`mt-[6px] size-2 shrink-0 rounded-full ${layer.dotClass}`}
+            />
+            <span className="min-w-0">
+              <span className="flex flex-wrap items-baseline gap-x-2.5">
+                <span className="text-foreground text-[15px] font-semibold whitespace-nowrap">
+                  {layer.label}
+                </span>
+                <span className="text-faint text-[13px]">{layer.note}</span>
+              </span>
+              <span className="text-fainter mt-0.5 block text-[12.5px] italic">
+                {layer.example}
+              </span>
             </span>
-            <span className="text-faint text-[13px]">{layer.note}</span>
           </div>
         ))}
       </div>

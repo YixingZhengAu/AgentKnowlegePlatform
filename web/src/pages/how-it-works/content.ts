@@ -1,8 +1,10 @@
 /**
  * How It Works 说明页的**文案唯一出处**。
  *
- * 体裁纪律(2026-08-24 需求方定):这是投屏讲稿,**不是文章** ——
- * 面试官不会逐句读,所以一律关键词/短语,句子只留每层一句主角句与每屏一句强调句。
+ * 体裁纪律(2026-08-26 需求方定,取代 08-24 的「投屏讲稿」定位):**自读优先** ——
+ * 一个没时间的人自己点开,前三屏拿到全部精髓;折叠区标题 + 结论句摘要本身就是目录。
+ * 投屏讲解场景靠折叠组的 Expand all 一键还原全展开。仍然一律关键词/短语,
+ * 句子只留每层一句主角句与每屏一句强调句。
  * 其余纪律见 documents/HOW-IT-WORKS-PLAN.md §6:
  * - 页面组件里不写死任何句子,一律从这里取。
  * - 全篇不出现表名、字段名、函数名、接口路径、阈值数字(G2)。
@@ -12,6 +14,8 @@
  * EVALUATION / AUTONOMY)与四条立场(PRINCIPLES);每层子页各加两条流程
  * (curation / runtime)。ANSWER_FLOW 与 ROLES 被 REQUEST_PATH 与 JOURNEY 取代,已删。
  * v2.1(同日):架构段一度是独立子页,现已并回总页(一页讲完,不再跳转)。
+ * v3(同日):自读优先重排——漏斗每层加例句(FUNNEL.layers[].example)、
+ * 五个折叠摘要改结论句、ARCHITECTURE.lede 改写;锚点条在 OverviewPage 删除。
  */
 
 export type LayerSlug = 'exact-qa' | 'document' | 'text2sql'
@@ -90,14 +94,30 @@ export const CLAIM = {
 
 export const FUNNEL = {
   layers: [
-    { label: 'Exact Q&A', note: 'written & accepted in advance', dotClass: 'bg-kb-exact-qa' },
+    {
+      label: 'Exact Q&A',
+      note: 'written & accepted in advance',
+      example: '“How many days of annual leave do I get?”',
+      dotClass: 'bg-kb-exact-qa',
+    },
     {
       label: 'Text-to-SQL',
       note: 'signed definition + filled parameters',
+      example: '“What was revenue by region last quarter?”',
       dotClass: 'bg-kb-text2sql',
     },
-    { label: 'Document RAG', note: 'summarised · citations mandatory', dotClass: 'bg-kb-document' },
-    { label: 'No basis', note: 'say so → becomes curation work', dotClass: 'bg-fainter' },
+    {
+      label: 'Document RAG',
+      note: 'summarised · citations mandatory',
+      example: '“Walk me through the incident process.”',
+      dotClass: 'bg-kb-document',
+    },
+    {
+      label: 'No basis',
+      note: 'say so → becomes curation work',
+      example: '“Anything we haven’t approved yet.”',
+      dotClass: 'bg-fainter',
+    },
   ],
   axes: ['required accuracy ↓', 'human effort ↓', 'model freedom ↑'],
 }
@@ -147,7 +167,7 @@ export const PAIN_POINTS = {
 
 export const GATE = {
   title: 'Three layers, one gate',
-  summary: 'raw material → AI proposes → business approves → published',
+  summary: 'nothing unsigned ever reaches search',
   steps: [
     { name: 'Raw material', keywords: 'FAQ exports · handbooks · database + docs' },
     { name: 'AI proposes', keywords: 'drafts candidates — not knowledge yet' },
@@ -215,7 +235,7 @@ export const LAYER_CARDS_TITLE = 'The three layers'
 
 export const ARCHITECTURE = {
   title: 'Architecture',
-  lede: 'Six tiers, one request path, one loop — and the controls that sit **outside** the model.',
+  lede: 'The positions we argue from — and the structure they produce.',
 }
 
 /* ── 架构段 1:分层技术架构(自上而下 = 面向用户 → 面向供应商) ── */
@@ -228,7 +248,7 @@ export interface StackTier {
 
 export const STACK = {
   title: 'The stack, tier by tier',
-  summary: 'surfaces · runtime · control plane · knowledge · data · models',
+  summary: 'six tiers — the control plane is the one most demos skip',
   tiers: [
     {
       name: 'Surfaces',
@@ -391,7 +411,7 @@ export interface JourneyStage {
 
 export const JOURNEY = {
   title: 'The loop people actually live in',
-  summary: 'curate → publish → ask → answer with sources → gap → back to the queue',
+  summary: 'every gap and every flag flows back into the curation queue',
   legend: [
     { key: 'ops', label: 'Business / knowledge ops' },
     { key: 'user', label: 'End user' },
@@ -422,7 +442,7 @@ export const JOURNEY = {
 
 export const EVALUATION = {
   title: 'How we know it works',
-  summary: 'component → trajectory → outcome → production & safety',
+  summary: 'four levels of checks, re-run on every prompt, model or retrieval change',
   levels: [
     {
       level: 'Component',
@@ -472,7 +492,7 @@ export const EVALUATION = {
 
 export const AUTONOMY = {
   title: 'Where autonomy stops',
-  summary: 'read · analyse · summarise  vs  write · execute · send',
+  summary: 'read and summarise freely — write, execute, send: never',
   moreLabel: 'More latitude',
   lessLabel: 'Kept out of the model',
   more: [

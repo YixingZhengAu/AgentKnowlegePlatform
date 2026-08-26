@@ -291,3 +291,43 @@ agentic where necessary / 模型概率而系统不必 / 自主性按后果分级
   「总页大块(30)> 架构小节(20)」的层级站得住;小节间距 80 → 64px。
 - 页面变长,靠三样东西控制:顶部锚点条、后半段四个默认收起的折叠区、大块之间的分隔线。
 - 文案仍然只在 `content.ts`;`ARCHITECTURE` 从 `{headline, lede}` 改成 `{title, lede}`。
+
+## 12. v3:自读优先重排(2026-08-26)
+
+需求方定的体裁升级:v2.1 仍是「投屏讲稿」(默认有人讲解),但真实场景多了一个 ——
+**没时间的人自己点开看**。v3 以自读优先:前三屏就是完整故事,折叠区标题 + 结论句
+摘要拼起来就是目录;投屏讲解场景靠折叠组顶部的 **Expand all** 一键还原 v2.1 的全展开形态。
+
+### 12.1 四个动作
+
+**提前、收折、加例子、砍重复**。常驻内容从 ~8 屏缩到 ~3.5 屏。
+
+### 12.2 新页面顺序(★ = 位置变化)
+
+| # | 内容 | 状态 |
+| --- | --- | --- |
+| 1 | 主张句 + 倒漏斗(每层加例句)+ R1–R3 + 黄条 | 常驻 |
+| 2 | ★ 三层卡片(加例子 chips,复用 `LAYER_DETAILS[].examples`) | 常驻(从 75% 深度提到第二屏) |
+| 3 | ★ One request, end to end(从架构段拎出,升为 30px 大块) | 常驻 |
+| 4 | Architecture 标题 + 新 lede + 四条立场 | 常驻(四条立场下移作架构段开场) |
+| 5 | ★ 架构其余五小节:stack / shell-core / journey / evaluation / autonomy | **全部折叠** |
+| 6 | 原四折叠区:pain-points / one-gate / comparison / tradeoffs | 折叠(只改 summary) |
+| 7 | 署名 | 不变 |
+
+理由:三层卡片必须先于一切论证出场(冷读者要先知道「三层是什么」);request path 是
+全页信息密度最高的图、自读者最直觉的入口(「我问一句话会发生什么」);其余五小节是
+「证据」,折叠态标题 + 结论句摘要本身就是目录。
+
+### 12.3 配套改动
+
+- **锚点条删除**:`ANCHORS` 常量与 `<nav>` 整个删掉,折叠列表取代其目录功能。
+- **CollapsibleScreen 受控化**:加可选 `open` / `onToggle`,传则受控(总页 Expand all
+  统一开合),不传退回内部 useState(LayerPage 等处零改动)。
+- **折叠摘要结论句化**:STACK / JOURNEY / EVALUATION / AUTONOMY / GATE 五处摘要从
+  名词罗列改成结论句,只读折叠行的人也带走观点;其余保留。
+- **漏斗例句**:`FUNNEL.layers[].example`,FunnelFigure 在 note 下一行渲染(斜体引号句)。
+- **黄条纪律**:常驻区 Emphasis 黄条 ≤3 → 实际 2(CLAIM + REQUEST_PATH);
+  其余 emphasis 随所在小节进折叠区,数据不删。
+- **P4 卡片对齐**:四条立场卡去掉 `flex flex-col` / `mt-auto`,说明文字自然跟排。
+- `ARCHITECTURE.lede` 改为 `The positions we argue from — and the structure they
+  produce.`(原句的 six tiers / one request path 已随重排失效)。
