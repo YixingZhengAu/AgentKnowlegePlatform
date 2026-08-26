@@ -69,7 +69,7 @@
 | 改演示业务库的表或数据 | `docker/mysql/init/02-schema.sql` / `gen_seed.py`(改生成器后 `make bizdb-seed-gen`),**改完必须 `make bizdb-reset`** |
 | 改问数的执行闸(超时/行上限) | `.env` 的 `TEXT2SQL_*` 两项;闸的实现在 `server/app/services/text2sql/executor.py` |
 | 改 How It Works 说明页的任何一句文案(主张/立场/架构六小节/署名/子页流程) | `web/src/pages/how-it-works/content.ts`(文案唯一出处,组件不写死句子) |
-| 改 How It Works 的图 / 折叠区 / 字阶 | `web/src/pages/how-it-works/{figures.tsx,Section.tsx}`;字阶规范在 UI-STYLE §2「演示页字阶」 |
+| 改 How It Works 的图(箭头零件 `FlowArrow` / 全局图 `SystemMapFigure`)/ 折叠区 / 字阶 | `web/src/pages/how-it-works/{figures.tsx,Section.tsx}`;字阶规范在 UI-STYLE §2「演示页字阶」 |
 | 改 How It Works 在侧栏里的子项 | `web/src/pages/how-it-works/content.ts` 的 `HOW_IT_WORKS_NAV`(AppLayout 只遍历,不硬编码) |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
 | 新机器从零装环境 / 改装机步骤 | 根目录 `bootstrap.sh`(工具链检查 → .env → 依赖 → 库 → 迁移 → seed → 自检);**新增外部依赖或初始化步骤必须同步进它** |
@@ -156,8 +156,9 @@ Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型
   意图详情页 `/ingest/text2sql/intents/:id` 的模板验收,D1–D4;问数命中在 `/chat` 里
   显示成结果表格 + 可展开的最终 SQL,D5),
   `/ingest/document` 是文档 RAG 的流水线(上传 PDF → 五步摄取 → 审核台改/合并/不采纳 → 发布成切片),
-  `/how-it-works` 是面试投屏用的说明页(总页一页讲完主张 + 架构六小节
-  + 三个层的子页讲各层的治理/回答两条流程,侧栏里是可展开分组,零后端依赖),
+  `/how-it-works` 是面试用的说明页(**图先于字**:总页常驻四张图 —— 全局图 / 路由漏斗 /
+  三层卡片 / 一次请求的判定流程图,其余架构内容进 9 个折叠区,顶部 Expand all 一键全展开;
+  三个层的子页讲各层的治理/回答两条流程,侧栏里是可展开分组,零后端依赖),
   `/jobs/{id}/review` 是审核台(直链进入;筛选/改/批量/键盘流/发布),`/styleguide` 是 UI 验收对照页
   (`/kbs`、`/jobs` 页面已删,重定向回 `/chat`;接口与表保留)
 - curl 也能直接流式聊天并查 trace:

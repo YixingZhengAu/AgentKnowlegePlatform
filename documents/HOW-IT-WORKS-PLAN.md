@@ -331,3 +331,53 @@ agentic where necessary / 模型概率而系统不必 / 自主性按后果分级
 - **P4 卡片对齐**:四条立场卡去掉 `flex flex-col` / `mt-auto`,说明文字自然跟排。
 - `ARCHITECTURE.lede` 改为 `The positions we argue from — and the structure they
   produce.`(原句的 six tiers / one request path 已随重排失效)。
+
+## 13. v4:图先于字(2026-08-27)
+
+需求方的一句话需求:**「读者很忙,没心情细读 —— 重点要靠图 show 出来」**。
+v3 已经把常驻内容压到 ~3.5 屏,但常驻区里仍有 7 张纯文字卡(R1–R3 + P1–P4),
+而且几张「图」其实是无方向的卡片阵列(治理骨架四步、角色闭环七格、四层评估列表),
+读者看不出先后与因果。v4 只解决这一件事:**每一块都由一张有方向的图领队,文字退成图注**。
+
+### 13.1 三个动作
+
+**补全局图、给每张图方向、把文字降成图注**。
+
+1. **补一张全局图(新增,常驻第一块)** —— `SYSTEM_MAP` + `SystemMapFigure`:
+   左「Curation time(业务/知识 owner)」、右「Answer time(终端用户 + agent)」两条泳道
+   各三步,左边第 3 步是黄色人审闸门;两条泳道都落到中间一条 **Approved knowledge**
+   中枢(nothing unsigned is searchable),左边标 `publishes ↓`、右边标 `reads only what is
+   approved ↑`;底下一条虚线回边(缺口与投诉回到 01)+ 一条留痕轨。
+   它把 `CLAIM.lede` 的 answer time → curation time 直接画出来 —— 冷读者三秒拿到全局。
+2. **每张图都看得见方向** —— 新增通用零件 `FlowArrow`(down / right,可带一句原因标签):
+   - `RequestPathFigure` 从竖直时间轴改成**判定流程图**:方块在左,**命中往右出**(绿块 + `EXIT` 标),
+     **未命中沿主干往下**且箭头旁写出原因(`step.miss`,支持 `**强调**`);
+   - `FunnelFigure` 层与层之间补箭头(第一条挂 `no confident match`),每层加 01–04 序号;
+   - `GateFigure` 四步之间补 `→`(窄屏转 `↓`),闸门那格换成黄底;
+   - `JourneyFigure` 七步按 `stage.phase` 拆成 Curation time / Answer time 两行,
+     行内 `→` 相连,末尾保留虚线回边;
+   - `EvaluationFigure` 四级串成一条 `↓` 链,检查项从项目符号改成 chips,底部加一条轴;
+   - `StackFigure` 标出 T6→T1 与 **供应商接缝**(`tiers[].seam` + `seamLabel`),底部加一条轴;
+   - `AutonomyFigure` 左右之间加一道带锁图标的竖虚线。
+3. **文字降成图注** —— 漏斗升为独立一屏(`FUNNEL.title` / `.summary`),R1–R3 跟到它下面
+   当推论;三层卡片加 `FreedomMeter` 三格自由度条(`LAYERS[].freedom`,与漏斗
+   `model freedom ↑` 同一口径),一眼看出三层的模型自由度差别。
+
+### 13.2 新常驻顺序(★ = 本次变化)
+
+| # | 内容 | 图 |
+| --- | --- | --- |
+| 1 | ★ 主张句 + **全局图** | `SystemMapFigure` |
+| 2 | ★ Four outcomes, always in this order(漏斗 + R1–R3 + 黄条) | `FunnelFigure` |
+| 3 | The three layers(★ 加自由度条) | 三张卡 + `FreedomMeter` |
+| 4 | One request, end to end(★ 改判定流程图) | `RequestPathFigure` |
+| 5 | Architecture 标题 + 四条立场 | 四张卡 |
+
+折叠区仍是 9 个,顺序不变,只是图的画法升级;Expand all / Collapse all 不变。
+
+### 13.3 纪律
+
+- 仍然**不用内联 SVG**、不引图表库、不新增 hex;箭头一律 lucide 1.75。
+- 黄色在这一页仍然只有一个含义:Exact Q&A 的识别色 + 人审闸门(全局图第 3 步同此)。
+- 常驻黄条(`Emphasis`)仍是 2 条:CLAIM 与 REQUEST_PATH(全局图靠图内标签讲话,不加黄条)。
+- 实测:1440px / 1000px 两档无横向滚动,窄屏所有多列网格降单列(泳道、判定流程的命中出口均转竖排)。

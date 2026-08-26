@@ -16,6 +16,10 @@
  * v2.1(同日):架构段一度是独立子页,现已并回总页(一页讲完,不再跳转)。
  * v3(同日):自读优先重排——漏斗每层加例句(FUNNEL.layers[].example)、
  * 五个折叠摘要改结论句、ARCHITECTURE.lede 改写;锚点条在 OverviewPage 删除。
+ * v4(2026-08-27):图先于字。新增全局图数据 `SYSTEM_MAP`(两个时钟 + 知识中枢 +
+ * 回边 + 留痕);`FUNNEL` 加 title/summary(升为独立一屏)、`LAYERS[].freedom`
+ * (三层卡片的自由度计量条)、`JOURNEY.stages[].phase` + `phaseLabels`(闭环分两行)、
+ * `STACK.tiers[].seam` + `seamLabel` + `axis`、`EVALUATION.axis`。
  */
 
 export type LayerSlug = 'exact-qa' | 'document' | 'text2sql'
@@ -29,6 +33,8 @@ export interface LayerCard {
   positioning: string
   /** 这一层唯一的完整句子:主角句 */
   leadLine: string
+  /** 模型自由度 1–3(三层卡片上的三格计量条;与漏斗的 model freedom ↑ 同一口径) */
+  freedom: 1 | 2 | 3
 }
 
 export const LAYERS: LayerCard[] = [
@@ -39,6 +45,7 @@ export const LAYERS: LayerCard[] = [
     positioning: 'one right answer · zero tolerance for drift',
     leadLine:
       "On a confident match we return the human-approved answer **verbatim** — the model doesn't get to rewrite a single word.",
+    freedom: 1,
   },
   {
     slug: 'document',
@@ -47,6 +54,7 @@ export const LAYERS: LayerCard[] = [
     positioning: 'long-form material · useful & sourced, not exact',
     leadLine:
       'This layer promises **useful and sourced**, not exact — citations are mandatory, and "no basis found" is a valid answer.',
+    freedom: 3,
   },
   {
     slug: 'text2sql',
@@ -55,8 +63,11 @@ export const LAYERS: LayerCard[] = [
     positioning: 'numbers from the database · only inside signed definitions',
     leadLine:
       "At answer time we **don't write SQL** — we match a definition the business already signed off on and fill in its parameters under constraints.",
+    freedom: 2,
   },
 ]
+
+export const FREEDOM_LABEL = 'model freedom'
 
 /* ───────────────────────── 总页 · 主张与三条推论 ───────────────────────── */
 
@@ -92,7 +103,61 @@ export const CLAIM = {
   emphasis: 'The hierarchy **is** the design.',
 }
 
+/* ───────────────────────── 总页 · 一张全局图 ─────────────────────────
+ * 冷读者第一眼要看到的东西:两个时钟(治理期 / 回答期)共用一份已签字的知识,
+ * 中间是人审闸门,底下是全程留痕。CLAIM.lede 那句 answer time → curation time
+ * 就是这张图。 */
+
+export interface MapStep {
+  name: string
+  note: string
+  /** 人审闸门(黄色识别条,全页黄色只有这一种含义) */
+  gate?: boolean
+}
+
+export const SYSTEM_MAP = {
+  title: 'The whole system, one picture',
+  summary: 'two clocks, one signed knowledge base',
+  lanes: [
+    {
+      key: 'curation',
+      label: 'Curation time',
+      who: 'Business & knowledge owners',
+      verb: 'publishes',
+      steps: [
+        { name: 'Raw material', note: 'handbooks · FAQ exports · a database' },
+        { name: 'AI proposes candidates', note: 'drafts — not knowledge yet' },
+        {
+          name: 'A human accepts, edits or rejects',
+          note: 'judgement, not data entry',
+          gate: true,
+        },
+      ] as MapStep[],
+    },
+    {
+      key: 'answer',
+      label: 'Answer time',
+      who: 'End user · the agent',
+      verb: 'reads only what is approved',
+      steps: [
+        { name: 'A question in plain words', note: 'no mode picker, no tool menu' },
+        { name: 'Ordered routing', note: 'first confident layer wins — then it stops' },
+        { name: 'Answer + sources + trace', note: 'or an honest “no basis found”' },
+      ] as MapStep[],
+    },
+  ],
+  hubLabel: 'Approved knowledge',
+  hubNote: 'nothing unsigned is searchable',
+  hubBlocks: ['Approved Q&A pairs', 'Signed metric definitions', 'Reviewed passages'],
+  returnNote:
+    'Coverage gaps and flagged answers re-enter curation at step 01 — the queue is the product.',
+  traceLabel: 'Traced end to end',
+  traceNote: 'which stage ran · latency · tokens & cost · what was retrieved · why it stopped',
+}
+
 export const FUNNEL = {
+  title: 'Four outcomes, always in this order',
+  summary: 'the first confident layer answers — the rest never run',
   layers: [
     {
       label: 'Exact Q&A',
@@ -244,6 +309,8 @@ export interface StackTier {
   name: string
   owner: string
   blocks: string[]
+  /** 这一层之上是供应商接缝(图里画一条虚线 + 说明) */
+  seam?: boolean
 }
 
 export const STACK = {
@@ -302,8 +369,11 @@ export const STACK = {
       name: 'Model foundation',
       owner: 'vendors — swappable behind one seam',
       blocks: ['Reasoning model', 'Light model', 'Embeddings', 'Reranker', 'Document parser'],
+      seam: true,
     },
   ] as StackTier[],
+  seamLabel: 'Provider seam — swap a vendor here and no tier above notices',
+  axis: ['top = what people touch', 'bottom = what we buy'],
   emphasis: 'Knowledge is **a tier**, not a folder — it has owners, a lifecycle and a gate.',
   notes: [
     'Every tier only knows the one below it. Models sit behind a single provider seam, so changing vendor never reaches the runtime.',
@@ -405,6 +475,8 @@ export const REQUEST_PATH = {
 
 export interface JourneyStage {
   who: 'ops' | 'user' | 'system'
+  /** 闭环的两段:治理期 / 回答期(图里分两行,行内箭头相连) */
+  phase: 'curation' | 'answer'
   name: string
   note: string
 }
@@ -417,19 +489,47 @@ export const JOURNEY = {
     { key: 'user', label: 'End user' },
     { key: 'system', label: 'System' },
   ],
+  phaseLabels: { curation: 'Curation time', answer: 'Answer time' },
   stages: [
-    { who: 'ops' as const, name: 'Bring raw material', note: 'handbooks · exports · a database' },
-    { who: 'system' as const, name: 'AI proposes', note: 'candidates — not knowledge yet' },
-    { who: 'ops' as const, name: 'Accept · edit · reject', note: 'judgement, not data entry' },
-    { who: 'ops' as const, name: 'Publish & own it', note: 'going live is an announcement' },
-    { who: 'user' as const, name: 'Ask in plain words', note: 'never picks a layer' },
+    {
+      who: 'ops' as const,
+      phase: 'curation' as const,
+      name: 'Bring raw material',
+      note: 'handbooks · exports · a database',
+    },
     {
       who: 'system' as const,
+      phase: 'curation' as const,
+      name: 'AI proposes',
+      note: 'candidates — not knowledge yet',
+    },
+    {
+      who: 'ops' as const,
+      phase: 'curation' as const,
+      name: 'Accept · edit · reject',
+      note: 'judgement, not data entry',
+    },
+    {
+      who: 'ops' as const,
+      phase: 'curation' as const,
+      name: 'Publish & own it',
+      note: 'going live is an announcement',
+    },
+    {
+      who: 'user' as const,
+      phase: 'answer' as const,
+      name: 'Ask in plain words',
+      note: 'never picks a layer',
+    },
+    {
+      who: 'system' as const,
+      phase: 'answer' as const,
       name: 'Answer + sources + trace',
       note: 'or an honest “no basis”',
     },
     {
       who: 'user' as const,
+      phase: 'answer' as const,
       name: 'Flag what’s wrong',
       note: 'goes back to a named owner',
     },
@@ -443,6 +543,7 @@ export const JOURNEY = {
 export const EVALUATION = {
   title: 'How we know it works',
   summary: 'four levels of checks, re-run on every prompt, model or retrieval change',
+  axis: ['L1 cheap & deterministic', 'L4 judgement & production reality'],
   levels: [
     {
       level: 'Component',

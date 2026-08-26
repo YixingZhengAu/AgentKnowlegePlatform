@@ -1,14 +1,15 @@
 /**
- * `/how-it-works` 总页。结构(2026-08-26 v3,自读优先):
+ * `/how-it-works` 总页。结构(2026-08-27 v4,图先于字):
  *
- *   主张块(漏斗带例句) → 三层卡片(带例子 chips) → 一次请求(常驻) →
- *   架构段(标题 + 四条立场常驻,其余五小节折叠) →
- *   四个折叠区 → 署名
+ *   主张句 + **全局图**(SystemMapFigure) → 路由漏斗(例句)+ R1–R3 →
+ *   三层卡片(例子 chips + 自由度计量条) → 一次请求(判定流程图) →
+ *   架构段(标题 + 四条立场常驻,其余五小节折叠) → 四个折叠区 → 署名
  *
- * v3 要点:前三屏 = 冷读者自读就能拿走的完整故事;下面 9 个折叠区
- * (架构五小节 + 原四区)默认收起,折叠态标题 + 结论句摘要就是目录;
- * 投屏讲解场景用折叠组顶部的 Expand all 一键还原全展开(v2.1 形态)。
- * 锚点条已删(折叠列表取代其目录功能)。
+ * v4 要点:常驻区四块**每块都由一张图领队**,文字退成图注 ——
+ * 第 1 块一张全局图先把「谁决定什么」讲完(两个时钟 + 知识中枢 + 回边 + 留痕),
+ * 后三块依次放大:路由顺序 → 三层是什么 → 一次请求逐步判定。
+ * 下面 9 个折叠区(架构五小节 + 原四区)默认收起,折叠态标题 + 结论句摘要就是目录;
+ * 投屏讲解场景用折叠组顶部的 Expand all 一键还原全展开。
  * 只渲染 content.ts 的数据;字阶走 Section.tsx。
  */
 import { ArrowRight, MoveRight } from 'lucide-react'
@@ -22,6 +23,8 @@ import {
   CLAIM,
   COMPARISON,
   EVALUATION,
+  FREEDOM_LABEL,
+  FUNNEL,
   GATE,
   JOURNEY,
   LAYER_CARDS_TITLE,
@@ -32,17 +35,20 @@ import {
   REQUEST_PATH,
   SHELL_CORE,
   STACK,
+  SYSTEM_MAP,
   TRADEOFFS,
 } from './content'
 import {
   AutonomyFigure,
   EvaluationFigure,
+  FreedomMeter,
   FunnelFigure,
   GateFigure,
   JourneyFigure,
   RequestPathFigure,
   ShellCoreFigure,
   StackFigure,
+  SystemMapFigure,
 } from './figures'
 import {
   ClaimHeadline,
@@ -87,37 +93,54 @@ export function OverviewPage() {
 
   return (
     <div className="mx-auto max-w-[860px] pt-6 pb-28">
-      {/* 常驻块 1:主张 + 倒漏斗(带例句) + 三条推论 */}
-      <div className="space-y-8">
+      {/* 常驻块 1:主张句 + 全局图 —— 冷读者的第一眼,整页唯一的「一图看懂」 */}
+      <div className="space-y-7">
         <div className="space-y-4">
           <ClaimHeadline>{CLAIM.headline}</ClaimHeadline>
           <Lede text={CLAIM.lede} />
         </div>
-        <FunnelFigure />
-        <div className="grid gap-4 md:grid-cols-3">
-          {CLAIM.corollaries.map((c, i) => (
-            <div key={c.title} className="bg-subtle rounded-[16px] px-5 py-5">
-              <span className="text-fainter font-mono text-[11px]">{`R${i + 1}`}</span>
-              <p className="font-display text-foreground mt-1 text-[17px] leading-[1.3] font-semibold">
-                {c.title}
-              </p>
-              <ul className="mt-3 space-y-1.5">
-                {c.points.map((point) => (
-                  <li
-                    key={point}
-                    className="text-secondary-foreground text-[13.5px] leading-[1.55]"
-                  >
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-baseline gap-x-3">
+            <SectionHeading>{SYSTEM_MAP.title}</SectionHeading>
+            <Meta>{SYSTEM_MAP.summary}</Meta>
+          </div>
+          <SystemMapFigure />
         </div>
-        <Emphasis text={CLAIM.emphasis} />
       </div>
 
-      {/* 常驻块 2:三层卡片(带例子 chips,进子页)。冷读者先知道"三层是什么" */}
+      {/* 常驻块 2:路由顺序(漏斗带例句)+ 三条推论 */}
+      <div className="border-border-soft mt-16 border-t pt-10">
+        <div className="space-y-7">
+          <div className="space-y-2">
+            <ScreenTitle>{FUNNEL.title}</ScreenTitle>
+            <Meta>{FUNNEL.summary}</Meta>
+          </div>
+          <FunnelFigure />
+          <div className="grid gap-4 md:grid-cols-3">
+            {CLAIM.corollaries.map((c, i) => (
+              <div key={c.title} className="bg-subtle rounded-[16px] px-5 py-5">
+                <span className="text-fainter font-mono text-[11px]">{`R${i + 1}`}</span>
+                <p className="font-display text-foreground mt-1 text-[17px] leading-[1.3] font-semibold">
+                  {c.title}
+                </p>
+                <ul className="mt-3 space-y-1.5">
+                  {c.points.map((point) => (
+                    <li
+                      key={point}
+                      className="text-secondary-foreground text-[13.5px] leading-[1.55]"
+                    >
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <Emphasis text={CLAIM.emphasis} />
+        </div>
+      </div>
+
+      {/* 常驻块 3:三层卡片(例子 chips + 自由度计量条,进子页) */}
       <div className="border-border-soft mt-16 border-t pt-10">
         <div className="space-y-6">
           <ScreenTitle>{LAYER_CARDS_TITLE}</ScreenTitle>
@@ -147,7 +170,11 @@ export function OverviewPage() {
                     </span>
                   ))}
                 </span>
-                <span className="text-primary mt-5 flex items-center gap-1.5 text-[12.5px] font-semibold">
+                <span className="border-border-soft mt-4 flex items-center gap-2.5 border-t pt-3.5">
+                  <FreedomMeter level={layer.freedom} dotClass={layer.dotClass} />
+                  <span className="text-faint text-[11.5px]">{FREEDOM_LABEL}</span>
+                </span>
+                <span className="text-primary mt-4 flex items-center gap-1.5 text-[12.5px] font-semibold">
                   Read on
                   <ArrowRight
                     className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
@@ -160,7 +187,7 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {/* 常驻块 3:一次请求的全链路(自读者最直觉的入口,从架构段拎出独立成块) */}
+      {/* 常驻块 4:一次请求的判定流程图(命中往右出 / 未命中往下走) */}
       <div className="border-border-soft mt-16 border-t pt-10">
         <div className="space-y-7">
           <div className="space-y-2">
@@ -172,7 +199,7 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {/* 常驻块 4:架构段开场 —— 标题 + lede + 四条立场;其余五小节在下面的折叠组 */}
+      {/* 常驻块 5:架构段开场 —— 标题 + lede + 四条立场;其余五小节在下面的折叠组 */}
       <div className="border-border-soft mt-16 border-t pt-10">
         <div className="space-y-6">
           <div className="space-y-4">

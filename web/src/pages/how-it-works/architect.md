@@ -23,11 +23,24 @@ correctness ≠ safety)。
 折叠区默认收起,顶部 Expand all / Collapse all 统一开合;锚点条删除(折叠列表取代其
 目录功能);漏斗每层加例句、折叠摘要改结论句;常驻黄条只剩 2 条(CLAIM + REQUEST_PATH)。
 
+**v4(2026-08-27,需求方定)**:**图先于字**(计划 §13)。读者很忙,重点必须靠图给,
+不靠句子给。三个动作:
+1. **补一张全局图**(`SystemMapFigure`,常驻第一块):左治理期 / 右回答期两条泳道,
+   都落到中间的「已签字的知识」,底下一条回边 + 一条留痕轨。整页唯一的「一图看懂」入口,
+   把 `CLAIM.lede` 那句 answer time → curation time 画出来。
+2. **每张图都看得见方向**:步骤之间一律有箭头(`FlowArrow`,可带原因标签),
+   分岔一律左右分开(请求链路改成判定流程图:**命中往右出绿块、未命中沿主干往下**),
+   闭环一律有虚线回边;治理骨架四步之间补箭头,闭环拆成治理/回答两行,
+   评估四级串成一条链、检查项做成 chips,技术架构标出 T6→T1 与**供应商接缝**,
+   自主性边界中间加一道带锁的虚线。
+3. **图注化**:漏斗升为独立一屏(`FUNNEL.title` / `.summary`),三层卡片加
+   `FreedomMeter` 三格自由度条(与漏斗 model freedom ↑ 同一口径),文字退成图的注解。
+
 ## 两级结构
 
 | 路由                   | 页面           | 内容                                                                                                                       |
 | ---------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `/how-it-works`        | `OverviewPage` | **为什么 + 是什么**:主张 + 漏斗(例句)→ 三层卡片(例子 chips)→ 一次请求 → 架构段(四条立场常驻 + 五小节折叠)→ 四折叠区 → 署名 |
+| `/how-it-works`        | `OverviewPage` | **为什么 + 是什么**:主张 + 全局图 → 路由漏斗(例句)+ R1–R3 → 三层卡片(例子 chips + 自由度条)→ 一次请求(判定流程图)→ 架构段(四条立场常驻 + 五小节折叠)→ 四折叠区 → 署名 |
 | `/how-it-works/:layer` | `LayerPage`    | **怎么做**:一层一页,含治理期 / 回答期两条流程                                                                              |
 
 侧栏子项清单是 `content.ts` 的 `HOW_IT_WORKS_NAV`(总页 / 三层),
@@ -37,8 +50,9 @@ correctness ≠ safety)。
 
 | 块                                                                           | 数据来源                       | 图                  |
 | ---------------------------------------------------------------------------- | ------------------------------ | ------------------- |
-| 常驻:The claim(漏斗每层带例句)                                               | `CLAIM` + `FUNNEL`             | `FunnelFigure`      |
-| 常驻:The three layers(卡片带例子 chips,取 `LAYER_DETAILS[slug].examples`)    | `LAYERS` + `LAYER_CARDS_TITLE` | 三张卡片            |
+| 常驻:The claim + **全局图**(整页第一眼)                                       | `CLAIM` + `SYSTEM_MAP`         | `SystemMapFigure`   |
+| 常驻:路由顺序(漏斗每层带例句)+ R1–R3                                          | `FUNNEL` + `CLAIM.corollaries` | `FunnelFigure`      |
+| 常驻:The three layers(例子 chips + 自由度条)                                  | `LAYERS` + `LAYER_CARDS_TITLE` | 三张卡片 + `FreedomMeter` |
 | 常驻:One request, end to end                                                 | `REQUEST_PATH`                 | `RequestPathFigure` |
 | 常驻:Architecture 开场(标题 + lede + 四条立场)                               | `ARCHITECTURE` + `PRINCIPLES`  | 四张卡              |
 | 折叠:架构五小节(stack / shell-core / journey / evaluation / autonomy,见下表) | 五个数据块                     | 五张图              |
@@ -65,12 +79,12 @@ REQUEST_PATH;其余 emphasis 随所在小节进折叠区。
 
 | 小节                                    | 数据来源       | 图                  | 讲什么                                                       |
 | --------------------------------------- | -------------- | ------------------- | ------------------------------------------------------------ |
-| One request, end to end(常驻)           | `REQUEST_PATH` | `RequestPathFigure` | 一次提问逐 stage 走,每步标出命中 / 未命中两个出口 + 全程留痕 |
-| The stack, tier by tier(折叠)           | `STACK`        | `StackFigure`       | 六层 + 每层的 owner,箭头向上表示谁支撑谁                     |
+| One request, end to end(常驻)           | `REQUEST_PATH` | `RequestPathFigure` | **判定流程图**:命中往右出(绿块),未命中沿主干往下(箭头带原因)+ 全程留痕 |
+| The stack, tier by tier(折叠)           | `STACK`        | `StackFigure`       | 六层 T6→T1 + 每层 owner,箭头向上表示谁支撑谁,底部一条供应商接缝虚线 |
 | Deterministic shell, agentic core(折叠) | `SHELL_CORE`   | `ShellCoreFigure`   | 外壳是代码写的确定性约束,内核才是模型真正能想的地方          |
-| The loop people actually live in(折叠)  | `JOURNEY`      | `JourneyFigure`     | 两个角色 + 系统的七步闭环,末尾回到 01                        |
-| How we know it works(折叠)              | `EVALUATION`   | `EvaluationFigure`  | 四层评估:组件 / 轨迹 / 端到端 / 生产与安全                   |
-| Where autonomy stops(折叠)              | `AUTONOMY`     | `AutonomyFigure`    | 读/析/摘宽松,写/执行/外发不给                                |
+| The loop people actually live in(折叠)  | `JOURNEY`      | `JourneyFigure`     | 七步闭环拆治理 / 回答两行,行内箭头相连,末尾一条虚线回边到 01 |
+| How we know it works(折叠)              | `EVALUATION`   | `EvaluationFigure`  | 四级评估串成一条链(L1→L4),检查项做 chips                    |
+| Where autonomy stops(折叠)              | `AUTONOMY`     | `AutonomyFigure`    | 读/析/摘宽松,写/执行/外发不给,中间一道带锁的虚线            |
 
 **口径纪律**:评估那段只写现在真做得到的事(固定评测集复跑、数字回源核对、无出处即缺陷),
 不写没落地的平台能力;`AUTONOMY` 最后一句明说「今天这个 agent 不做任何动作」。
@@ -92,8 +106,9 @@ REQUEST_PATH;其余 emphasis 随所在小节进折叠区。
 常驻大块间距 64px(`mt-16` + 分隔线),右侧面板不挂载。
 行内强调只支持 `**...**`,由 `<Emphasized>` 解析。
 
-`figures.tsx` 用填充块而非 SVG:图里的说明句较长,SVG `<text>` 不换行、窄屏必溢出;
-填充块既合「白底 + 填充块」的基调,也天然自适应(1100px 实测无横向滚动)。
+`figures.tsx` 用填充块 + lucide 箭头而非 SVG:图里的说明句较长,SVG `<text>` 不换行、
+窄屏必溢出;填充块既合「白底 + 填充块」的基调,也天然自适应(1000 / 1440px 实测无横向滚动)。
+方向感全靠通用零件 `FlowArrow`(down / right,可带一句原因标签,标签走 `<Emphasized>`)。
 倒漏斗保留几何语义(块宽自上而下递增 = 模型自由度递增)。
 黄色只出现在两处语义上一致的地方:三层里的 Exact Q&A 识别色,以及**人审闸门**
 (治理骨架第 3 步 / 流程图的 GATE / 闭环里的 ops 步)。
