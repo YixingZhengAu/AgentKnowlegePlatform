@@ -7,6 +7,9 @@
 
 三类知识按容错率分层治理(精准问答对 / 文档 RAG / 智能问数),每类走同一条摄取流水线
 (上传原料 → 异步加工 Job → 人工审核 Staging → 发布),Agent 在回答时路由到对应知识并强制引用。
+路由的层级(说明页口径):**精准问答 / 智能问数 / 编排三者同级**(都注册意图,命中即执行),
+**文档 RAG 是兜底**,再往下是「说没有依据」。**编排(workflow)是第四种知识** ——
+只把前三种按签过字的顺序连起来,不产生新事实;当前**只有设计与占位页,没有后端**。
 
 ## 1. 目录地图(带指路)
 
@@ -68,8 +71,10 @@
 | 改容器/系统库初始化 | `docker/postgres/init/01-init.sql`,**改完必须 `make db-reset`** 才生效 |
 | 改演示业务库的表或数据 | `docker/mysql/init/02-schema.sql` / `gen_seed.py`(改生成器后 `make bizdb-seed-gen`),**改完必须 `make bizdb-reset`** |
 | 改问数的执行闸(超时/行上限) | `.env` 的 `TEXT2SQL_*` 两项;闸的实现在 `server/app/services/text2sql/executor.py` |
-| 改 How It Works 说明页的任何一句文案(主张/立场/架构六小节/署名/子页流程) | `web/src/pages/how-it-works/content.ts`(文案唯一出处,组件不写死句子) |
-| 改 How It Works 的图(箭头零件 `FlowArrow` / 全局图 `SystemMapFigure`)/ 折叠区 / 字阶 | `web/src/pages/how-it-works/{figures.tsx,Section.tsx}`;字阶规范在 UI-STYLE §2「演示页字阶」 |
+| 改 How It Works 说明页的任何一句文案(主张/立场/架构六小节/**编排那一节**/署名/子页流程) | `web/src/pages/how-it-works/content.ts`(文案唯一出处,组件不写死句子) |
+| 改 How It Works 的图(箭头零件 `FlowArrow` / 全局图 `SystemMapFigure` / **两级路由 `RoutingFigure`** / **编排 `WorkflowExampleFigure`**)/ 折叠区 / 字阶 | `web/src/pages/how-it-works/{figures.tsx,Section.tsx}`;字阶规范在 UI-STYLE §2「演示页字阶」 |
+| 改路由层级的说法(谁跟谁同级 / 谁是兜底) | `web/src/pages/how-it-works/content.ts` 的 `ROUTING`(+ `REQUEST_PATH` 的出口、`COMPARISON` 的列序);后端固定顺序在 `server/app/core/chat.py`,它是同级之间的 tie-break |
+| 改编排(第四种知识)的摄取占位页 | `web/src/domains/workflow/CanvasPage.tsx`(静态预览,零后端;道理只在说明页讲) |
 | 改 How It Works 在侧栏里的子项 | `web/src/pages/how-it-works/content.ts` 的 `HOW_IT_WORKS_NAV`(AppLayout 只遍历,不硬编码) |
 | 加一个开发命令 | 根目录 `Makefile`(命令带 `## 说明`,会被 `make help` 列出) |
 | 新机器从零装环境 / 改装机步骤 | 根目录 `bootstrap.sh`(工具链检查 → .env → 依赖 → 库 → 迁移 → seed → 自检);**新增外部依赖或初始化步骤必须同步进它** |
@@ -156,8 +161,10 @@ Trace 框架 + 问答链路 / 前端壳 / 对话页 + 通用 Job 框架 / 泛型
   意图详情页 `/ingest/text2sql/intents/:id` 的模板验收,D1–D4;问数命中在 `/chat` 里
   显示成结果表格 + 可展开的最终 SQL,D5),
   `/ingest/document` 是文档 RAG 的流水线(上传 PDF → 五步摄取 → 审核台改/合并/不采纳 → 发布成切片),
-  `/how-it-works` 是面试用的说明页(**图先于字**:总页常驻四张图 —— 全局图 / 路由漏斗 /
-  三层卡片 / 一次请求的判定流程图,其余架构内容进 9 个折叠区,顶部 Expand all 一键全展开;
+  `/ingest/workflow` 是编排(第四种知识)的**占位页**:一页静态画布预览,零后端零交互,
+  `/how-it-works` 是面试用的说明页(**图先于字**:总页常驻四张图 —— 全局图 / **两级路由图** /
+  四种知识的卡片 / 一次请求的判定流程图,其余架构内容进 9 个折叠区,顶部 Expand all 一键全展开;
+  末尾一节 `#workflows` 讲第四种知识(概念图 + 四条纪律 + 客服邮件那条编排逐节点);
   三个层的子页讲各层的治理/回答两条流程,侧栏里是可展开分组,零后端依赖),
   `/jobs/{id}/review` 是审核台(直链进入;筛选/改/批量/键盘流/发布),`/styleguide` 是 UI 验收对照页
   (`/kbs`、`/jobs` 页面已删,重定向回 `/chat`;接口与表保留)

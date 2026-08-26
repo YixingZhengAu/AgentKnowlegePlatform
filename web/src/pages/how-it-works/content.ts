@@ -20,6 +20,16 @@
  * 回边 + 留痕);`FUNNEL` 加 title/summary(升为独立一屏)、`LAYERS[].freedom`
  * (三层卡片的自由度计量条)、`JOURNEY.stages[].phase` + `phaseLabels`(闭环分两行)、
  * `STACK.tiers[].seam` + `seamLabel` + `axis`、`EVALUATION.axis`。
+ * v5(2026-08-27,需求方纠正 + 补第四种知识):
+ * 1. **层级关系改对了**:精准问答 / 智能问数 / **编排(workflow)** 三者**同级** ——
+ *    都事先注册意图,回答时一次意图匹配、谁命中谁执行;文档 RAG 不是第三级台阶,
+ *    而是**没有任何意图命中时**的兜底。旧的四级倒漏斗 `FUNNEL` 已被 `ROUTING` 取代。
+ * 2. **补上第四种知识**:`WORKFLOW`(它是什么 / 四种节点 / 四条纪律 / 已设计未落地)
+ *    + `WORKFLOW_EXAMPLE`(客服邮件那条链,逐节点 input / output / 参数绑定)
+ *    + `WORKFLOW_CARD`(总页第四张卡,链到收尾那一节而不是子页 —— 它没有子页)。
+ * 3. 连带改口径的地方:`SYSTEM_MAP`(回答期那步 + 知识中枢多一块)、`CLAIM.corollaries` R3、
+ *    `REQUEST_PATH`(第 2 步一步三出口)、`COMPARISON`(四列,顺序 = 三家同级 + 兜底)、
+ *    `STACK`、`AUTONOMY`、`EVALUATION`、`PAIN_POINTS`、`GATE`。
  */
 
 export type LayerSlug = 'exact-qa' | 'document' | 'text2sql'
@@ -48,15 +58,6 @@ export const LAYERS: LayerCard[] = [
     freedom: 1,
   },
   {
-    slug: 'document',
-    name: 'Document RAG',
-    dotClass: 'bg-kb-document',
-    positioning: 'long-form material · useful & sourced, not exact',
-    leadLine:
-      'This layer promises **useful and sourced**, not exact — citations are mandatory, and "no basis found" is a valid answer.',
-    freedom: 3,
-  },
-  {
     slug: 'text2sql',
     name: 'Text-to-SQL',
     dotClass: 'bg-kb-text2sql',
@@ -65,9 +66,27 @@ export const LAYERS: LayerCard[] = [
       "At answer time we **don't write SQL** — we match a definition the business already signed off on and fill in its parameters under constraints.",
     freedom: 2,
   },
+  {
+    slug: 'document',
+    name: 'Document RAG',
+    dotClass: 'bg-kb-document',
+    positioning: 'long-form material · useful & sourced, not exact',
+    leadLine:
+      'This layer promises **useful and sourced**, not exact — citations are mandatory, and "no basis found" is a valid answer.',
+    freedom: 3,
+  },
 ]
 
 export const FREEDOM_LABEL = 'model freedom'
+
+/** 总页卡片区的顺序:两家意图层 → 编排(第四种,同级)→ 文档兜底。
+ *  与 ROUTING / COMPARISON 一个口径;`'workflow'` 那张卡的数据在 `WORKFLOW_CARD`。 */
+export const KIND_CARD_ORDER: (LayerSlug | 'workflow')[] = [
+  'exact-qa',
+  'text2sql',
+  'workflow',
+  'document',
+]
 
 /* ───────────────────────── 总页 · 主张与三条推论 ───────────────────────── */
 
@@ -94,9 +113,9 @@ export const CLAIM = {
     {
       title: 'RAG is the fallback',
       points: [
-        'only for error-tolerant questions',
-        'exact → text-to-sql → documents → "no basis"',
-        'retrieval is ordered, not one index',
+        'signed intents first: answers · numbers · workflows',
+        'documents only when nothing matched',
+        'then an honest "no basis"',
       ],
     },
   ],
@@ -141,50 +160,85 @@ export const SYSTEM_MAP = {
       verb: 'reads only what is approved',
       steps: [
         { name: 'A question in plain words', note: 'no mode picker, no tool menu' },
-        { name: 'Ordered routing', note: 'first confident layer wins — then it stops' },
+        {
+          name: 'Intent match, then fallback',
+          note: 'signed intents are peers — documents only if nothing matched',
+        },
         { name: 'Answer + sources + trace', note: 'or an honest “no basis found”' },
       ] as MapStep[],
     },
   ],
   hubLabel: 'Approved knowledge',
   hubNote: 'nothing unsigned is searchable',
-  hubBlocks: ['Approved Q&A pairs', 'Signed metric definitions', 'Reviewed passages'],
+  hubBlocks: [
+    'Approved Q&A pairs',
+    'Signed metric definitions',
+    'Published workflows',
+    'Reviewed passages',
+  ],
   returnNote:
     'Coverage gaps and flagged answers re-enter curation at step 01 — the queue is the product.',
   traceLabel: 'Traced end to end',
   traceNote: 'which stage ran · latency · tokens & cost · what was retrieved · why it stopped',
 }
 
-export const FUNNEL = {
-  title: 'Four outcomes, always in this order',
-  summary: 'the first confident layer answers — the rest never run',
-  layers: [
+/* ───────────────────────── 总页 · 路由的两级结构 ─────────────────────────
+ * 2026-08-27 需求方纠正:精准问答 / 智能问数 / 编排三者是**同级**的 —— 它们都事先注册
+ * 了自己的意图,回答时先做一次意图匹配、谁命中谁执行;文档 RAG 不是第三级台阶,
+ * 而是**没有任何意图命中**时的兜底。旧的四级倒漏斗(FUNNEL)把三家画成了台阶,已删。 */
+
+export interface RoutingIntent {
+  label: string
+  note: string
+  example: string
+  dotClass: string
+}
+
+export const ROUTING = {
+  title: 'One intent check — then, and only then, a fallback',
+  summary: 'three signed registries are peers; documents run when nothing matched',
+  questionLabel: 'A question in plain words',
+  questionNote: 'no mode picker, no tool menu — routing is never the user’s job',
+  intentLabel: 'Registered intents · peers, not rungs',
+  intentNote: 'every intent here was written, approved and owned before anyone asked',
+  intents: [
     {
       label: 'Exact Q&A',
-      note: 'written & accepted in advance',
+      note: 'one approved answer, returned verbatim',
       example: '“How many days of annual leave do I get?”',
       dotClass: 'bg-kb-exact-qa',
     },
     {
       label: 'Text-to-SQL',
-      note: 'signed definition + filled parameters',
+      note: 'a signed definition, parameters filled',
       example: '“What was revenue by region last quarter?”',
       dotClass: 'bg-kb-text2sql',
     },
     {
-      label: 'Document RAG',
-      note: 'summarised · citations mandatory',
-      example: '“Walk me through the incident process.”',
-      dotClass: 'bg-kb-document',
+      label: 'Workflows',
+      note: 'a signed sequence of steps, executed',
+      example: '“Where is my order? It’s late.”',
+      dotClass: 'bg-kb-workflow',
     },
-    {
-      label: 'No basis',
-      note: 'say so → becomes curation work',
-      example: '“Anything we haven’t approved yet.”',
-      dotClass: 'bg-fainter',
-    },
-  ],
-  axes: ['required accuracy ↓', 'human effort ↓', 'model freedom ↑'],
+  ] as RoutingIntent[],
+  peerNote:
+    'Between peers the order is a tie-break, not a hierarchy: the more specific commitment wins, so a workflow beats a bare answer when both match.',
+  missLabel: 'no intent matched confidently',
+  fallbackLabel: 'Fallback · open retrieval',
+  fallback: {
+    label: 'Document RAG',
+    note: 'summarised · citations mandatory · abstains on thin evidence',
+    example: '“Walk me through the incident process.”',
+    dotClass: 'bg-kb-document',
+  } as RoutingIntent,
+  lastLabel: 'And if that finds nothing',
+  last: {
+    label: 'No basis',
+    note: 'say so → the question becomes curation work',
+    example: '“Anything nobody has approved yet.”',
+    dotClass: 'bg-fainter',
+  } as RoutingIntent,
+  axes: ['tier 1 = decided in advance', 'fallback = decided on the spot', 'model freedom ↑'],
 }
 
 /* ───────────────────────── 总页 · 四条立场 ─────────────────────────
@@ -216,7 +270,7 @@ export const PRINCIPLES = {
 
 export const PAIN_POINTS = {
   title: "Why generic RAG isn't enough",
-  summary: '7 familiar failures → 7 design answers',
+  summary: '8 familiar failures → 8 design answers',
   rows: [
     { symptom: 'Answers everything, trust nothing', answer: '3 layers, split by error tolerance' },
     { symptom: 'Same question, two answers', answer: 'decided once, at curation time' },
@@ -225,19 +279,26 @@ export const PAIN_POINTS = {
     { symptom: 'Data questions never right', answer: 'governed semantic layer, not prose' },
     { symptom: "Wrong — but where's the fix?", answer: 'every answer carries its trace + sources' },
     { symptom: 'Empty retrieval → starts writing', answer: 'no basis → say so, loudly' },
+    {
+      symptom: 'Answered — but the task isn’t done',
+      answer: 'workflows: a signed sequence, not more chat',
+    },
   ],
 }
 
 /* ───────────────────────── 总页 · 三层与共同的闸门 ───────────────────────── */
 
 export const GATE = {
-  title: 'Three layers, one gate',
-  summary: 'nothing unsigned ever reaches search',
+  title: 'Four kinds of knowledge, one gate',
+  summary: 'nothing unsigned ever reaches search — or gets orchestrated',
   steps: [
-    { name: 'Raw material', keywords: 'FAQ exports · handbooks · database + docs' },
+    {
+      name: 'Raw material',
+      keywords: 'FAQ exports · handbooks · a database · a process someone knows by heart',
+    },
     { name: 'AI proposes', keywords: 'drafts candidates — not knowledge yet' },
     { name: 'Business approves', keywords: 'accept / edit / reject — the gate' },
-    { name: 'Published', keywords: 'only signed-off content is searchable' },
+    { name: 'Published', keywords: 'only signed-off content is searchable — or referenceable' },
   ],
   emphasis: 'Human-in-the-loop is **the design**, not a patch.',
 }
@@ -245,36 +306,64 @@ export const GATE = {
 /* ───────────────────────── 总页 · 三层横向对比 ───────────────────────── */
 
 export const COMPARISON = {
-  title: 'The three layers side by side',
-  summary: 'accuracy · ownership · model freedom · risk',
-  columns: ['Exact Q&A', 'Document RAG', 'Text-to-SQL'],
+  title: 'The four kinds side by side',
+  summary: 'three peers, one fallback — accuracy · ownership · freedom · risk',
+  columns: ['Exact Q&A', 'Text-to-SQL', 'Workflows', 'Document RAG'],
+  /** 表头色点(顺序与 columns 一致;不再按下标去 LAYERS 里取,那会错位) */
+  dots: ['bg-kb-exact-qa', 'bg-kb-text2sql', 'bg-kb-workflow', 'bg-kb-document'],
   rows: [
     {
+      dimension: 'When it runs',
+      cells: [
+        'a registered intent matched',
+        'a registered intent matched',
+        'a registered intent matched',
+        'only when nothing matched',
+      ],
+    },
+    {
       dimension: 'Required accuracy',
-      cells: ['exact, word for word', 'useful + honestly sourced', 'exact, within definitions'],
+      cells: [
+        'exact, word for word',
+        'exact, within definitions',
+        'exact per step — the sequence is the promise',
+        'useful + honestly sourced',
+      ],
     },
     {
       dimension: 'Who defines it',
-      cells: ['subject owners', 'the document itself', 'data owner + business owner'],
+      cells: [
+        'subject owners',
+        'data owner + business owner',
+        'the process owner, composing signed knowledge',
+        'the document itself',
+      ],
     },
     {
       dimension: 'Model may…',
       cells: [
         'match → return verbatim',
-        'summarise, cite everything',
         'fill parameters, within limits',
+        'read the situation, bind parameters, draft wording',
+        'summarise, cite everything',
       ],
     },
     {
       dimension: 'Main risk',
-      cells: ['coverage gaps', 'confident prose, weak basis', 'right-looking, wrong-meaning query'],
+      cells: [
+        'coverage gaps',
+        'right-looking, wrong-meaning query',
+        'a step standing on knowledge nobody signed',
+        'confident prose, weak basis',
+      ],
     },
     {
       dimension: 'Contained by',
       cells: [
         'unanswered → review queue',
-        'mandatory citations · abstain',
         'no free-form SQL · loud refusal',
+        'published references only · actions need a human',
+        'mandatory citations · abstain',
       ],
     },
   ],
@@ -294,7 +383,7 @@ export const TRADEOFFS = {
   ],
 }
 
-export const LAYER_CARDS_TITLE = 'The three layers'
+export const LAYER_CARDS_TITLE = 'The four kinds of knowledge'
 
 /* ═════════════════════════ 总页 · 架构段(六小节常驻) ═════════════════════════ */
 
@@ -326,10 +415,11 @@ export const STACK = {
       name: 'Agent runtime',
       owner: 'AI / platform team',
       blocks: [
-        'Ordered routing',
+        'Intent match across registries',
         'Exact match',
-        'Intent match + constrained rewrite',
-        'Hybrid retrieval + rerank',
+        'Definition match + constrained rewrite',
+        'Workflow execution',
+        'Hybrid retrieval + rerank (fallback)',
         'Answer composition & citation',
       ],
     },
@@ -340,6 +430,7 @@ export const STACK = {
         'Human approval gate',
         'Publish & retire lifecycle',
         'Read-only execution gate',
+        'Action gate — prepared, never auto-sent',
         'Citation enforcement',
         'Refusal paths',
         'Trace & audit trail',
@@ -350,8 +441,9 @@ export const STACK = {
       owner: 'business & knowledge owners',
       blocks: [
         'Approved Q&A pairs',
-        'Reviewed passages',
         'Signed metric definitions',
+        'Published workflows',
+        'Reviewed passages',
         'Retired content',
       ],
     },
@@ -409,18 +501,28 @@ export const SHELL_CORE = {
 
 /* ── 架构段 3:一次请求的全链路 ── */
 
+export interface RequestExit {
+  /** 出口标签(哪一家意图命中) */
+  label: string
+  text: string
+  tone: 'exact' | 'text2sql' | 'workflow'
+}
+
 export interface RequestStep {
   name: string
   who: string
   detail: string
+  /** 单一出口 */
   hit?: string
+  /** 多出口(意图匹配那一步:三家同级,谁命中谁执行) */
+  exits?: RequestExit[]
   miss?: string
-  tone: 'neutral' | 'exact' | 'text2sql' | 'document' | 'none'
+  tone: 'neutral' | 'intent' | 'document' | 'none'
 }
 
 export const REQUEST_PATH = {
   title: 'One request, end to end',
-  summary: 'route → retrieve in order → compose → trace',
+  summary: 'match an intent → else fall back to documents → compose → trace',
   steps: [
     {
       name: 'Question arrives',
@@ -429,23 +531,32 @@ export const REQUEST_PATH = {
       tone: 'neutral' as const,
     },
     {
-      name: 'Exact answers first',
+      name: 'One pass over every signed intent',
       who: 'model judges the match · code enforces the gate',
-      detail: 'closest approved questions retrieved, then a same-question check',
-      hit: 'approved answer returned **verbatim**, marked verified — chain stops',
-      miss: 'hand down · question logged as a coverage gap',
-      tone: 'exact' as const,
+      detail:
+        'the question is compared with everything the business has registered — approved questions, published definitions, published workflows. The most specific confident match wins; the other two never run.',
+      exits: [
+        {
+          label: 'Exact Q&A',
+          text: 'approved answer returned **verbatim**, marked verified',
+          tone: 'exact' as const,
+        },
+        {
+          label: 'Text-to-SQL',
+          text: 'the number **plus the exact query** that produced it',
+          tone: 'text2sql' as const,
+        },
+        {
+          label: 'Workflow',
+          text: 'the signed sequence runs — **every node traced**, actions left for a human',
+          tone: 'workflow' as const,
+        },
+      ],
+      miss: 'nothing matched confidently · the question is logged as a coverage gap',
+      tone: 'intent' as const,
     },
     {
-      name: 'Then the numbers',
-      who: 'model fills parameters · code runs the query',
-      detail: 'match a published definition, rewrite under constraints, pass the execution gate',
-      hit: 'number + the exact query that produced it',
-      miss: 'refuse **with the reason** — no generation model is even called',
-      tone: 'text2sql' as const,
-    },
-    {
-      name: 'Then the documents',
+      name: 'Fallback: the documents',
       who: 'model summarises · code checks the evidence',
       detail: 'meaning + keyword retrieval, reranked, evidence assembled',
       hit: 'summary where every claim carries an openable source',
@@ -468,7 +579,7 @@ export const REQUEST_PATH = {
     'what was retrieved, and what was used',
     'why it stopped where it stopped',
   ],
-  emphasis: 'Freedom is granted **per layer**, never per request.',
+  emphasis: 'Freedom is granted **per kind of knowledge**, never per request.',
 }
 
 /* ── 架构段 4:两个角色的闭环 ── */
@@ -560,6 +671,7 @@ export const EVALUATION = {
       asks: 'Did it get there the right way?',
       checks: [
         'right layer, right order',
+        'a workflow ran the nodes it was published with — no improvised detours',
         'stopped at the first confident hit',
         'refused instead of improvising',
         'no retry loops, no wandering',
@@ -601,6 +713,7 @@ export const AUTONOMY = {
     'retrieve and rank evidence',
     'summarise, with citations',
     'fill parameters of a signed definition',
+    'prepare an action for a human to approve',
     'recommend the next step',
   ],
   less: [
@@ -608,10 +721,201 @@ export const AUTONOMY = {
     'issuing a query nobody approved',
     'sending anything outward',
     'changing what a business term means',
+    'firing a workflow’s action step on its own',
     'publishing knowledge',
   ],
   emphasis:
     'Today the agent takes **no** actions at all — a deliberate choice, and the cheapest one to defend.',
+}
+
+/* ═════════════════ 总页收尾 · 第四种知识:编排(workflow) ═════════════════
+ * 前三种知识各自回答一个问题,第四种把它们连起来把一件事做完。三条纪律:
+ * 1. 它和精准问答 / 智能问数**同级** —— 也是事先注册意图,命中就执行(见 ROUTING)。
+ * 2. 它**不产生新事实**:只能引用已发布的知识,引的是名字不是副本。
+ * 3. 画布还没建 —— 文案必须说清「已设计、未落地」;动作节点仍守 AUTONOMY 那条线
+ *    (准备好动作,人按下去)。
+ * 它没有子页:总页第四张卡链到本节锚点 `#workflows`,深讲就在这一节。 */
+
+export type WorkflowNodeKind = 'trigger' | 'llm' | 'knowledge' | 'compute' | 'action'
+
+/** 节点类型的短标(图里的 mono 徽标) */
+export const WORKFLOW_KIND_LABEL: Record<WorkflowNodeKind, string> = {
+  trigger: 'trigger',
+  llm: 'llm',
+  knowledge: 'knowledge',
+  compute: 'code',
+  action: 'action',
+}
+
+/** 总页第四张卡(三层卡片旁边那张)。它链到本页锚点,不是子页 */
+export const WORKFLOW_CARD = {
+  name: 'Workflows',
+  dotClass: 'bg-kb-workflow',
+  positioning: 'many steps, one signed sequence · composes the other three',
+  leadLine:
+    'A workflow **calls the other three in an order the business signed** — plus code and actions — to finish a task instead of answering a sentence.',
+  freedom: 2 as const,
+  examples: ['late-order reply', 'refund pre-check', 'onboarding kickoff'],
+  href: '#workflows',
+  linkLabel: 'See it run',
+  badge: 'designed, not built',
+}
+
+export const WORKFLOW = {
+  title: 'Workflows: knowledge about order',
+  lede: 'The other three kinds answer a question. A workflow **finishes a task** — by calling them in an order the business signed off on.',
+  summary: 'composition, not new facts',
+  builtFromLabel: 'What a workflow is made of',
+  referencedLabel: 'Knowledge it may reference — all of it already approved',
+  referencedBlocks: [
+    { label: 'Approved Q&A pairs', dotClass: 'bg-kb-exact-qa' },
+    { label: 'Signed metric definitions', dotClass: 'bg-kb-text2sql' },
+    { label: 'Reviewed passages', dotClass: 'bg-kb-document' },
+  ],
+  referencedArrow: 'referenced by name, never copied',
+  canvasLabel: 'One workflow = one signed sequence of nodes',
+  builtFromNote:
+    'It adds no new facts. It references knowledge that is already published — by name, never by copy — and adds the two things no handbook writes down: the order, and what to do with each result.',
+  kinds: [
+    {
+      kind: 'knowledge' as WorkflowNodeKind,
+      label: 'Knowledge node',
+      note: 'calls one approved kind — an answer, a number, a passage',
+    },
+    {
+      kind: 'llm' as WorkflowNodeKind,
+      label: 'LLM node',
+      note: 'judge · classify · write — where the wording is the deliverable',
+    },
+    {
+      kind: 'compute' as WorkflowNodeKind,
+      label: 'Code node',
+      note: 'branches, thresholds, arithmetic — deterministic on purpose',
+    },
+    {
+      kind: 'action' as WorkflowNodeKind,
+      label: 'Action node',
+      note: 'reach another system — log it, update a record, notify someone',
+    },
+  ],
+  rules: [
+    {
+      head: 'Built on top, never beside',
+      body: 'A workflow may only reference knowledge that is already approved and published. If a step needs knowledge nobody has signed, the workflow is blocked until someone curates it — orchestration cannot manufacture authority.',
+    },
+    {
+      head: 'Parameters bind themselves',
+      body: 'Each node declares what it needs; the model reads the steps before it and fills the blanks — an order number lifted out of an email, a delay in days returned by a query. Nobody wires fields by hand.',
+    },
+    {
+      head: 'A workflow is an intent, too',
+      body: 'It registers the questions it serves, exactly like the other two intent layers. Match one of them and the workflow runs instead of an answer being written — same tier, not a deeper one.',
+    },
+    {
+      head: 'The gate does not move',
+      body: 'Reading, deciding and drafting are free. Writing, sending, changing a record: the step is prepared and then a human presses the button — the same line as everywhere else here.',
+    },
+  ],
+  statusLabel: 'Status',
+  status:
+    'Designed, not built. The three kinds a workflow composes are running today; the canvas that composes them is the next slice.',
+}
+
+export interface WorkflowStep {
+  name: string
+  kind: WorkflowNodeKind
+  /** 知识节点引用的是哪一种知识(识别色 + 名字) */
+  source?: { label: string; dotClass: string }
+  input: string
+  output: string
+  /** 这一步产出、被后面步骤引用的参数(AI 自动认出来的东西) */
+  binds?: string[]
+  /** 人审闸门(黄色,全页同一含义) */
+  gate?: boolean
+  /** 一句设计注解 */
+  note?: string
+}
+
+export const WORKFLOW_EXAMPLE = {
+  title: 'One workflow, node by node',
+  scenario: 'Support inbox · “where is my order — it’s late”',
+  summary: 'eight nodes · three kinds of knowledge · one human gate',
+  inLabel: 'in',
+  outLabel: 'out',
+  bindsLabel: 'binds',
+  steps: [
+    {
+      name: 'An email lands in the support inbox',
+      kind: 'trigger' as WorkflowNodeKind,
+      input: 'the raw email — sender, subject, body',
+      output: 'the message, verbatim, as the workflow’s starting material',
+    },
+    {
+      name: 'Read the intent and the mood',
+      kind: 'llm' as WorkflowNodeKind,
+      input: 'the email body',
+      output: 'intent: order status · mood: anxious, near escalating · order number: SO-10482',
+      binds: ['order number', 'mood'],
+      note: 'the model is used for judgement here, never for facts',
+    },
+    {
+      name: 'Look that order up',
+      kind: 'knowledge' as WorkflowNodeKind,
+      source: { label: 'Text-to-SQL', dotClass: 'bg-kb-text2sql' },
+      input: 'order number, bound from step 02',
+      output: 'in transit · promised 12 Aug · now expected 19 Aug · 7 days late',
+      binds: ['days late'],
+      note: 'no free-form SQL — it fills the parameters of a definition the business signed',
+    },
+    {
+      name: 'Which delay band is this?',
+      kind: 'compute' as WorkflowNodeKind,
+      input: '7 days late',
+      output: 'band: 4–10 days',
+      binds: ['band'],
+      note: 'a threshold is a rule, not an opinion — so code decides, the same way every time',
+    },
+    {
+      name: 'What are we allowed to offer for this band?',
+      kind: 'knowledge' as WorkflowNodeKind,
+      source: { label: 'Exact Q&A', dotClass: 'bg-kb-exact-qa' },
+      input: 'band',
+      output:
+        'the approved handling, word for word: apologise, give the revised date, offer a goodwill credit — no discount, no re-ship',
+      note: 'a promise to a customer is exactly the kind of sentence nobody may paraphrase',
+    },
+    {
+      name: 'Which reply template belongs to this band?',
+      kind: 'knowledge' as WorkflowNodeKind,
+      source: { label: 'Exact Q&A', dotClass: 'bg-kb-exact-qa' },
+      input: 'band',
+      output: 'the approved template, with blanks: name · order · revised date · gesture',
+    },
+    {
+      name: 'Write the reply',
+      kind: 'llm' as WorkflowNodeKind,
+      input: 'the template + the approved handling + the mood read in step 02',
+      output: 'a draft that keeps every approved sentence and adapts only the tone',
+      note: 'the freedom here is stylistic — every promise in the email came from an approved source',
+    },
+    {
+      name: 'Log the enquiry · move the promised date',
+      kind: 'action' as WorkflowNodeKind,
+      gate: true,
+      input: 'the draft + the order',
+      output: 'reply sent, enquiry recorded, promised date updated — once a human presses send',
+      note: 'the workflow prepares the action and stops there',
+    },
+  ] as WorkflowStep[],
+  traceLabel: 'What the trace shows afterwards',
+  traced: [
+    'which node ran, in what order',
+    'what each node read and returned',
+    'which approved knowledge was quoted',
+    'where the human stepped in',
+  ],
+  emphasis:
+    'Seven of those eight nodes are worthless on their own: two approved answers, one signed definition, one deterministic rule did the work. **The workflow is the wiring — the knowledge underneath is still the product.**',
 }
 
 /* ═════════════════════════ 子页:每层一页 ═════════════════════════ */

@@ -36,6 +36,21 @@ correctness ≠ safety)。
 3. **图注化**:漏斗升为独立一屏(`FUNNEL.title` / `.summary`),三层卡片加
    `FreedomMeter` 三格自由度条(与漏斗 model freedom ↑ 同一口径),文字退成图的注解。
 
+**v5(同日,需求方纠正 + 补最后一块拼图)**:计划 §14。两件事:
+
+1. **层级关系改对了**。原来那张四级倒漏斗(`FUNNEL`)把「精准问答 → 智能问数 → 文档 → 无依据」
+   画成四级台阶,读者会以为文档 RAG 是第三档知识。真实层级是:**精准问答 / 智能问数 /
+   编排三者同级** —— 都事先注册意图,回答时一次意图匹配、谁命中谁执行,同级之间只有
+   「谁更具体」的 tie-break(实现上按固定顺序落这个 tie-break,与 `core/chat.py` 一致);
+   **文档 RAG 是兜底**,只在无人命中时才跑。新图 `RoutingFigure`:三家**并排等宽**在一个框里,
+   往下一条带原因的箭头才是兜底,再往下是「说没有依据」。一次请求那张图同步改成
+   **一步三出口**(意图那一步右侧三个绿块并列)。
+2. **补上第四种知识:编排(workflow)**。它**不产生新事实**,只把前三种按签过字的顺序连起来,
+   再加代码节点(阈值/分支)与动作节点(写库/外发,守人审那道闸)。它是总页的**收尾一节**
+   (锚点 `#workflows`):概念图(已发布的知识 → 引用 → 四种节点)+ 四条纪律 W1–W4 +
+   那条客服邮件编排逐节点的 input / output / 参数绑定 + 一句「已设计、未落地」。
+   **它没有子页** —— 卡片区第四张卡链到本页锚点;摄取侧的占位页在 `src/domains/workflow/`。
+
 ## 两级结构
 
 | 路由                   | 页面           | 内容                                                                                                                       |
@@ -51,8 +66,8 @@ correctness ≠ safety)。
 | 块                                                                           | 数据来源                       | 图                  |
 | ---------------------------------------------------------------------------- | ------------------------------ | ------------------- |
 | 常驻:The claim + **全局图**(整页第一眼)                                       | `CLAIM` + `SYSTEM_MAP`         | `SystemMapFigure`   |
-| 常驻:路由顺序(漏斗每层带例句)+ R1–R3                                          | `FUNNEL` + `CLAIM.corollaries` | `FunnelFigure`      |
-| 常驻:The three layers(例子 chips + 自由度条)                                  | `LAYERS` + `LAYER_CARDS_TITLE` | 三张卡片 + `FreedomMeter` |
+| 常驻:**两级路由**(三家同级 + 兜底 + 无依据)+ R1–R3 | `ROUTING` + `CLAIM.corollaries` | `RoutingFigure` |
+| 常驻:The four kinds of knowledge(例子 chips + 自由度条) | `LAYERS` + `WORKFLOW_CARD` + `KIND_CARD_ORDER` | 四张卡片 + `FreedomMeter` |
 | 常驻:One request, end to end                                                 | `REQUEST_PATH`                 | `RequestPathFigure` |
 | 常驻:Architecture 开场(标题 + lede + 四条立场)                               | `ARCHITECTURE` + `PRINCIPLES`  | 四张卡              |
 | 折叠:架构五小节(stack / shell-core / journey / evaluation / autonomy,见下表) | 五个数据块                     | 五张图              |
@@ -60,6 +75,7 @@ correctness ≠ safety)。
 | 折叠:Three layers, one gate                                                  | `GATE` + `LAYERS`              | `GateFigure`        |
 | 折叠:The three layers side by side                                           | `COMPARISON`                   | 表(全页唯一)        |
 | 折叠:What we deliberately don’t do                                           | `TRADEOFFS`                    | —                   |
+| **常驻(收尾):Workflows(锚点 `#workflows`)** | `WORKFLOW` + `WORKFLOW_EXAMPLE` | `WorkflowConceptFigure` + `WorkflowExampleFigure` |
 | 页脚:署名                                                                    | `AUTHORS`                      | —                   |
 
 折叠区由 `Section.tsx` 的 `CollapsibleScreen` 实现:默认收起,折叠态一行 =
@@ -68,8 +84,10 @@ correctness ≠ safety)。
 提升为 `openIds: Set<string>`,折叠组顶部一个 Expand all / Collapse all 文本按钮
 统一开合),不传则内部自持状态。常驻黄条(`Emphasis`)恰好 2 条:CLAIM 与
 REQUEST_PATH;其余 emphasis 随所在小节进折叠区。
-三条推论(`CLAIM.corollaries`)是全篇地基;检索顺序 **精准问答 → Text-to-SQL → 文档 →
-说没有依据** 与后端 `core/chat.py` 的 stage 顺序一致。命名纪律:该层全站叫 **Text-to-SQL**。
+三条推论(`CLAIM.corollaries`)是全篇地基;**层级口径**(v5):精准问答 / Text-to-SQL / 编排
+同级(注册意图,命中即执行),文档 RAG 是兜底,再往下是「说没有依据」—— 与后端
+`core/chat.py` 的 stage 顺序不矛盾:那个固定顺序就是同级之间的 tie-break。
+命名纪律:该层全站叫 **Text-to-SQL**;第四种叫 **Workflows**(不叫 orchestration)。
 
 ## 架构段(总页内:开场常驻,五小节折叠)
 
@@ -79,7 +97,7 @@ REQUEST_PATH;其余 emphasis 随所在小节进折叠区。
 
 | 小节                                    | 数据来源       | 图                  | 讲什么                                                       |
 | --------------------------------------- | -------------- | ------------------- | ------------------------------------------------------------ |
-| One request, end to end(常驻)           | `REQUEST_PATH` | `RequestPathFigure` | **判定流程图**:命中往右出(绿块),未命中沿主干往下(箭头带原因)+ 全程留痕 |
+| One request, end to end(常驻) | `REQUEST_PATH` | `RequestPathFigure` | **判定流程图**:意图那一步**一步三出口**(三家同级各一个绿块),未命中沿主干往下到兜底(箭头带原因)+ 全程留痕 |
 | The stack, tier by tier(折叠)           | `STACK`        | `StackFigure`       | 六层 T6→T1 + 每层 owner,箭头向上表示谁支撑谁,底部一条供应商接缝虚线 |
 | Deterministic shell, agentic core(折叠) | `SHELL_CORE`   | `ShellCoreFigure`   | 外壳是代码写的确定性约束,内核才是模型真正能想的地方          |
 | The loop people actually live in(折叠)  | `JOURNEY`      | `JourneyFigure`     | 七步闭环拆治理 / 回答两行,行内箭头相连,末尾一条虚线回边到 01 |
@@ -109,7 +127,8 @@ REQUEST_PATH;其余 emphasis 随所在小节进折叠区。
 `figures.tsx` 用填充块 + lucide 箭头而非 SVG:图里的说明句较长,SVG `<text>` 不换行、
 窄屏必溢出;填充块既合「白底 + 填充块」的基调,也天然自适应(1000 / 1440px 实测无横向滚动)。
 方向感全靠通用零件 `FlowArrow`(down / right,可带一句原因标签,标签走 `<Emphasized>`)。
-倒漏斗保留几何语义(块宽自上而下递增 = 模型自由度递增)。
+**同级用并排、兜底用下一行**(`RoutingFigure`):层级关系必须靠版面表达,不靠句子解释;
+旧的倒漏斗(块宽递增 = 自由度递增)因为把同级画成了台阶,已删。
 黄色只出现在两处语义上一致的地方:三层里的 Exact Q&A 识别色,以及**人审闸门**
 (治理骨架第 3 步 / 流程图的 GATE / 闭环里的 ops 步)。
 
@@ -125,3 +144,6 @@ REQUEST_PATH;其余 emphasis 随所在小节进折叠区。
 | 漏斗某层的例句       | `content.ts` 的 `FUNNEL.layers[].example`                                                                                   |
 | 署名                 | `content.ts` 的 `AUTHORS`                                                                                                   |
 | 总页加一个折叠区     | `content.ts` 加数据 + `OverviewPage.tsx` 加一个 `<CollapsibleScreen>` 并把 id 加进 `COLLAPSIBLE_IDS`                        |
+| 路由层级(谁跟谁同级 / 谁是兜底) | `content.ts` 的 `ROUTING` + `figures.tsx` 的 `RoutingFigure`;改完必须同步 `REQUEST_PATH.steps[1].exits` 与 `COMPARISON` 的列顺序 |
+| 编排那一节(概念 / 四条纪律 / 例子) | `content.ts` 的 `WORKFLOW` / `WORKFLOW_EXAMPLE`;图在 `figures.tsx` 的 `WorkflowConceptFigure` / `WorkflowExampleFigure` |
+| 卡片区的顺序或多一张卡 | `content.ts` 的 `KIND_CARD_ORDER`(+ 卡片数据);`OverviewPage.tsx` 只遍历它 |

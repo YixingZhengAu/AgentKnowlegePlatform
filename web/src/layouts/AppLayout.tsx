@@ -129,7 +129,7 @@ export function AppLayout() {
               </NavLink>
             ))}
 
-            {/* Knowledge Ingestion 分组:子项 = 三个知识域,识别色圆点区分 */}
+            {/* Knowledge Ingestion 分组:子项 = 各知识域(末尾 workflow 只有设计预览),识别色圆点区分 */}
             <button
               onClick={() => setIngestOpen((v) => !v)}
               className={cn(navItemClass(pathname.startsWith('/ingest')), 'mt-0.5 py-1.5')}

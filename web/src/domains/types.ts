@@ -12,8 +12,9 @@ import type { CitationRenderer } from '@/components/Citations'
 import type { ItemRenderers } from '@/components/staging/types'
 
 export type DomainModule = {
-  /** 域标识,与后端 KB_TYPES / knowledge_bases.type 一致 */
-  key: 'exact_qa' | 'document' | 'text2sql'
+  /** 域标识。前三个与后端 KB_TYPES / knowledge_bases.type 一致;
+   *  `workflow` 是第四种知识(编排),**目前只有前端的设计预览、没有后端类型** */
+  key: 'exact_qa' | 'document' | 'text2sql' | 'workflow'
   /** 导航子项文案(英文);顶栏标题由它派生("<label> Ingestion") */
   label: string
   /** ingestion 页路由,约定 /ingest/<segment> */

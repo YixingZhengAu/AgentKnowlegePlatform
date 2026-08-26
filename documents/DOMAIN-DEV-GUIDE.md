@@ -16,6 +16,12 @@
 | 精准 QA(S1) | `web/src/domains/exact-qa/` | `server/app/services/exact_qa/` | `/ingest/exact-qa` | `bg-kb-exact-qa`(黄) | `qa_pair` |
 | 文档 RAG(S2) | `web/src/domains/document/` | `server/app/services/document/` | `/ingest/document` | `bg-kb-document`(蓝) | `chunk` |
 | 智能问数(S3) | `web/src/domains/text2sql/` | `server/app/services/text2sql/` | `/ingest/text2sql` | `bg-kb-text2sql`(紫) | `sql_intent` |
+| 编排(未排期) | `web/src/domains/workflow/` | —(没有后端) | `/ingest/workflow` | `bg-kb-workflow`(navy) | —(没有候选) |
+
+**第四行是占位**:编排(第四种知识,2026-08-27 加)现在只有一页静态画布预览,
+**没有后端、没有表、没有 Job、没有审核台**,`knowledge_bases.type` 里也还没有这个取值。
+它的设计说明在说明页 `/how-it-works#workflows` 与 `PRD.md §3.6`;真开发的落点见
+`web/src/domains/workflow/architect.md` 末节。别把它当成一个在开发中的域。
 
 **核心规则一句话**:你的所有代码只落在上面两个属于你的文件夹里;
 需要在共享文件落笔的地方全部收敛成"加一行",见 §4 冲突地图。

@@ -1,13 +1,17 @@
 /**
  * `/how-it-works` 总页。结构(2026-08-27 v4,图先于字):
  *
- *   主张句 + **全局图**(SystemMapFigure) → 路由漏斗(例句)+ R1–R3 →
- *   三层卡片(例子 chips + 自由度计量条) → 一次请求(判定流程图) →
- *   架构段(标题 + 四条立场常驻,其余五小节折叠) → 四个折叠区 → 署名
+ *   主张句 + **全局图**(SystemMapFigure) → **两级路由图**(RoutingFigure)+ R1–R3 →
+ *   四种知识的卡片(例子 chips + 自由度计量条) → 一次请求(判定流程图) →
+ *   架构段(标题 + 四条立场常驻,其余五小节折叠) → 九个折叠区 →
+ *   **收尾:第四种知识 · 编排**(#workflows) → 署名
  *
  * v4 要点:常驻区四块**每块都由一张图领队**,文字退成图注 ——
  * 第 1 块一张全局图先把「谁决定什么」讲完(两个时钟 + 知识中枢 + 回边 + 留痕),
  * 后三块依次放大:路由顺序 → 三层是什么 → 一次请求逐步判定。
+ * v5(同日,需求方纠正):**层级关系** —— 精准问答 / 智能问数 / 编排三者同级(都注册意图),
+ * 文档 RAG 是兜底,由 `RoutingFigure` 画;卡片区因此变四张(第四张链到收尾那一节,
+ * 它没有子页)。收尾一节把编排讲完:概念图 + 四条纪律 + 那条客服邮件逐节点的例子。
  * 下面 9 个折叠区(架构五小节 + 原四区)默认收起,折叠态标题 + 结论句摘要就是目录;
  * 投屏讲解场景用折叠组顶部的 Expand all 一键还原全展开。
  * 只渲染 content.ts 的数据;字阶走 Section.tsx。
@@ -24,31 +28,37 @@ import {
   COMPARISON,
   EVALUATION,
   FREEDOM_LABEL,
-  FUNNEL,
   GATE,
   JOURNEY,
+  KIND_CARD_ORDER,
   LAYER_CARDS_TITLE,
   LAYER_DETAILS,
   LAYERS,
   PAIN_POINTS,
   PRINCIPLES,
   REQUEST_PATH,
+  ROUTING,
   SHELL_CORE,
   STACK,
   SYSTEM_MAP,
   TRADEOFFS,
+  WORKFLOW,
+  WORKFLOW_CARD,
+  WORKFLOW_EXAMPLE,
 } from './content'
 import {
   AutonomyFigure,
   EvaluationFigure,
   FreedomMeter,
-  FunnelFigure,
   GateFigure,
   JourneyFigure,
   RequestPathFigure,
+  RoutingFigure,
   ShellCoreFigure,
   StackFigure,
   SystemMapFigure,
+  WorkflowConceptFigure,
+  WorkflowExampleFigure,
 } from './figures'
 import {
   ClaimHeadline,
@@ -73,6 +83,66 @@ const COLLAPSIBLE_IDS = [
   'comparison',
   'tradeoffs',
 ]
+
+/** 四张卡片共用的外框(三层是 <Link> 进子页,编排是 <a> 滚到收尾那一节) */
+const KIND_CARD_CLASS =
+  'group flex flex-col rounded-[var(--radius-card)] border border-[var(--border)] p-6 shadow-[var(--shadow-card)] transition-all duration-150 hover:border-[var(--border-strong)]'
+
+function KindCardBody({
+  name,
+  dotClass,
+  leadLine,
+  examples,
+  freedom,
+  linkLabel,
+  badge,
+}: {
+  name: string
+  dotClass: string
+  leadLine: string
+  examples: string[]
+  freedom: number
+  linkLabel: string
+  badge?: string
+}) {
+  return (
+    <>
+      <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <span aria-hidden className={`size-2 rounded-full ${dotClass}`} />
+        <span className="font-display text-foreground text-[17px] font-semibold">{name}</span>
+        {badge && (
+          <span className="bg-muted text-muted-foreground rounded-[var(--radius-pill)] px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.04em] uppercase">
+            {badge}
+          </span>
+        )}
+      </span>
+      <span className="text-secondary-foreground mt-3 flex-1 text-[14px] leading-[1.6]">
+        <Emphasized text={leadLine} />
+      </span>
+      <span className="mt-3 flex flex-wrap gap-1.5">
+        {examples.map((example) => (
+          <span
+            key={example}
+            className="bg-muted text-secondary-foreground rounded-[var(--radius-pill)] px-2.5 py-1 text-[11.5px]"
+          >
+            {example}
+          </span>
+        ))}
+      </span>
+      <span className="border-border-soft mt-4 flex items-center gap-2.5 border-t pt-3.5">
+        <FreedomMeter level={freedom} dotClass={dotClass} />
+        <span className="text-faint text-[11.5px]">{FREEDOM_LABEL}</span>
+      </span>
+      <span className="text-primary mt-4 flex items-center gap-1.5 text-[12.5px] font-semibold">
+        {linkLabel}
+        <ArrowRight
+          className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
+          strokeWidth={1.75}
+        />
+      </span>
+    </>
+  )
+}
 
 export function OverviewPage() {
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set())
@@ -108,14 +178,14 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {/* 常驻块 2:路由顺序(漏斗带例句)+ 三条推论 */}
+      {/* 常驻块 2:两级路由(三家同级 + 兜底)+ 三条推论 */}
       <div className="border-border-soft mt-16 border-t pt-10">
         <div className="space-y-7">
           <div className="space-y-2">
-            <ScreenTitle>{FUNNEL.title}</ScreenTitle>
-            <Meta>{FUNNEL.summary}</Meta>
+            <ScreenTitle>{ROUTING.title}</ScreenTitle>
+            <Meta>{ROUTING.summary}</Meta>
           </div>
-          <FunnelFigure />
+          <RoutingFigure />
           <div className="grid gap-4 md:grid-cols-3">
             {CLAIM.corollaries.map((c, i) => (
               <div key={c.title} className="bg-subtle rounded-[16px] px-5 py-5">
@@ -140,49 +210,42 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {/* 常驻块 3:三层卡片(例子 chips + 自由度计量条,进子页) */}
+      {/* 常驻块 3:四种知识的卡片(前三张进子页,第四张滚到收尾那一节) */}
       <div className="border-border-soft mt-16 border-t pt-10">
         <div className="space-y-6">
           <ScreenTitle>{LAYER_CARDS_TITLE}</ScreenTitle>
-          <div className="grid gap-4 lg:grid-cols-3">
-            {LAYERS.map((layer) => (
-              <Link
-                key={layer.slug}
-                to={`/how-it-works/${layer.slug}`}
-                className="group flex flex-col rounded-[var(--radius-card)] border border-[var(--border)] p-6 shadow-[var(--shadow-card)] transition-all duration-150 hover:border-[var(--border-strong)]"
-              >
-                <span className="flex items-center gap-2.5">
-                  <span aria-hidden className={`size-2 rounded-full ${layer.dotClass}`} />
-                  <span className="font-display text-foreground text-[17px] font-semibold">
-                    {layer.name}
-                  </span>
-                </span>
-                <span className="text-secondary-foreground mt-3 flex-1 text-[14px] leading-[1.6]">
-                  <Emphasized text={layer.leadLine} />
-                </span>
-                <span className="mt-3 flex flex-wrap gap-1.5">
-                  {LAYER_DETAILS[layer.slug].examples.map((example) => (
-                    <span
-                      key={example}
-                      className="bg-muted text-secondary-foreground rounded-[var(--radius-pill)] px-2.5 py-1 text-[11.5px]"
-                    >
-                      {example}
-                    </span>
-                  ))}
-                </span>
-                <span className="border-border-soft mt-4 flex items-center gap-2.5 border-t pt-3.5">
-                  <FreedomMeter level={layer.freedom} dotClass={layer.dotClass} />
-                  <span className="text-faint text-[11.5px]">{FREEDOM_LABEL}</span>
-                </span>
-                <span className="text-primary mt-4 flex items-center gap-1.5 text-[12.5px] font-semibold">
-                  Read on
-                  <ArrowRight
-                    className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
-                    strokeWidth={1.75}
+          {/* 顺序出自 content 的 KIND_CARD_ORDER:两家意图层 → 编排 → 文档兜底 */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {KIND_CARD_ORDER.map((key) => {
+              if (key === 'workflow') {
+                return (
+                  <a key={key} href={WORKFLOW_CARD.href} className={KIND_CARD_CLASS}>
+                    <KindCardBody
+                      name={WORKFLOW_CARD.name}
+                      dotClass={WORKFLOW_CARD.dotClass}
+                      leadLine={WORKFLOW_CARD.leadLine}
+                      examples={WORKFLOW_CARD.examples}
+                      freedom={WORKFLOW_CARD.freedom}
+                      linkLabel={WORKFLOW_CARD.linkLabel}
+                      badge={WORKFLOW_CARD.badge}
+                    />
+                  </a>
+                )
+              }
+              const layer = LAYERS.find((l) => l.slug === key)!
+              return (
+                <Link key={key} to={`/how-it-works/${key}`} className={KIND_CARD_CLASS}>
+                  <KindCardBody
+                    name={layer.name}
+                    dotClass={layer.dotClass}
+                    leadLine={layer.leadLine}
+                    examples={LAYER_DETAILS[key].examples}
+                    freedom={layer.freedom}
+                    linkLabel="Read on"
                   />
-                </span>
-              </Link>
-            ))}
+                </Link>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -315,11 +378,11 @@ export function OverviewPage() {
           summary={GATE.summary}
         >
           <div className="flex flex-wrap gap-x-8 gap-y-2">
-            {LAYERS.map((layer) => (
-              <p key={layer.slug} className="flex items-center gap-2.5 text-[14px]">
-                <span aria-hidden className={`size-2 shrink-0 rounded-full ${layer.dotClass}`} />
-                <span className="text-foreground font-semibold">{layer.name}</span>
-                <span className="text-faint">{layer.positioning}</span>
+            {[...LAYERS, WORKFLOW_CARD].map((kind) => (
+              <p key={kind.name} className="flex items-center gap-2.5 text-[14px]">
+                <span aria-hidden className={`size-2 shrink-0 rounded-full ${kind.dotClass}`} />
+                <span className="text-foreground font-semibold">{kind.name}</span>
+                <span className="text-faint">{kind.positioning}</span>
               </p>
             ))}
           </div>
@@ -333,7 +396,7 @@ export function OverviewPage() {
           summary={COMPARISON.summary}
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] border-collapse text-left">
+            <table className="w-full min-w-[780px] border-collapse text-left">
               <thead>
                 <tr>
                   <th className="w-[140px] pb-3" />
@@ -343,7 +406,7 @@ export function OverviewPage() {
                       className="text-muted-foreground pb-3 pl-5 text-[11px] font-semibold tracking-[0.06em] uppercase"
                     >
                       <span className="flex items-center gap-2">
-                        <span aria-hidden className={`size-2 rounded-full ${LAYERS[i].dotClass}`} />
+                        <span aria-hidden className={`size-2 rounded-full ${COMPARISON.dots[i]}`} />
                         {col}
                       </span>
                     </th>
@@ -386,6 +449,60 @@ export function OverviewPage() {
           </div>
         </CollapsibleScreen>
       </div>
+
+      {/* 收尾常驻块:第四种知识 —— 编排(卡片区第四张卡链到这里)。
+          纪律:它必须自己说清「已设计、未落地」,动作节点仍守 AUTONOMY 那条线 */}
+      <section id="workflows" className="border-border-soft mt-16 scroll-mt-20 border-t pt-10">
+        <div className="space-y-7">
+          <div className="space-y-4">
+            <ScreenTitle>{WORKFLOW.title}</ScreenTitle>
+            <Lede text={WORKFLOW.lede} />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-baseline gap-x-3">
+              <SectionHeading>{WORKFLOW.builtFromLabel}</SectionHeading>
+              <Meta>{WORKFLOW.summary}</Meta>
+            </div>
+            <p className="text-secondary-foreground text-[15px] leading-[1.6]">
+              {WORKFLOW.builtFromNote}
+            </p>
+            <WorkflowConceptFigure />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {WORKFLOW.rules.map((rule, i) => (
+              <div key={rule.head} className="bg-subtle rounded-[16px] px-5 py-5">
+                <span className="text-fainter font-mono text-[11px]">{`W${i + 1}`}</span>
+                <p className="text-foreground mt-1.5 text-[16px] leading-[1.4] font-semibold">
+                  {rule.head}
+                </p>
+                <p className="border-border-soft text-faint mt-3 border-t pt-3 text-[13.5px] leading-[1.55]">
+                  {rule.body}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="border-border-strong flex flex-wrap items-baseline gap-x-2.5 rounded-[14px] border border-dashed px-4 py-3">
+            <span className="text-muted-foreground font-mono text-[10.5px] tracking-[0.06em] uppercase">
+              {WORKFLOW.statusLabel}
+            </span>
+            <span className="text-faint text-[13px] leading-[1.55]">{WORKFLOW.status}</span>
+          </p>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-wrap items-baseline gap-x-3">
+              <SectionHeading>{WORKFLOW_EXAMPLE.title}</SectionHeading>
+              <Meta>{WORKFLOW_EXAMPLE.summary}</Meta>
+            </div>
+            <Meta>{WORKFLOW_EXAMPLE.scenario}</Meta>
+            <WorkflowExampleFigure />
+          </div>
+
+          <Emphasis text={WORKFLOW_EXAMPLE.emphasis} />
+        </div>
+      </section>
 
       {/* 页脚:署名 */}
       <div className="border-border-soft mt-4 border-t pt-8">

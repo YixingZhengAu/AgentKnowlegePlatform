@@ -35,7 +35,9 @@ export type TraceList = S['ListResponse_TraceOut_']
 export type JobList = S['ListResponse_JobOut_']
 export type StagingList = S['ListResponse_StagingItemOut_']
 
-/** 三类知识的固定识别色(色值在 index.css,这里只做 type -> token 的映射)。 */
+/** 后端三类知识的固定识别色(色值在 index.css,这里只做 type -> token 的映射)。
+ *  第四种「编排」还没有后端类型,所以不在这里 —— 它的识别色是 `bg-kb-workflow`,
+ *  只由前端的域描述符与说明页用(见 `src/domains/workflow/`)。 */
 // 取值与 server/app/models/knowledge.py 的 KB_TYPES 一致(exact_qa / document / text2sql)
 export const KB_TYPES = ['exact_qa', 'document', 'text2sql'] as const
 export type KbType = (typeof KB_TYPES)[number]

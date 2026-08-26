@@ -8,7 +8,9 @@
 import { documentDomain } from './document/module'
 import { exactQaDomain } from './exact-qa/module'
 import { text2sqlDomain } from './text2sql/module'
+import { workflowDomain } from './workflow/module'
 
 export type { DomainModule } from './types'
 
-export const DOMAINS = [exactQaDomain, documentDomain, text2sqlDomain]
+/** 顺序 = 侧栏顺序:三种已落地的知识,末尾是编排(第四种,只有设计预览、没有后端) */
+export const DOMAINS = [exactQaDomain, documentDomain, text2sqlDomain, workflowDomain]

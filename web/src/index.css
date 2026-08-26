@@ -156,10 +156,13 @@
     /* 全站唯一一处渐变:任务进度卡(UI-STYLE §3) */
     --gradient-progress: linear-gradient(135deg, var(--brand-grad-from), var(--brand-grad-to));
 
-    /* 三类知识的固定识别色,全站一致(路由徽标 / KB 卡片 / 引用标记同一套) */
+    /* 四种知识的固定识别色,全站一致(路由徽标 / KB 卡片 / 引用标记同一套)。
+       workflow 是第四种(编排,已设计未落地):用品牌 navy —— 它编排另外三种,
+       不该再引入一个新色相,而 navy 与黄/蓝/紫都拉得开 */
     --kb-exact-qa: var(--brand-yellow);
     --kb-document: var(--brand-blue-dot);
     --kb-text2sql: var(--brand-violet-dot);
+    --kb-workflow: var(--brand-navy);
   }
 }
 
@@ -229,6 +232,7 @@
   --color-kb-exact-qa: var(--kb-exact-qa);
   --color-kb-document: var(--kb-document);
   --color-kb-text2sql: var(--kb-text2sql);
+  --color-kb-workflow: var(--kb-workflow);
 
   /* 字体:标题/导航用几何感的 Montserrat,正文 Inter,数字与代码用等宽 */
   --font-display: 'Montserrat', system-ui, sans-serif;

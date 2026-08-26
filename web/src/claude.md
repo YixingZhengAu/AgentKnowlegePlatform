@@ -9,7 +9,7 @@
 | `index.css` | **全站唯一色源**:品牌原色 → 语义变量 → Tailwind `@theme`(三层,见 `../architect.md`) |
 | `api/` | 后端交互层,见 `api/claude.md` |
 | `components/` | 通用组件,见 `components/claude.md` |
-| `domains/` | **三类知识的隔离边界**(一域一文件夹,并行开发),见 `domains/claude.md` |
+| `domains/` | **各类知识的隔离边界**(一域一文件夹,并行开发;含只有设计预览的 `workflow`),见 `domains/claude.md` |
 | `layouts/` | 三栏骨架,见 `layouts/claude.md` |
 | `pages/` | 跨域公共页面,见 `pages/claude.md` |
 | `lib/` | 无 React 依赖的工具,见 `lib/claude.md` |
