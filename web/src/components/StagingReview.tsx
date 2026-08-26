@@ -256,6 +256,20 @@ export function StagingReview({
       return next
     })
 
+  // ★ 全选只覆盖**当前筛选出的这批**(items),绝不是"job 里的全部":
+  //   S2 合并相邻切片会把被吸收的那条标 rejected,一次全量 Approve 会把它捞回来,
+  //   同段正文在两片里各出现一次(S2-PLAN 附录三 F1 的 🩸)。
+  const allShownChecked = items.length > 0 && items.every((i) => checked.has(i.id))
+  const toggleAll = () =>
+    setChecked(allShownChecked ? new Set() : new Set(items.map((i) => i.id)))
+
+  // 换筛选就清空勾选:勾选是对"眼前这批"的表态,换一批人还留着旧勾选,
+  // 批量动作就会打在看不见的条目上 —— 和上面是同一个坑的另一半
+  const changeFilter = (s: string) => {
+    setStatusFilter(s)
+    setChecked(new Set())
+  }
+
   // ---------------------------------------------------------------- 键盘流
   // 审几十条时快捷键把效率拉开:j/k 走条目、a 通过、x 驳回、空格勾选。
   // 输入框里按 a 当然是打字,所以先看事件目标是不是可编辑元素。
@@ -303,7 +317,7 @@ export function StagingReview({
             label="All"
             count={counts?.total}
             active={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
+            onClick={() => changeFilter('all')}
           />
           {REVIEW_STATUSES.map((s) => (
             <Tab
@@ -311,7 +325,7 @@ export function StagingReview({
               label={s}
               count={counts?.[s]}
               active={statusFilter === s}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => changeFilter(s)}
             />
           ))}
         </Segmented>
@@ -350,6 +364,14 @@ export function StagingReview({
         <div className="flex w-[322px] shrink-0 flex-col min-[1400px]:w-[376px]">
           <div className="text-fainter flex shrink-0 items-center gap-1.5 overflow-hidden px-1 pb-2.5 text-[11px] tracking-[0.02em] whitespace-nowrap">
             <span className="text-faint shrink-0 font-medium">{items.length} items</span>
+            {actions.bulk && items.length > 0 && (
+              <button
+                className="text-faint hover:text-foreground shrink-0 font-medium underline-offset-2 transition-colors duration-150 hover:underline"
+                onClick={toggleAll}
+              >
+                {allShownChecked ? 'Clear' : 'Select all'}
+              </button>
+            )}
             <span className="ml-auto flex min-w-0 items-center gap-1.5 truncate font-mono text-[10.5px]">
               <Kbd>j / k</Kbd>
               <Kbd>a</Kbd> approve <Kbd>x</Kbd> reject{actions.bulk ? ' · space select' : ''}

@@ -14,7 +14,7 @@
 | `TracePanel.tsx` | 执行轨迹面板:竖线时间轴,流式 span 或 `GET /api/traces/{id}`(可展开 input/output) |
 | `JobProgress.tsx` | 通用任务进度条:轮询 + 声明式步骤 + 分步日志 + 从失败步骤重跑;**审核入口只在真有条目时才画**(`stats.staged`/`published` > 0) |
 | `Toaster.tsx` | 订阅 `lib/toast` store 渲染 toast,固定右下角 |
-| `StagingReview.tsx` | **泛型审核台**:筛选/排序/单条/批量/键盘流/发布;**动作层可由各域替换**(S1 的采纳即发布)。★ 保存不是裁决 —— 存过未裁决的那一条被钉在列表里,否则右侧详情会静默换人 |
+| `StagingReview.tsx` | **泛型审核台**:筛选/排序/单条/批量(含全选,**只选当前筛选集**,换筛选清空勾选)/键盘流/发布;**动作层可由各域替换**(S1 的采纳即发布)。★ 保存不是裁决 —— 存过未裁决的那一条被钉在列表里,否则右侧详情会静默换人 |
 | `Citations.tsx` | 答案下面的引用条(命中面 + 相似度 + 页码,可展开看原文摘录);**citation_type 可由各域在 `module.ts` 的 `citations` 里换成自己的渲染器**(S3 问数要画结果表格 + 最终 SQL) |
 | `staging/` | 各类知识的渲染器(item_type → 卡片 + 编辑器),见 `staging/claude.md` |
 
