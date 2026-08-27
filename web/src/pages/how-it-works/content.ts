@@ -26,7 +26,7 @@
  *    而是**没有任何意图命中时**的兜底。旧的四级倒漏斗 `FUNNEL` 已被 `ROUTING` 取代。
  * 2. **补上第四种知识**:`WORKFLOW`(它是什么 / 四种节点 / 四条纪律 / 已设计未落地)
  *    + `WORKFLOW_EXAMPLE`(客服邮件那条链,逐节点 input / output / 参数绑定)
- *    + `WORKFLOW_CARD`(总页第四张卡,链到收尾那一节而不是子页 —— 它没有子页)。
+ *    + `WORKFLOW_CARD`(总页第四张卡,链到自己的子页 `/how-it-works/workflow`)。
  * 3. 连带改口径的地方:`SYSTEM_MAP`(回答期那步 + 知识中枢多一块)、`CLAIM.corollaries` R3、
  *    `REQUEST_PATH`(第 2 步一步三出口)、`COMPARISON`(四列,顺序 = 三家同级 + 兜底)、
  *    `STACK`、`AUTONOMY`、`EVALUATION`、`PAIN_POINTS`、`GATE`。
@@ -728,13 +728,13 @@ export const AUTONOMY = {
     'Today the agent takes **no** actions at all — a deliberate choice, and the cheapest one to defend.',
 }
 
-/* ═════════════════ 总页收尾 · 第四种知识:编排(workflow) ═════════════════
+/* ═════════════════ 第四种知识:编排(workflow) ═════════════════
  * 前三种知识各自回答一个问题,第四种把它们连起来把一件事做完。三条纪律:
  * 1. 它和精准问答 / 智能问数**同级** —— 也是事先注册意图,命中就执行(见 ROUTING)。
  * 2. 它**不产生新事实**:只能引用已发布的知识,引的是名字不是副本。
  * 3. 画布还没建 —— 文案必须说清「已设计、未落地」;动作节点仍守 AUTONOMY 那条线
  *    (准备好动作,人按下去)。
- * 它没有子页:总页第四张卡链到本节锚点 `#workflows`,深讲就在这一节。 */
+ * 它和三层一样有自己的子页 `/how-it-works/workflow`(`WorkflowPage`),总页第四张卡链到它。 */
 
 export type WorkflowNodeKind = 'trigger' | 'llm' | 'knowledge' | 'compute' | 'action'
 
@@ -756,7 +756,8 @@ export const WORKFLOW_CARD = {
     'A workflow **calls the other three in an order the business signed** — plus code and actions — to finish a task instead of answering a sentence.',
   freedom: 2 as const,
   examples: ['late-order reply', 'refund pre-check', 'onboarding kickoff'],
-  href: '#workflows',
+  /** 编排有自己的子页(`/how-it-works/workflow`),和三层同级地挂在侧栏 */
+  to: '/how-it-works/workflow',
   linkLabel: 'See it run',
   badge: 'designed, not built',
 }
@@ -1200,7 +1201,7 @@ export const BACK_TO_OVERVIEW = 'Back to the overview'
 export const AUTHORS = {
   label: 'Designed and built by',
   names: ['Yixing (Ethan) Zheng', 'Delai (Tony) Ye'],
-  note: 'An interview demo — the design positions above are the point, not the feature count.',
+  note: 'An interview demo — the design positions below are the point, not the feature count.',
 }
 
 /* ───────────────────────── 侧栏子项(AppLayout 消费) ─────────────────────────
@@ -1218,9 +1219,16 @@ export interface HowItWorksNavItem {
 
 export const HOW_IT_WORKS_NAV: HowItWorksNavItem[] = [
   { to: '/how-it-works', label: 'Overview', dotClass: 'bg-border-strong', end: true },
-  ...LAYERS.map((l) => ({
-    to: `/how-it-works/${l.slug}`,
-    label: l.name,
-    dotClass: l.dotClass,
-  })),
+  // 顺序 = KIND_CARD_ORDER:两家意图层 → 编排 → 文档兜底,和页面里的层级一致
+  ...KIND_CARD_ORDER.map((key) => {
+    if (key === 'workflow') {
+      return {
+        to: WORKFLOW_CARD.to,
+        label: WORKFLOW_CARD.name,
+        dotClass: WORKFLOW_CARD.dotClass,
+      }
+    }
+    const layer = LAYERS.find((l) => l.slug === key)!
+    return { to: `/how-it-works/${layer.slug}`, label: layer.name, dotClass: layer.dotClass }
+  }),
 ]

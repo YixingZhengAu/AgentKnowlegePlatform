@@ -3,7 +3,7 @@
 **职责**:编排(workflow)域前端 —— **第四种知识,当前只有一页静态设计预览,没有后端**
 (2026-08-27 需求方定:先在导航里占个位置,不做开发)。
 
-设计说明的唯一出处是说明页 `/how-it-works#workflows`(文案在
+设计说明的唯一出处是说明页 `/how-it-works/workflow`(文案在
 `src/pages/how-it-works/content.ts` 的 `WORKFLOW` / `WORKFLOW_EXAMPLE`),**本域不重复讲道理**,
 只把形状摆出来:左侧节点面板 / 中间画布 / 右侧节点检查器。
 

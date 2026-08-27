@@ -5,7 +5,7 @@
 第四种知识:**编排**。前三种各自回答一个问题,编排把它们按业务签过字的顺序连起来把一件事做完,
 外加代码节点(阈值 / 分支)与动作节点(写库 / 外发)。层级上它与精准问答、智能问数**同级**
 (都注册意图、命中即执行),文档 RAG 才是兜底 —— 这套口径的唯一出处是
-`src/pages/how-it-works/`(那里的 `ROUTING` 与 `WORKFLOW`)。
+`src/pages/how-it-works/`(那里的 `ROUTING` 与 `WORKFLOW`,页面是 `/how-it-works/workflow`)。
 
 **当前范围**:导航里有位置 + 一页静态预览,**没有后端、没有表、没有 Job、没有审核台**。
 所以这个域没有 `schema.ts`(不碰生成类型)、没有 `actions.ts`、没有 `renderers.tsx`。

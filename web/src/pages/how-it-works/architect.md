@@ -46,10 +46,11 @@ correctness ≠ safety)。
    往下一条带原因的箭头才是兜底,再往下是「说没有依据」。一次请求那张图同步改成
    **一步三出口**(意图那一步右侧三个绿块并列)。
 2. **补上第四种知识:编排(workflow)**。它**不产生新事实**,只把前三种按签过字的顺序连起来,
-   再加代码节点(阈值/分支)与动作节点(写库/外发,守人审那道闸)。它是总页的**收尾一节**
-   (锚点 `#workflows`):概念图(已发布的知识 → 引用 → 四种节点)+ 四条纪律 W1–W4 +
-   那条客服邮件编排逐节点的 input / output / 参数绑定 + 一句「已设计、未落地」。
-   **它没有子页** —— 卡片区第四张卡链到本页锚点;摄取侧的占位页在 `src/domains/workflow/`。
+   再加代码节点(阈值/分支)与动作节点(写库/外发,守人审那道闸)。它**和三层一样有自己的子页**
+   `/how-it-works/workflow`(`WorkflowPage`,侧栏里四页并列):概念图(已发布的知识 → 引用 →
+   四种节点)+ 四条纪律 W1–W4 + 那条客服邮件编排逐节点的 input / output / 参数绑定 +
+   一句「已设计、未落地」。卡片区第四张卡链到它;摄取侧的占位页在 `src/domains/workflow/`。
+   路由上 `/how-it-works/workflow` 在 `:layer` 之前显式声明(它不是 `LayerSlug`)。
 
 ## 两级结构
 
@@ -57,9 +58,11 @@ correctness ≠ safety)。
 | ---------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `/how-it-works`        | `OverviewPage` | **为什么 + 是什么**:主张 + 全局图 → 路由漏斗(例句)+ R1–R3 → 三层卡片(例子 chips + 自由度条)→ 一次请求(判定流程图)→ 架构段(四条立场常驻 + 五小节折叠)→ 四折叠区 → 署名 |
 | `/how-it-works/:layer` | `LayerPage`    | **怎么做**:一层一页,含治理期 / 回答期两条流程                                                                              |
+| `/how-it-works/workflow` | `WorkflowPage` | **第四种知识**:概念图 + W1–W4 + 「已设计、未落地」+ 客服邮件那条编排逐节点 |
 
-侧栏子项清单是 `content.ts` 的 `HOW_IT_WORKS_NAV`(总页 / 三层),
-由 `AppLayout` 遍历渲染 —— **AppLayout 不硬编码任何一页**,和 DOMAINS 同一纪律。
+侧栏子项清单是 `content.ts` 的 `HOW_IT_WORKS_NAV`(总页 + 四种知识各一页,顺序 = `KIND_CARD_ORDER`:
+两家意图层 → 编排 → 文档兜底),由 `AppLayout` 遍历渲染 —— **AppLayout 不硬编码任何一页**,
+和 DOMAINS 同一纪律。
 
 ## 总页(常驻 + 折叠)
 
@@ -75,8 +78,7 @@ correctness ≠ safety)。
 | 折叠:Three layers, one gate                                                  | `GATE` + `LAYERS`              | `GateFigure`        |
 | 折叠:The three layers side by side                                           | `COMPARISON`                   | 表(全页唯一)        |
 | 折叠:What we deliberately don’t do                                           | `TRADEOFFS`                    | —                   |
-| **常驻(收尾):Workflows(锚点 `#workflows`)** | `WORKFLOW` + `WORKFLOW_EXAMPLE` | `WorkflowConceptFigure` + `WorkflowExampleFigure` |
-| 页脚:署名                                                                    | `AUTHORS`                      | —                   |
+| **页首:署名**(v5.1 从页脚挪到页首)                                          | `AUTHORS`                      | —                   |
 
 折叠区由 `Section.tsx` 的 `CollapsibleScreen` 实现:默认收起,折叠态一行 =
 24px 标题 + 13px **结论句**摘要(`*.summary`),9 行拼起来就是目录。

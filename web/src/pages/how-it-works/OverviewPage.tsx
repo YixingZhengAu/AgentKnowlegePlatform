@@ -1,17 +1,18 @@
 /**
  * `/how-it-works` 总页。结构(2026-08-27 v4,图先于字):
  *
- *   主张句 + **全局图**(SystemMapFigure) → **两级路由图**(RoutingFigure)+ R1–R3 →
+ *   署名(页首一条) + 主张句 + **全局图**(SystemMapFigure) →
+ *   **两级路由图**(RoutingFigure)+ R1–R3 →
  *   四种知识的卡片(例子 chips + 自由度计量条) → 一次请求(判定流程图) →
- *   架构段(标题 + 四条立场常驻,其余五小节折叠) → 九个折叠区 →
- *   **收尾:第四种知识 · 编排**(#workflows) → 署名
+ *   架构段(标题 + 四条立场常驻,其余五小节折叠) → 九个折叠区
  *
  * v4 要点:常驻区四块**每块都由一张图领队**,文字退成图注 ——
  * 第 1 块一张全局图先把「谁决定什么」讲完(两个时钟 + 知识中枢 + 回边 + 留痕),
  * 后三块依次放大:路由顺序 → 三层是什么 → 一次请求逐步判定。
  * v5(同日,需求方纠正):**层级关系** —— 精准问答 / 智能问数 / 编排三者同级(都注册意图),
- * 文档 RAG 是兜底,由 `RoutingFigure` 画;卡片区因此变四张(第四张链到收尾那一节,
- * 它没有子页)。收尾一节把编排讲完:概念图 + 四条纪律 + 那条客服邮件逐节点的例子。
+ * 文档 RAG 是兜底,由 `RoutingFigure` 画;卡片区因此变四张。
+ * v5.1(同日):编排不再是本页收尾一节,升成自己的子页 `WorkflowPage`
+ * (`/how-it-works/workflow`,侧栏里和三层并列);署名从页脚挪到页首。
  * 下面 9 个折叠区(架构五小节 + 原四区)默认收起,折叠态标题 + 结论句摘要就是目录;
  * 投屏讲解场景用折叠组顶部的 Expand all 一键还原全展开。
  * 只渲染 content.ts 的数据;字阶走 Section.tsx。
@@ -42,9 +43,7 @@ import {
   STACK,
   SYSTEM_MAP,
   TRADEOFFS,
-  WORKFLOW,
   WORKFLOW_CARD,
-  WORKFLOW_EXAMPLE,
 } from './content'
 import {
   AutonomyFigure,
@@ -57,8 +56,6 @@ import {
   ShellCoreFigure,
   StackFigure,
   SystemMapFigure,
-  WorkflowConceptFigure,
-  WorkflowExampleFigure,
 } from './figures'
 import {
   ClaimHeadline,
@@ -84,7 +81,7 @@ const COLLAPSIBLE_IDS = [
   'tradeoffs',
 ]
 
-/** 四张卡片共用的外框(三层是 <Link> 进子页,编排是 <a> 滚到收尾那一节) */
+/** 四张卡片共用的外框(四张都是 <Link>,各进自己的子页) */
 const KIND_CARD_CLASS =
   'group flex flex-col rounded-[var(--radius-card)] border border-[var(--border)] p-6 shadow-[var(--shadow-card)] transition-all duration-150 hover:border-[var(--border-strong)]'
 
@@ -163,6 +160,19 @@ export function OverviewPage() {
 
   return (
     <div className="mx-auto max-w-[860px] pt-6 pb-28">
+      {/* 页首署名:先说谁做的,再进主张 */}
+      <div className="border-border-soft mb-9 flex flex-wrap items-baseline gap-x-5 gap-y-1 border-b pb-6">
+        <p className="text-fainter font-mono text-[11px] tracking-[0.06em] uppercase">
+          {AUTHORS.label}
+        </p>
+        {AUTHORS.names.map((name) => (
+          <p key={name} className="text-foreground text-[15px] font-semibold">
+            {name}
+          </p>
+        ))}
+        <p className="text-faint text-[13.5px] leading-[1.55]">{AUTHORS.note}</p>
+      </div>
+
       {/* 常驻块 1:主张句 + 全局图 —— 冷读者的第一眼,整页唯一的「一图看懂」 */}
       <div className="space-y-7">
         <div className="space-y-4">
@@ -210,16 +220,16 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {/* 常驻块 3:四种知识的卡片(前三张进子页,第四张滚到收尾那一节) */}
+      {/* 常驻块 3:四种知识的卡片(四张各进自己的子页) */}
       <div className="border-border-soft mt-16 border-t pt-10">
         <div className="space-y-6">
           <ScreenTitle>{LAYER_CARDS_TITLE}</ScreenTitle>
-          {/* 顺序出自 content 的 KIND_CARD_ORDER:两家意图层 → 编排 → 文档兜底 */}
+          {/* 顺序出自 content 的 KIND_CARD_ORDER(= 侧栏顺序):两家意图层 → 编排 → 文档兜底 */}
           <div className="grid gap-4 md:grid-cols-2">
             {KIND_CARD_ORDER.map((key) => {
               if (key === 'workflow') {
                 return (
-                  <a key={key} href={WORKFLOW_CARD.href} className={KIND_CARD_CLASS}>
+                  <Link key={key} to={WORKFLOW_CARD.to} className={KIND_CARD_CLASS}>
                     <KindCardBody
                       name={WORKFLOW_CARD.name}
                       dotClass={WORKFLOW_CARD.dotClass}
@@ -229,7 +239,7 @@ export function OverviewPage() {
                       linkLabel={WORKFLOW_CARD.linkLabel}
                       badge={WORKFLOW_CARD.badge}
                     />
-                  </a>
+                  </Link>
                 )
               }
               const layer = LAYERS.find((l) => l.slug === key)!
@@ -448,75 +458,6 @@ export function OverviewPage() {
             ))}
           </div>
         </CollapsibleScreen>
-      </div>
-
-      {/* 收尾常驻块:第四种知识 —— 编排(卡片区第四张卡链到这里)。
-          纪律:它必须自己说清「已设计、未落地」,动作节点仍守 AUTONOMY 那条线 */}
-      <section id="workflows" className="border-border-soft mt-16 scroll-mt-20 border-t pt-10">
-        <div className="space-y-7">
-          <div className="space-y-4">
-            <ScreenTitle>{WORKFLOW.title}</ScreenTitle>
-            <Lede text={WORKFLOW.lede} />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-baseline gap-x-3">
-              <SectionHeading>{WORKFLOW.builtFromLabel}</SectionHeading>
-              <Meta>{WORKFLOW.summary}</Meta>
-            </div>
-            <p className="text-secondary-foreground text-[15px] leading-[1.6]">
-              {WORKFLOW.builtFromNote}
-            </p>
-            <WorkflowConceptFigure />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {WORKFLOW.rules.map((rule, i) => (
-              <div key={rule.head} className="bg-subtle rounded-[16px] px-5 py-5">
-                <span className="text-fainter font-mono text-[11px]">{`W${i + 1}`}</span>
-                <p className="text-foreground mt-1.5 text-[16px] leading-[1.4] font-semibold">
-                  {rule.head}
-                </p>
-                <p className="border-border-soft text-faint mt-3 border-t pt-3 text-[13.5px] leading-[1.55]">
-                  {rule.body}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <p className="border-border-strong flex flex-wrap items-baseline gap-x-2.5 rounded-[14px] border border-dashed px-4 py-3">
-            <span className="text-muted-foreground font-mono text-[10.5px] tracking-[0.06em] uppercase">
-              {WORKFLOW.statusLabel}
-            </span>
-            <span className="text-faint text-[13px] leading-[1.55]">{WORKFLOW.status}</span>
-          </p>
-
-          <div className="space-y-3 pt-2">
-            <div className="flex flex-wrap items-baseline gap-x-3">
-              <SectionHeading>{WORKFLOW_EXAMPLE.title}</SectionHeading>
-              <Meta>{WORKFLOW_EXAMPLE.summary}</Meta>
-            </div>
-            <Meta>{WORKFLOW_EXAMPLE.scenario}</Meta>
-            <WorkflowExampleFigure />
-          </div>
-
-          <Emphasis text={WORKFLOW_EXAMPLE.emphasis} />
-        </div>
-      </section>
-
-      {/* 页脚:署名 */}
-      <div className="border-border-soft mt-4 border-t pt-8">
-        <p className="text-fainter font-mono text-[11px] tracking-[0.06em] uppercase">
-          {AUTHORS.label}
-        </p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1">
-          {AUTHORS.names.map((name) => (
-            <p key={name} className="text-foreground text-[15px] font-semibold">
-              {name}
-            </p>
-          ))}
-        </div>
-        <p className="text-faint mt-2 text-[13.5px] leading-[1.55]">{AUTHORS.note}</p>
       </div>
     </div>
   )

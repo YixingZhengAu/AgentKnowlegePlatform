@@ -20,7 +20,7 @@
 
 **第四行是占位**:编排(第四种知识,2026-08-27 加)现在只有一页静态画布预览,
 **没有后端、没有表、没有 Job、没有审核台**,`knowledge_bases.type` 里也还没有这个取值。
-它的设计说明在说明页 `/how-it-works#workflows` 与 `PRD.md §3.6`;真开发的落点见
+它的设计说明在说明页 `/how-it-works/workflow` 与 `PRD.md §3.6`;真开发的落点见
 `web/src/domains/workflow/architect.md` 末节。别把它当成一个在开发中的域。
 
 **核心规则一句话**:你的所有代码只落在上面两个属于你的文件夹里;

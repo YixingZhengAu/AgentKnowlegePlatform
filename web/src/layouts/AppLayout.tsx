@@ -6,7 +6,7 @@
  * 没塞东西时整块不占宽度 —— 这样列表页不会白白让出 320px。
  *
  * 侧栏有两个可展开分组,子项清单都在别处、本文件不硬编码:
- *   "How It Works"        → src/pages/how-it-works 的 HOW_IT_WORKS_NAV(总页 / 架构 / 三层)
+ *   "How It Works"        → src/pages/how-it-works 的 HOW_IT_WORKS_NAV(总页 + 四种知识各一页)
  *   "Knowledge Ingestion" → 域清单 src/domains/index.ts(结构调整,见 S0-PLAN §5)
  */
 
@@ -89,7 +89,7 @@ export function AppLayout() {
             </span>
           </div>
           <div className="flex flex-col gap-[3px] px-3.5 pt-2.5">
-            {/* How It Works 分组:子项 = 说明页自己的页面清单(总页 / 架构 / 三层),
+            {/* How It Works 分组:子项 = 说明页自己的页面清单(总页 + 四种知识各一页),
                 清单出处在 pages/how-it-works,本文件不硬编码任何一页 */}
             <button
               onClick={() => setDeckOpen((v) => !v)}

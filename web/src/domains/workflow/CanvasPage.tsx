@@ -4,7 +4,7 @@
  * 所以它长成一个编排画布该有的样子(左侧节点面板 / 中间画布 / 右侧节点检查器),
  * 但**任何东西都不可交互、不落库、不发请求** —— 页顶那条横幅必须一直说清这件事。
  *
- * 说明性文字与真正的例子在说明页(`/how-it-works#workflows`),这里不重复讲道理,
+ * 说明性文字与真正的例子在说明页(`/how-it-works/workflow`),这里不重复讲道理,
  * 只把形状摆出来;两处的节点顺序保持一致,别让人以为是两个东西。
  * 域纪律:不 import 兄弟域,识别色只用 `bg-kb-workflow`(色值在 index.css)。
  */
@@ -95,7 +95,7 @@ export function CanvasPage() {
             slice, so this page saves nothing and calls nothing.
           </p>
         </div>
-        <Link to="/how-it-works#workflows">
+        <Link to="/how-it-works/workflow">
           <Button variant="secondary" size="sm">
             Read the design
             <ArrowRight strokeWidth={1.75} />
